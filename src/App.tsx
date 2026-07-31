@@ -12,7 +12,20 @@ import { Position, Candidate, Voter, VoteChoices, ElectionSettings } from './typ
 import { INITIAL_ELECTION_SETTINGS } from './data/initialData';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'ballot' | 'candidates' | 'results' | 'verify' | 'admin'>('results');
+  const [activeTab, setActiveTab] = useState<'ballot' | 'candidates' | 'results' | 'verify' | 'admin'>(() => {
+    const saved = localStorage.getItem('cpe_voter');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.email?.toLowerCase() === 'bamuyahacksie@gmail.com') {
+          return 'admin';
+        }
+      } catch {
+        // fallback
+      }
+    }
+    return 'ballot';
+  });
 
   // Server Data
   const [positions, setPositions] = useState<Position[]>([]);
@@ -29,7 +42,10 @@ export default function App() {
   const [choices, setChoices] = useState<VoteChoices>({});
 
   // Modals
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(() => {
+    const saved = localStorage.getItem('cpe_voter');
+    return !saved;
+  });
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [lastReceiptHash, setLastReceiptHash] = useState('');
@@ -55,6 +71,16 @@ export default function App() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const isAdminUser = voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com';
+    if (voter && !isAdminUser && activeTab !== 'ballot') {
+      setActiveTab('ballot');
+    }
+    if (!voter && activeTab !== 'admin') {
+      setIsAuthModalOpen(true);
+    }
+  }, [voter, activeTab]);
+
   const handleSelectCandidate = (positionId: string, choiceId: string) => {
     setChoices((prev) => ({
       ...prev,
@@ -65,10 +91,10 @@ export default function App() {
   const handleLoginSuccess = (authenticatedVoter: Voter) => {
     setVoter(authenticatedVoter);
     localStorage.setItem('cpe_voter', JSON.stringify(authenticatedVoter));
-    if (!authenticatedVoter.hasVoted) {
-      setActiveTab('ballot');
+    if (authenticatedVoter.email?.toLowerCase() === 'bamuyahacksie@gmail.com') {
+      setActiveTab('admin');
     } else {
-      setActiveTab('results');
+      setActiveTab('ballot');
     }
   };
 
@@ -76,6 +102,7 @@ export default function App() {
     setVoter(null);
     localStorage.removeItem('cpe_voter');
     setChoices({});
+    setIsAuthModalOpen(true);
   };
 
   const handleCastSuccess = (receiptHash: string, timestamp: string) => {
@@ -159,27 +186,42 @@ export default function App() {
             </p>
           </div>
 
-          <div className="flex items-center space-x-4 text-slate-400 text-[11px]">
-            <button onClick={() => setActiveTab('verify')} className="hover:text-cyan-400">
-              Receipt Audit
-            </button>
-            <span>•</span>
-            <button onClick={() => setActiveTab('candidates')} className="hover:text-cyan-400">
-              Candidates
-            </button>
-            <span>•</span>
-            <button onClick={() => setIsAuthModalOpen(true)} className="hover:text-cyan-400">
-              Voter Portal
-            </button>
-          </div>
+          {!voter ? (
+            <div className="flex items-center space-x-4 text-slate-400 text-[11px]">
+              <button onClick={() => setActiveTab('verify')} className="hover:text-cyan-400">
+                Receipt Audit
+              </button>
+              <span>•</span>
+              <button onClick={() => setActiveTab('candidates')} className="hover:text-cyan-400">
+                Candidates
+              </button>
+              <span>•</span>
+              <button onClick={() => setIsAuthModalOpen(true)} className="hover:text-cyan-400">
+                Voter Portal
+              </button>
+            </div>
+          ) : (
+            <div className="text-[11px] text-cyan-400 font-semibold tracking-wide">
+              🔒 Student Voting Portal • Official Ballot Station
+            </div>
+          )}
         </div>
       </footer>
 
       {/* Modals */}
       <VoterAuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        isOpen={isAuthModalOpen && activeTab !== 'admin'}
+        onClose={() => {
+          if (voter) {
+            setIsAuthModalOpen(false);
+          }
+        }}
         onLoginSuccess={handleLoginSuccess}
+        preventClose={!voter}
+        onSwitchToAdmin={() => {
+          setActiveTab('admin');
+          setIsAuthModalOpen(false);
+        }}
       />
 
       {voter && (
@@ -200,6 +242,7 @@ export default function App() {
         receiptHash={lastReceiptHash}
         timestamp={lastReceiptTime}
         onViewResults={() => setActiveTab('results')}
+        isVoterLoggedIn={!!voter}
       />
     </div>
   );

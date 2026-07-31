@@ -19,12 +19,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onLogout,
 }) => {
+  const isAdmin = voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com';
+
   return (
     <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-slate-100 shadow-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Brand & Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('results')}>
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab(voter ? (isAdmin ? 'admin' : 'ballot') : 'results')}>
             <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 p-0.5 shadow-lg shadow-cyan-500/20">
               <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
                 <Cpu className="w-6 h-6 text-cyan-400" />
@@ -66,53 +68,57 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Official Ballot</span>
             </button>
 
-            <button
-              onClick={() => setActiveTab('candidates')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'candidates'
-                  ? 'bg-cyan-500 text-slate-950 font-semibold shadow-md shadow-cyan-500/20'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span>Candidates</span>
-            </button>
+            {(!voter || isAdmin) && (
+              <>
+                <button
+                  onClick={() => setActiveTab('candidates')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === 'candidates'
+                      ? 'bg-cyan-500 text-slate-950 font-semibold shadow-md shadow-cyan-500/20'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Candidates</span>
+                </button>
 
-            <button
-              onClick={() => setActiveTab('results')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'results'
-                  ? 'bg-cyan-500 text-slate-950 font-semibold shadow-md shadow-cyan-500/20'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span>Live Results</span>
-            </button>
+                <button
+                  onClick={() => setActiveTab('results')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === 'results'
+                      ? 'bg-cyan-500 text-slate-950 font-semibold shadow-md shadow-cyan-500/20'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Live Results</span>
+                </button>
 
-            <button
-              onClick={() => setActiveTab('verify')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'verify'
-                  ? 'bg-cyan-500 text-slate-950 font-semibold shadow-md shadow-cyan-500/20'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Audit Receipt</span>
-            </button>
+                <button
+                  onClick={() => setActiveTab('verify')}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === 'verify'
+                      ? 'bg-cyan-500 text-slate-950 font-semibold shadow-md shadow-cyan-500/20'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Audit Receipt</span>
+                </button>
 
-            <button
-              onClick={() => setActiveTab('admin')}
-              className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'admin'
-                  ? 'bg-slate-800 text-cyan-400 font-semibold border border-cyan-500/40'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-              }`}
-            >
-              <Settings className="w-4 h-4" />
-              <span>Admin</span>
-            </button>
+                <button
+                  onClick={() => setActiveTab('admin')}
+                  className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === 'admin'
+                      ? 'bg-slate-800 text-cyan-400 font-semibold border border-cyan-500/40'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Admin</span>
+                </button>
+              </>
+            )}
           </nav>
 
           {/* User Auth Section */}
@@ -122,6 +128,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="text-right hidden sm:block">
                   <div className="flex items-center justify-end space-x-1.5">
                     <span className="text-sm font-semibold text-slate-200">{voter.name}</span>
+                    {isAdmin && (
+                      <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded font-bold border border-cyan-500/30">ADMIN</span>
+                    )}
                     {voter.hasVoted && (
                       <CheckCircle2 className="w-4 h-4 text-emerald-400" title="Voted Successfully" />
                     )}
@@ -160,44 +169,48 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Vote className="w-4 h-4" />
-            <span>Ballot</span>
+            <span>Official Ballot</span>
           </button>
-          <button
-            onClick={() => setActiveTab('candidates')}
-            className={`flex flex-col items-center space-y-1 ${
-              activeTab === 'candidates' ? 'text-cyan-400 font-bold' : 'text-slate-400'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Candidates</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('results')}
-            className={`flex flex-col items-center space-y-1 ${
-              activeTab === 'results' ? 'text-cyan-400 font-bold' : 'text-slate-400'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>Results</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('verify')}
-            className={`flex flex-col items-center space-y-1 ${
-              activeTab === 'verify' ? 'text-cyan-400 font-bold' : 'text-slate-400'
-            }`}
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Audit</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('admin')}
-            className={`flex flex-col items-center space-y-1 ${
-              activeTab === 'admin' ? 'text-cyan-400 font-bold' : 'text-slate-400'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            <span>Admin</span>
-          </button>
+          {(!voter || isAdmin) && (
+            <>
+              <button
+                onClick={() => setActiveTab('candidates')}
+                className={`flex flex-col items-center space-y-1 ${
+                  activeTab === 'candidates' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>Candidates</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('results')}
+                className={`flex flex-col items-center space-y-1 ${
+                  activeTab === 'results' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Results</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('verify')}
+                className={`flex flex-col items-center space-y-1 ${
+                  activeTab === 'verify' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Audit</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`flex flex-col items-center space-y-1 ${
+                  activeTab === 'admin' ? 'text-cyan-400 font-bold' : 'text-slate-400'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                <span>Admin</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>

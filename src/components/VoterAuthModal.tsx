@@ -1,40 +1,67 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, UserCheck, Key, Zap, CheckCircle2, Cpu } from 'lucide-react';
+import { X, ShieldCheck, Mail, User, CreditCard, GraduationCap, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Voter, YearLevel } from '../types';
+import { signInWithGoogle } from '../lib/firebase';
 
 interface VoterAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (voter: Voter) => void;
+  preventClose?: boolean;
+  onSwitchToAdmin?: () => void;
 }
 
 export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
   isOpen,
   onClose,
   onLoginSuccess,
+  preventClose = false,
+  onSwitchToAdmin,
 }) => {
-  const [studentNumber, setStudentNumber] = useState('');
-  const [pin, setPin] = useState('1234');
+  const [step, setStep] = useState<'email' | 'details'>('email');
+  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [studentId, setStudentId] = useState('');
+  const [yearLevel, setYearLevel] = useState<YearLevel>('3rd Year');
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!studentNumber.trim()) {
-      setError('Please enter a valid CPE Student ID (e.g., 2023-10294).');
-      return;
-    }
+  const performDirectLogin = async (
+    userEmail: string,
+    providedName?: string,
+    providedStudentId?: string,
+    providedYearLevel?: YearLevel
+  ) => {
+    const cleanEmail = userEmail.trim().toLowerCase();
+    const isAdmin = cleanEmail === 'bamuyahacksie@gmail.com';
+    const cleanName =
+      providedName ||
+      fullName.trim() ||
+      (isAdmin
+        ? 'Bamuya (Admin)'
+        : cleanEmail.split('@')[0].replace(/[\._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()));
+    const cleanStudentId =
+      providedStudentId ||
+      studentId.trim() ||
+      (isAdmin ? 'ADMIN-2026' : `2026-${cleanEmail.split('@')[0].toUpperCase().slice(0, 8)}`);
+    const cleanYearLevel = providedYearLevel || yearLevel || '3rd Year';
 
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch('/api/voter/login', {
+      const res = await fetch('/api/voter/register-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentNumber, pin }),
+        body: JSON.stringify({
+          email: cleanEmail,
+          studentNumber: cleanStudentId,
+          name: cleanName,
+          yearLevel: cleanYearLevel,
+        }),
       });
       const data = await res.json();
 
@@ -42,7 +69,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
         onLoginSuccess(data.voter);
         onClose();
       } else {
-        setError(data.message || 'Authentication failed. Please check your credentials.');
+        setError(data.message || 'Voter registration failed.');
       }
     } catch {
       setError('Connection error. Please try again.');
@@ -51,49 +78,87 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
     }
   };
 
-  const handleDemoPreset = async (yearLevel: YearLevel) => {
+  const handleStep1EmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setError('Please enter a valid email address (e.g., student@cpe.edu.ph).');
+      return;
+    }
+    setError(null);
+    if (cleanEmail === 'bamuyahacksie@gmail.com') {
+      performDirectLogin(cleanEmail);
+    } else {
+      setStep('details');
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const res = await fetch('/api/voter/demo-select', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ yearLevel }),
-      });
-      const data = await res.json();
-
-      if (data.success && data.voter) {
-        onLoginSuccess(data.voter);
-        onClose();
-      } else {
-        setError(data.message || 'Failed to select demo voter.');
+      const user = await signInWithGoogle();
+      if (user && user.email) {
+        const cleanEmail = user.email.trim().toLowerCase();
+        setEmail(cleanEmail);
+        if (user.displayName) {
+          setFullName(user.displayName);
+        }
+        if (cleanEmail === 'bamuyahacksie@gmail.com') {
+          await performDirectLogin(cleanEmail, user.displayName || undefined);
+        } else {
+          setStep('details');
+        }
       }
-    } catch {
-      setError('Connection error.');
+    } catch (err: unknown) {
+      const authErr = err as { code?: string; message?: string };
+      if (authErr.code !== 'auth/popup-closed-by-user') {
+        setError(authErr.message || 'Google Sign-In failed.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleFinalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName.trim()) {
+      setError('Please enter your full name.');
+      return;
+    }
+    if (!studentId.trim()) {
+      setError('Please enter your student ID number (e.g. 2023-10294).');
+      return;
+    }
+    performDirectLogin(email, fullName, studentId, yearLevel);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-100 animate-in fade-in zoom-in-95 duration-200">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        {!preventClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
 
         {/* Header */}
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+        <div className="flex items-center space-x-3 mb-5">
+          <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 flex-shrink-0">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-100 leading-snug">Voter Portal Authorization</h2>
-            <p className="text-xs text-slate-400">CPE Department Officer Elections 2026</p>
+            <h2 className="text-lg font-bold text-slate-100 leading-snug">
+              {step === 'email' ? 'Step 1: Voter Email Authentication' : 'Step 2: Student Information'}
+            </h2>
+            <p className="text-xs text-slate-400">
+              {step === 'email'
+                ? 'Enter your email to sign in & access your official ballot'
+                : 'Complete your student profile to proceed directly to voting'}
+            </p>
           </div>
         </div>
 
@@ -103,96 +168,172 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
           </div>
         )}
 
-        {/* Login Form */}
-        <form onSubmit={handleLogin} className="space-y-4">
+        {step === 'email' ? (
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-              Student ID / ID Number
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={studentNumber}
-                onChange={(e) => setStudentNumber(e.target.value)}
-                placeholder="e.g. 2023-10294"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all uppercase tracking-wide"
-              />
-              <UserCheck className="w-4 h-4 text-slate-500 absolute right-3.5 top-3" />
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">Format: YYYY-XXXXX (e.g. 2023-10001)</p>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-              Voter Security PIN
-            </label>
-            <div className="relative">
-              <input
-                type="password"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                placeholder="••••"
-                maxLength={6}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all tracking-widest font-mono"
-              />
-              <Key className="w-4 h-4 text-slate-500 absolute right-3.5 top-3" />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center space-x-2 text-sm disabled:opacity-50 mt-2"
-          >
-            {loading ? (
-              <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent" />
-            ) : (
-              <>
-                <Cpu className="w-4 h-4" />
-                <span>Authorize & Access Ballot</span>
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Divider */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-800" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-slate-900 px-3 text-slate-400 font-semibold tracking-wider">
-              Or Instant Demo Presets
-            </span>
-          </div>
-        </div>
-
-        {/* Demo Student Presets */}
-        <div>
-          <p className="text-xs text-slate-400 mb-2.5">
-            Select a student year level to test ballot voting instantly:
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {(['1st Year', '2nd Year', '3rd Year', '4th Year'] as YearLevel[]).map((yl) => (
+            {/* Google Sign-In */}
+            <div className="mb-4">
               <button
-                key={yl}
-                onClick={() => handleDemoPreset(yl)}
+                type="button"
+                onClick={handleGoogleSignIn}
                 disabled={loading}
-                className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800/80 hover:border-cyan-500/50 text-left transition-all text-xs font-medium text-slate-200 group"
+                className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center space-x-3 text-sm disabled:opacity-50"
               >
-                <div className="flex items-center space-x-2">
-                  <Zap className="w-3.5 h-3.5 text-cyan-400 group-hover:scale-110 transition-transform" />
-                  <span>{yl} CPE Student</span>
-                </div>
-                <CheckCircle2 className="w-3.5 h-3.5 text-slate-600 group-hover:text-cyan-400" />
+                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"
+                  />
+                </svg>
+                <span>Sign in with Google Email</span>
               </button>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Security Notice */}
-        <div className="mt-5 pt-4 border-t border-slate-800/80 text-[11px] text-slate-400 text-center">
-          🔒 End-to-end voter anonymity guaranteed. Ballots are cryptographically hashed and unlinked from personal IDs.
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-800" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase">
+                <span className="bg-slate-900 px-3 text-slate-500 font-semibold tracking-wider">
+                  Or Enter Email Address
+                </span>
+              </div>
+            </div>
+
+            {/* Step 1 Email Form */}
+            <form onSubmit={handleStep1EmailSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="e.g. student@cpe.edu.ph"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                    required
+                  />
+                  <Mail className="w-4 h-4 text-slate-500 absolute right-3.5 top-3" />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center space-x-2 text-sm"
+              >
+                <span>Continue to Information</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        ) : (
+          /* Step 2 Details Form */
+          <form onSubmit={handleFinalSubmit} className="space-y-4 text-xs">
+            <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+              <div className="flex items-center space-x-2 truncate">
+                <Mail className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                <span className="text-slate-200 font-medium truncate">{email}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStep('email')}
+                className="text-[11px] text-cyan-400 hover:underline flex items-center space-x-1 ml-2 flex-shrink-0"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                <span>Change</span>
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Full Name *</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g. Juan Dela Cruz"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500"
+                  required
+                />
+                <User className="w-4 h-4 text-slate-500 absolute right-3.5 top-3" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">Student ID Number *</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  placeholder="e.g. 2023-10294"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 text-sm uppercase focus:outline-none focus:border-cyan-500"
+                  required
+                />
+                <CreditCard className="w-4 h-4 text-slate-500 absolute right-3.5 top-3" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-300 font-semibold mb-1">School Year Level *</label>
+              <div className="relative">
+                <select
+                  value={yearLevel}
+                  onChange={(e) => setYearLevel(e.target.value as YearLevel)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 text-sm font-medium focus:outline-none focus:border-cyan-500 appearance-none"
+                >
+                  <option value="1st Year">1st Year Computer Engineering</option>
+                  <option value="2nd Year">2nd Year Computer Engineering</option>
+                  <option value="3rd Year">3rd Year Computer Engineering</option>
+                  <option value="4th Year">4th Year Computer Engineering</option>
+                </select>
+                <GraduationCap className="w-4 h-4 text-slate-500 absolute right-3.5 top-3 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-xl transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center space-x-2 text-sm disabled:opacity-50"
+              >
+                {loading ? (
+                  <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent" />
+                ) : (
+                  <>
+                    <span>Proceed to Voting Section</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+
+        <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-500 text-center flex items-center justify-between">
+          <span>🔒 Mandatory Voter Verification</span>
+          {onSwitchToAdmin && (
+            <button
+              type="button"
+              onClick={onSwitchToAdmin}
+              className="text-cyan-400 hover:underline font-semibold text-[11px]"
+            >
+              Admin Console Access →
+            </button>
+          )}
         </div>
       </div>
     </div>

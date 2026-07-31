@@ -22,15 +22,9 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
 
   // Nomination Form State
   const [nomForm, setNomForm] = useState({
-    nominatorName: '',
-    nominatorStudentId: '',
-    positionId: positions[0]?.id || 'gov',
     nomineeName: '',
-    nomineeNickname: '',
-    party: 'ByteCraft Alliance' as const,
     yearLevel: '3rd Year' as const,
-    platformHeading: '',
-    manifesto: '',
+    description: '',
   });
 
   // AI Comparison Assistant State
@@ -60,8 +54,8 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
 
   const handleNominateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nomForm.nomineeName.trim() || !nomForm.platformHeading.trim()) {
-      setNominateError('Nominee Name and Core Platform Heading are required.');
+    if (!nomForm.nomineeName.trim() || !nomForm.description.trim()) {
+      setNominateError('Full Name and Brief Description are required.');
       return;
     }
 
@@ -72,7 +66,13 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
       const res = await fetch('/api/election/nominate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nomForm),
+        body: JSON.stringify({
+          nomineeName: nomForm.nomineeName,
+          yearLevel: nomForm.yearLevel,
+          description: nomForm.description,
+          platformHeading: nomForm.description,
+          manifesto: nomForm.description,
+        }),
       });
 
       const data = await res.json();
@@ -80,15 +80,9 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
         setNominateSuccess(data.message);
         setShowNominateModal(false);
         setNomForm({
-          nominatorName: '',
-          nominatorStudentId: '',
-          positionId: positions[0]?.id || 'gov',
           nomineeName: '',
-          nomineeNickname: '',
-          party: 'ByteCraft Alliance',
           yearLevel: '3rd Year',
-          platformHeading: '',
-          manifesto: '',
+          description: '',
         });
 
         fetchNominations();
@@ -96,10 +90,10 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
 
         setTimeout(() => setNominateSuccess(null), 4000);
       } else {
-        setNominateError(data.message || 'Failed to submit nomination.');
+        setNominateError(data.message || 'Failed to submit candidate registration.');
       }
     } catch {
-      setNominateError('Connection error submitting candidate nomination.');
+      setNominateError('Connection error submitting candidate registration.');
     } finally {
       setIsSubmittingNomination(false);
     }
@@ -464,10 +458,10 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
 
             <div className="flex items-center space-x-2 text-cyan-400 mb-2">
               <UserPlus className="w-5 h-5" />
-              <h3 className="text-lg font-bold text-slate-100">Nominate Candidate</h3>
+              <h3 className="text-lg font-bold text-slate-100">Register Candidate</h3>
             </div>
             <p className="text-xs text-slate-400 mb-4">
-              Nominate yourself or a fellow CPE peer for Governor, Vice-Governor, Secretary, Treasurer, Auditor, P.I.O, or Muse.
+              Simple candidate registration form. Fill in full name, school year level, and a brief description.
             </p>
 
             {nominateError && (
@@ -477,116 +471,41 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
               </div>
             )}
 
-            <form onSubmit={handleNominateSubmit} className="space-y-3 text-xs">
+            <form onSubmit={handleNominateSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Position to Nominate For</label>
-                <select
-                  value={nomForm.positionId}
-                  onChange={(e) => setNomForm({ ...nomForm, positionId: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-semibold focus:outline-none focus:border-cyan-500"
-                >
-                  {positions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Nominee Full Name *</label>
+                <label className="block text-slate-300 font-semibold mb-1">Full Name *</label>
                 <input
                   type="text"
                   value={nomForm.nomineeName}
                   onChange={(e) => setNomForm({ ...nomForm, nomineeName: e.target.value })}
                   placeholder="e.g. Maria Angela Reyes"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Nickname</label>
-                  <input
-                    type="text"
-                    value={nomForm.nomineeNickname}
-                    onChange={(e) => setNomForm({ ...nomForm, nomineeNickname: e.target.value })}
-                    placeholder="e.g. Gela"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Year Level</label>
-                  <select
-                    value={nomForm.yearLevel}
-                    onChange={(e) => setNomForm({ ...nomForm, yearLevel: e.target.value as any })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
-                  >
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                  </select>
-                </div>
-              </div>
-
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Party / Alliance</label>
+                <label className="block text-slate-300 font-semibold mb-1">School Year *</label>
                 <select
-                  value={nomForm.party}
-                  onChange={(e) => setNomForm({ ...nomForm, party: e.target.value as any })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
+                  value={nomForm.yearLevel}
+                  onChange={(e) => setNomForm({ ...nomForm, yearLevel: e.target.value as any })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-cyan-500"
                 >
-                  <option value="ByteCraft Alliance">ByteCraft Alliance</option>
-                  <option value="Synapse Union">Synapse Union</option>
-                  <option value="Independent Circuit">Independent Circuit</option>
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Core Advocacy / Platform Heading *</label>
-                <input
-                  type="text"
-                  value={nomForm.platformHeading}
-                  onChange={(e) => setNomForm({ ...nomForm, platformHeading: e.target.value })}
-                  placeholder="e.g. Free Hardware Lab Kits & Peer Study Workshops"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-semibold mb-1">Manifesto / Reason for Nomination</label>
+                <label className="block text-slate-300 font-semibold mb-1">Brief Description *</label>
                 <textarea
-                  rows={2}
-                  value={nomForm.manifesto}
-                  onChange={(e) => setNomForm({ ...nomForm, manifesto: e.target.value })}
-                  placeholder="Why is this candidate suited to lead?"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
+                  rows={4}
+                  value={nomForm.description}
+                  onChange={(e) => setNomForm({ ...nomForm, description: e.target.value })}
+                  placeholder="Provide a brief description of the candidate, advocacy, or platform..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-cyan-500"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
-                <div>
-                  <label className="block text-slate-400 text-[11px] mb-1">Nominator Name (Optional)</label>
-                  <input
-                    type="text"
-                    value={nomForm.nominatorName}
-                    onChange={(e) => setNomForm({ ...nomForm, nominatorName: e.target.value })}
-                    placeholder="Your Name"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-slate-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-400 text-[11px] mb-1">Nominator Student ID</label>
-                  <input
-                    type="text"
-                    value={nomForm.nominatorStudentId}
-                    onChange={(e) => setNomForm({ ...nomForm, nominatorStudentId: e.target.value })}
-                    placeholder="e.g. 2023-10001"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-slate-200"
-                  />
-                </div>
               </div>
 
               <div className="pt-3 border-t border-slate-800 flex justify-end space-x-2">
@@ -605,7 +524,7 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
                   {isSubmittingNomination ? (
                     <span className="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-slate-950 border-t-transparent" />
                   ) : (
-                    <span>Submit Nomination</span>
+                    <span>Register Candidate</span>
                   )}
                 </button>
               </div>

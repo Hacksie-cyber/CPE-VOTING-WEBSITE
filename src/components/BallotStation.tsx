@@ -138,7 +138,7 @@ export const BallotStation: React.FC<BallotStationProps> = ({
       {/* Position Cards Loop */}
       <div className="space-y-10">
         {positions.map((pos) => {
-          const posCandidates = candidates.filter((c) => c.positionId === pos.id);
+          const posCandidates = candidates;
           const currentChoice = choices[pos.id];
 
           return (

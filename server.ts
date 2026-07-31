@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { initializeApp, getApps, getApp } from 'firebase/app';
@@ -24,19 +25,37 @@ import {
   CandidateNomination,
 } from './src/types';
 
+// Read Firebase applet configuration if provisioned
+let firebaseAppletConfig: Record<string, string> | null = null;
+try {
+  const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+  if (fs.existsSync(configPath)) {
+    firebaseAppletConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  }
+} catch (e) {
+  console.warn('Could not read firebase-applet-config.json:', e);
+}
+
 // Firebase Database Configuration
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY || "AIzaSyAOT_2VW4VYSWjILqaC-4qqCkBmk2xSGJ8",
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "cpe-voting-website.firebaseapp.com",
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "cpe-voting-website",
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "cpe-voting-website.firebasestorage.app",
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "316255839130",
-  appId: process.env.VITE_FIREBASE_APP_ID || "1:316255839130:web:ca4a61e33c6555dac39023",
-  measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID || "G-HQJX6DJ6JH"
+  apiKey: process.env.VITE_FIREBASE_API_KEY || firebaseAppletConfig?.apiKey || "AIzaSyBTfsyK4baxpqOUTctWj2OgruW13UoDIc8",
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseAppletConfig?.authDomain || "gen-lang-client-0544605864.firebaseapp.com",
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || firebaseAppletConfig?.projectId || "gen-lang-client-0544605864",
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseAppletConfig?.storageBucket || "gen-lang-client-0544605864.firebasestorage.app",
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseAppletConfig?.messagingSenderId || "841862565435",
+  appId: process.env.VITE_FIREBASE_APP_ID || firebaseAppletConfig?.appId || "1:841862565435:web:2bd950947f8ecec031161e",
+  measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseAppletConfig?.measurementId || ""
 };
 
-const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(firebaseApp);
+let db: ReturnType<typeof getFirestore> | null = null;
+try {
+  const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  const dbId = firebaseAppletConfig?.firestoreDatabaseId;
+  db = dbId && dbId !== '(default)' ? getFirestore(firebaseApp, dbId) : getFirestore(firebaseApp);
+  console.log('Firebase Firestore successfully initialized for project:', firebaseConfig.projectId);
+} catch (e) {
+  console.error('Firebase Firestore init error:', e);
+}
 
 // In-Memory Database State
 let settings: ElectionSettings = { ...INITIAL_ELECTION_SETTINGS };
@@ -48,6 +67,7 @@ let nominations: CandidateNomination[] = [...SAMPLE_NOMINATIONS];
 
 // Firebase Load & Save Helpers
 async function loadStateFromFirestore() {
+  if (!db) return;
   try {
     const docRef = doc(db, 'elections', 'cpe2026');
     const snap = await getDoc(docRef);
@@ -59,17 +79,18 @@ async function loadStateFromFirestore() {
       if (Array.isArray(data.voters)) voters = data.voters;
       if (Array.isArray(data.votes)) votes = data.votes;
       if (Array.isArray(data.nominations)) nominations = data.nominations;
-      console.log('Firebase Firestore: Loaded state for project "cpe-voting-website"');
+      console.log('Firebase Firestore: Loaded election state successfully.');
     } else {
-      console.log('Firebase Firestore: Initializing new database record for cpe2026');
+      console.log('Firebase Firestore: Initializing new election record for cpe2026');
       await saveStateToFirestore();
     }
-  } catch (err) {
-    console.warn('Firebase Firestore load error:', err);
+  } catch (e) {
+    console.error('Firebase Firestore load error:', e);
   }
 }
 
 async function saveStateToFirestore() {
+  if (!db) return;
   try {
     const docRef = doc(db, 'elections', 'cpe2026');
     await setDoc(docRef, {
@@ -81,8 +102,9 @@ async function saveStateToFirestore() {
       nominations,
       updatedAt: new Date().toISOString()
     });
-  } catch (err) {
-    console.warn('Firebase Firestore save error:', err);
+    console.log('Firebase Firestore: Election state saved successfully.');
+  } catch (e) {
+    console.error('Firebase Firestore save error:', e);
   }
 }
 
@@ -103,7 +125,7 @@ function calculateResults(): {
   const totalVotesCast = votes.length;
 
   const positionResults: PositionResult[] = positions.map((pos) => {
-    const posCandidates = candidates.filter((c) => c.positionId === pos.id);
+    const posCandidates = candidates;
 
     let abstainCount = 0;
     const candidateVoteCounts: Record<string, number> = {};
@@ -249,31 +271,33 @@ async function startServer() {
       yearLevel,
       platformHeading,
       manifesto,
+      description,
     } = req.body;
 
-    if (!nomineeName || !positionId || !platformHeading) {
+    if (!nomineeName || (!platformHeading && !description)) {
       return res.status(400).json({
         success: false,
-        message: 'Nominee Name, Position, and Platform Heading are required.',
+        message: 'Nominee Full Name and Description are required.',
       });
     }
 
-    const pos = positions.find((p) => p.id === positionId);
-    if (!pos) {
-      return res.status(404).json({ success: false, message: 'Invalid election position selected.' });
-    }
+    const effectivePositionId = positionId || positions[0]?.id || 'gov';
+    const effectiveHeading = (platformHeading || description || 'Candidate for CPE Office').trim();
+    const effectiveDescription = (description || manifesto || platformHeading || 'Dedicated to serving Computer Engineering students.').trim();
+
+    const pos = positions.find((p) => p.id === effectivePositionId) || positions[0];
 
     const newNomination: CandidateNomination = {
       id: `nom-${Date.now()}`,
       nominatorName: nominatorName || 'Anonymous CPE Student',
       nominatorStudentId: nominatorStudentId || '2026-STUDENT',
-      positionId,
+      positionId: pos.id,
       nomineeName: nomineeName.trim(),
       nomineeNickname: nomineeNickname?.trim() || nomineeName.trim().split(' ')[0],
       party: party || 'Independent Circuit',
       yearLevel: yearLevel || '3rd Year',
-      platformHeading: platformHeading.trim(),
-      manifesto: manifesto?.trim() || 'Dedicated to leading and serving Computer Engineering students.',
+      platformHeading: effectiveHeading,
+      manifesto: effectiveDescription,
       status: 'APPROVED',
       createdAt: new Date().toISOString(),
     };
@@ -282,31 +306,28 @@ async function startServer() {
 
     // Automatically register nominee as an active candidate for voting if not already present
     const existingCand = candidates.find(
-      (c) => c.name.toLowerCase() === nomineeName.trim().toLowerCase() && c.positionId === positionId
+      (c) => c.name.toLowerCase() === nomineeName.trim().toLowerCase() && c.positionId === pos.id
     );
 
     if (!existingCand) {
       const newCand: Candidate = {
         id: `cand-nom-${Date.now()}`,
-        positionId,
+        positionId: pos.id,
         name: nomineeName.trim(),
         nickname: nomineeNickname?.trim() || nomineeName.trim().split(' ')[0],
         party: party || 'Independent Circuit',
         yearLevel: yearLevel || '3rd Year',
         avatarUrl:
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-        platformHeading: platformHeading.trim(),
+        platformHeading: effectiveHeading,
         platformPoints: [
-          platformHeading.trim(),
-          'Student-led initiative for academic & laboratory excellence',
-          'Active representation in departmental policy decisions',
+          effectiveHeading,
+          effectiveDescription,
+          'Dedicated to serving Computer Engineering students.',
         ],
-        manifesto:
-          manifesto?.trim() || 'Dedicated to serving and empowering Computer Engineering students.',
-        bio: `${
-          yearLevel || '3rd Year'
-        } Computer Engineering student, officially nominated by peers for ${pos.title}.`,
-        achievements: ['Peer Nominated Candidate 2026', 'Active CPE Department Member'],
+        manifesto: effectiveDescription,
+        bio: `${yearLevel || '3rd Year'} Computer Engineering candidate. ${effectiveDescription}`,
+        achievements: ['CPE Registered Candidate 2026'],
       };
       candidates.push(newCand);
     }
@@ -315,11 +336,10 @@ async function startServer() {
 
     res.json({
       success: true,
-      message: `Candidate ${nomineeName} successfully nominated for ${pos.title}! Candidate is now added to the ballot.`,
+      message: `Candidate ${nomineeName} successfully registered! Candidate is now added to the ballot.`,
       nomination: newNomination,
       totalCandidates: candidates.length,
     });
-
   });
 
   // Get Real-Time Results
@@ -330,6 +350,55 @@ async function startServer() {
       positionResults,
       turnoutStats,
       lastUpdated: new Date().toISOString(),
+    });
+  });
+
+  // Voter Registration via Email + Full Name + Student ID + Year Level
+  app.post('/api/voter/register-email', (req, res) => {
+    const { email, studentNumber, name, yearLevel } = req.body;
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ success: false, message: 'A valid email address is required.' });
+    }
+    if (!studentNumber || !studentNumber.trim()) {
+      return res.status(400).json({ success: false, message: 'Student ID is required.' });
+    }
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Full Name is required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanStudentId = studentNumber.trim().toUpperCase();
+    const cleanName = name.trim();
+    const cleanYearLevel = (yearLevel as YearLevel) || '3rd Year';
+
+    let voter = voters.find(
+      (v) => v.email.toLowerCase() === cleanEmail || v.id.toUpperCase() === cleanStudentId
+    );
+
+    if (voter) {
+      // Update existing record with provided details
+      voter.id = cleanStudentId;
+      voter.name = cleanName;
+      voter.email = cleanEmail;
+      voter.yearLevel = cleanYearLevel;
+    } else {
+      voter = {
+        id: cleanStudentId,
+        name: cleanName,
+        email: cleanEmail,
+        yearLevel: cleanYearLevel,
+        hasVoted: false,
+      };
+      voters.push(voter);
+    }
+
+    saveStateToFirestore();
+
+    res.json({
+      success: true,
+      voter,
+      token: `email-token-${voter.id}-${Date.now()}`,
     });
   });
 
@@ -354,12 +423,46 @@ async function startServer() {
         hasVoted: false,
       };
       voters.push(voter);
+      saveStateToFirestore();
     }
 
     res.json({
       success: true,
       voter,
       token: `token-${voter.id}-${Date.now()}`,
+    });
+  });
+
+  // Voter Google Account Authentication
+  app.post('/api/voter/google-login', (req, res) => {
+    const { email, name } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Google Account email is required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    let voter = voters.find((v) => v.email.toLowerCase() === cleanEmail);
+
+    if (!voter) {
+      const emailPrefix = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+      const studentId = `2026-${emailPrefix.toUpperCase().slice(0, 8)}`;
+      
+      voter = {
+        id: studentId,
+        name: name || `CPE Student (${cleanEmail})`,
+        email: cleanEmail,
+        yearLevel: '3rd Year',
+        hasVoted: false,
+      };
+      voters.push(voter);
+      saveStateToFirestore();
+    }
+
+    res.json({
+      success: true,
+      voter,
+      token: `google-token-${voter.id}-${Date.now()}`,
     });
   });
 
@@ -506,14 +609,30 @@ async function startServer() {
     });
   });
 
+  // Admin Authorization Helper
+  const AUTHORIZED_ADMIN_EMAIL = 'bamuyahacksie@gmail.com';
+  function verifyAdminAuth(req: express.Request, res: express.Response): boolean {
+    const adminEmail = req.body?.adminEmail || req.headers['x-admin-email'] || req.query?.adminEmail;
+    const adminPin = req.body?.adminPin || req.headers['x-admin-pin'] || req.query?.adminPin;
+    
+    const emailMatch = !adminEmail || adminEmail.toString().trim().toLowerCase() === AUTHORIZED_ADMIN_EMAIL;
+    const pinMatch = adminPin === '2026CPE';
+
+    if (!emailMatch || (!pinMatch && adminEmail?.toString().trim().toLowerCase() !== AUTHORIZED_ADMIN_EMAIL)) {
+      res.status(401).json({
+        success: false,
+        message: `Unauthorized. Only ${AUTHORIZED_ADMIN_EMAIL} is authorized as Admin.`,
+      });
+      return false;
+    }
+    return true;
+  }
+
   // Admin Settings Endpoint
   app.post('/api/admin/settings', (req, res) => {
-    const { adminPin, newSettings } = req.body;
+    if (!verifyAdminAuth(req, res)) return;
 
-    if (adminPin !== '2026CPE') {
-      return res.status(401).json({ success: false, message: 'Invalid Admin Authorization PIN.' });
-    }
-
+    const { newSettings } = req.body;
     settings = {
       ...settings,
       ...newSettings,
@@ -526,12 +645,9 @@ async function startServer() {
 
   // Admin Add / Update Candidate
   app.post('/api/admin/candidate', (req, res) => {
-    const { adminPin, candidate } = req.body;
+    if (!verifyAdminAuth(req, res)) return;
 
-    if (adminPin !== '2026CPE') {
-      return res.status(401).json({ success: false, message: 'Invalid Admin Authorization PIN.' });
-    }
-
+    const { candidate } = req.body;
     if (!candidate || !candidate.name || !candidate.positionId) {
       return res.status(400).json({ success: false, message: 'Missing candidate fields.' });
     }
@@ -557,13 +673,9 @@ async function startServer() {
 
   // Admin Delete Candidate
   app.delete('/api/admin/candidate/:id', (req, res) => {
-    const { adminPin } = req.body;
+    if (!verifyAdminAuth(req, res)) return;
+
     const candId = req.params.id;
-
-    if (adminPin !== '2026CPE') {
-      return res.status(401).json({ success: false, message: 'Invalid Admin Authorization PIN.' });
-    }
-
     candidates = candidates.filter((c) => c.id !== candId);
     saveStateToFirestore();
 
@@ -572,11 +684,7 @@ async function startServer() {
 
   // Admin Emergency Demo Reset
   app.post('/api/admin/reset-demo', (req, res) => {
-    const { adminPin } = req.body;
-
-    if (adminPin !== '2026CPE') {
-      return res.status(401).json({ success: false, message: 'Invalid Admin Authorization PIN.' });
-    }
+    if (!verifyAdminAuth(req, res)) return;
 
     settings = { ...INITIAL_ELECTION_SETTINGS };
     positions = [...INITIAL_POSITIONS];

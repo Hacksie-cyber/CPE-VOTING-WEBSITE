@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PositionResult, VoterTurnoutStats, ElectionSettings } from '../types';
+import { generateElectionPDF } from '../utils/pdfGenerator';
 import {
   BarChart,
   Bar,
@@ -19,6 +20,8 @@ import {
   Award,
   Crown,
   CheckCircle2,
+  Download,
+  FileText,
 } from 'lucide-react';
 
 interface LiveResultsProps {
@@ -103,7 +106,16 @@ export const LiveResults: React.FC<LiveResultsProps> = ({ settings }) => {
             </p>
           </div>
 
-          <div className="flex items-center space-x-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+          <div className="flex flex-wrap items-center gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+            <button
+              onClick={() => generateElectionPDF(positionResults, turnoutStats, settings, lastUpdated)}
+              className="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center space-x-1.5 transition-all shadow-md shadow-cyan-500/20 active:scale-95"
+              title="Download Official Election Results Certificate PDF"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download PDF Report</span>
+            </button>
+
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-colors ${

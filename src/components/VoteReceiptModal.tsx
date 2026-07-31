@@ -8,6 +8,7 @@ interface VoteReceiptModalProps {
   receiptHash: string;
   timestamp: string;
   onViewResults: () => void;
+  isVoterLoggedIn?: boolean;
 }
 
 export const VoteReceiptModal: React.FC<VoteReceiptModalProps> = ({
@@ -16,6 +17,7 @@ export const VoteReceiptModal: React.FC<VoteReceiptModalProps> = ({
   receiptHash,
   timestamp,
   onViewResults,
+  isVoterLoggedIn = false,
 }) => {
   const [copied, setCopied] = React.useState(false);
 
@@ -85,16 +87,26 @@ export const VoteReceiptModal: React.FC<VoteReceiptModalProps> = ({
         </div>
 
         <div className="space-y-2.5">
-          <button
-            onClick={() => {
-              onClose();
-              onViewResults();
-            }}
-            className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold py-3 rounded-xl transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center space-x-2 text-sm"
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>View Live Election Results</span>
-          </button>
+          {!isVoterLoggedIn ? (
+            <button
+              onClick={() => {
+                onClose();
+                onViewResults();
+              }}
+              className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold py-3 rounded-xl transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center space-x-2 text-sm"
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>View Live Election Results</span>
+            </button>
+          ) : (
+            <button
+              onClick={onClose}
+              className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold py-3 rounded-xl transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center space-x-2 text-sm"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Return to Ballot Station</span>
+            </button>
+          )}
 
           <button
             onClick={onClose}
