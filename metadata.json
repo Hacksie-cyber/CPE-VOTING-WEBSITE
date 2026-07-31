@@ -1,0 +1,6 @@
+{
+  "name": "CPE Department Officer Elections 2026",
+  "description": "Official voting system for the Computer Engineering Department Officer Elections 2026 featuring secure student voter authentication, live vote tallies, candidate profiles, and election commission audit tools.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
