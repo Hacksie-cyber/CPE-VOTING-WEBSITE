@@ -207,26 +207,26 @@ function calculateResults(): {
   };
 }
 
-async function startServer() {
-  const app = express();
-  app.use(express.json());
+export const app = express();
+app.use(express.json());
 
-  const PORT = 3000;
+// Load initial election state from Firebase Firestore
+loadStateFromFirestore().catch((e) => console.warn('Firestore async load note:', e));
 
-  // Load initial election state from Firebase Firestore
-  await loadStateFromFirestore();
-
-  // Initialize Gemini API lazily
-  let aiClient: GoogleGenAI | null = null;
-  function getGeminiClient(): GoogleGenAI | null {
-    if (!aiClient) {
-      const key = process.env.GEMINI_API_KEY;
-      if (key) {
-        aiClient = new GoogleGenAI({ apiKey: key });
-      }
+// Initialize Gemini API lazily
+let aiClient: GoogleGenAI | null = null;
+function getGeminiClient(): GoogleGenAI | null {
+  if (!aiClient) {
+    const key = process.env.GEMINI_API_KEY;
+    if (key) {
+      aiClient = new GoogleGenAI({ apiKey: key });
     }
-    return aiClient;
   }
+  return aiClient;
+}
+
+async function startServer() {
+  const PORT = 3000;
 
   // --- API ROUTES ---
 
