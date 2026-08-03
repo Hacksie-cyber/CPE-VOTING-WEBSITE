@@ -868,6 +868,47 @@ async function startServer() {
     res.json({ success: true, message: 'Election data reset to initial official state.' });
   });
 
+  // Admin Reset Election Votes Only (Requires Confirmation Password 'confirm')
+  app.post('/api/admin/reset-votes', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+
+    await loadStateFromFirestore();
+    const { password } = req.body;
+
+    if (!password || password.toString().trim() !== 'confirm') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid confirmation password. You must enter "confirm" to proceed with vote reset.',
+      });
+    }
+
+    // Reset votes array
+    votes = [];
+
+    // Reset voter voting status
+    voters.forEach((v) => {
+      v.hasVoted = false;
+      v.receiptHash = undefined;
+      v.votedAt = undefined;
+      v.isInvalidated = false;
+      v.invalidatedReason = undefined;
+      v.invalidatedAt = undefined;
+    });
+
+    await saveStateToFirestore();
+
+    const { positionResults, turnoutStats } = calculateResults();
+    const actualVoters = voters.filter(isActualAccount);
+
+    res.json({
+      success: true,
+      message: 'All election votes have been reset to zero. Candidate profiles and positions remain untouched.',
+      voters: actualVoters,
+      turnoutStats,
+      positionResults,
+    });
+  });
+
   // Admin Get All Registered Voters & Audit Info
   app.get('/api/admin/voters', async (req, res) => {
     if (!verifyAdminAuth(req, res)) return;
