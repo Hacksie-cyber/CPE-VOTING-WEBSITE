@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
 export const firebaseConfig = {
   apiKey: import.meta.env?.VITE_FIREBASE_API_KEY || "AIzaSyAOT_2VW4VYSWjILqaC-4qqCkBmk2xSGJ8",
@@ -15,6 +16,7 @@ export const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async () => {
@@ -22,7 +24,32 @@ export const signInWithGoogle = async () => {
   return result.user;
 };
 
+export const loadElectionDataFromFirestore = async () => {
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return snap.data();
+    }
+  } catch (err) {
+    console.warn('Client Firestore load error:', err);
+  }
+  return null;
+};
+
+export const subscribeToElectionData = (onUpdate: (data: any) => void) => {
+  const docRef = doc(db, 'elections', 'cpe2026');
+  return onSnapshot(docRef, (snap) => {
+    if (snap.exists()) {
+      onUpdate(snap.data());
+    }
+  }, (err) => {
+    console.warn('Snapshot listener error:', err);
+  });
+};
+
 export { signOut };
 export default app;
+
 
 

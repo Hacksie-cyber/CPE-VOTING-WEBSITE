@@ -10,6 +10,7 @@ import { BallotConfirmationModal } from './components/BallotConfirmationModal';
 import { VoteReceiptModal } from './components/VoteReceiptModal';
 import { Position, Candidate, Voter, VoteChoices, ElectionSettings } from './types';
 import { INITIAL_ELECTION_SETTINGS } from './data/initialData';
+import { loadElectionDataFromFirestore, subscribeToElectionData } from './lib/firebase';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'ballot' | 'candidates' | 'results' | 'verify' | 'admin'>(() => {
@@ -55,20 +56,42 @@ export default function App() {
   const fetchData = async () => {
     try {
       const resCand = await fetch('/api/election/candidates');
-      const dataCand = await resCand.json();
-      if (dataCand.positions) setPositions(dataCand.positions);
-      if (dataCand.candidates) setCandidates(dataCand.candidates);
+      if (resCand.ok && resCand.headers.get('content-type')?.includes('application/json')) {
+        const dataCand = await resCand.json();
+        if (dataCand.positions && dataCand.positions.length > 0) setPositions(dataCand.positions);
+        if (dataCand.candidates) setCandidates(dataCand.candidates);
+      }
 
       const resInfo = await fetch('/api/election/info');
-      const dataInfo = await resInfo.json();
-      if (dataInfo.settings) setSettings(dataInfo.settings);
-    } catch (err) {
-      console.error('Error loading election data:', err);
+      if (resInfo.ok && resInfo.headers.get('content-type')?.includes('application/json')) {
+        const dataInfo = await resInfo.json();
+        if (dataInfo.settings) setSettings(dataInfo.settings);
+      }
+    } catch {
+      // API fallback handled by Firestore direct subscription
+    }
+
+    const fsData = await loadElectionDataFromFirestore();
+    if (fsData) {
+      if (fsData.positions && fsData.positions.length > 0) setPositions(fsData.positions);
+      if (fsData.candidates) setCandidates(fsData.candidates);
+      if (fsData.settings) setSettings(fsData.settings);
     }
   };
 
   useEffect(() => {
     fetchData();
+
+    // Direct Firestore real-time listener for candidate & election data across all environments
+    const unsubscribe = subscribeToElectionData((data) => {
+      if (data) {
+        if (Array.isArray(data.positions) && data.positions.length > 0) setPositions(data.positions);
+        if (Array.isArray(data.candidates)) setCandidates(data.candidates);
+        if (data.settings) setSettings(data.settings);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
