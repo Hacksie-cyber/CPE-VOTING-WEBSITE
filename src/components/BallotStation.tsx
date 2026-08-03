@@ -1,6 +1,22 @@
 import React, { useState } from 'react';
 import { Position, Candidate, Voter, VoteChoices, ElectionSettings } from '../types';
-import { CheckCircle2, Info, AlertTriangle, ShieldCheck, ChevronRight, Ban, Award, FileText, Sparkles, AlertCircle } from 'lucide-react';
+import {
+  CheckCircle2,
+  Info,
+  AlertTriangle,
+  ShieldCheck,
+  ChevronRight,
+  ChevronLeft,
+  Ban,
+  Award,
+  FileText,
+  Sparkles,
+  AlertCircle,
+  Layers,
+  ArrowRight,
+  ArrowLeft,
+  Grid
+} from 'lucide-react';
 
 interface BallotStationProps {
   positions: Position[];
@@ -23,6 +39,8 @@ export const BallotStation: React.FC<BallotStationProps> = ({
   onOpenReview,
   onOpenAuth,
 }) => {
+  const [activePosIndex, setActivePosIndex] = useState(0);
+  const [viewMode, setViewMode] = useState<'horizontal' | 'grid'>('horizontal');
   const [selectedCandidateModal, setSelectedCandidateModal] = useState<Candidate | null>(null);
   const [ruleViolationNotice, setRuleViolationNotice] = useState<string | null>(null);
 
@@ -61,10 +79,19 @@ export const BallotStation: React.FC<BallotStationProps> = ({
     }
 
     onSelectCandidate(posId, cand.id);
+
+    // Subtle horizontal auto-advance to next position in step-by-step mode
+    if (viewMode === 'horizontal' && activePosIndex < totalPositions - 1) {
+      setTimeout(() => {
+        setActivePosIndex((prev) => Math.min(totalPositions - 1, prev + 1));
+      }, 350);
+    }
   };
 
+  const activePosition = positions[activePosIndex] || positions[0];
+
   return (
-    <div className="space-y-8 pb-32">
+    <div className="space-y-6 pb-32">
       {/* Rule Notice Banner */}
       {ruleViolationNotice && (
         <div className="sticky top-4 z-40 bg-amber-950/90 border border-amber-500/50 backdrop-blur-md text-amber-200 p-4 rounded-2xl text-xs font-semibold shadow-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
@@ -95,35 +122,34 @@ export const BallotStation: React.FC<BallotStationProps> = ({
               Official Department Council Ballot
             </h2>
             <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-              Select one candidate or choose &quot;Abstain&quot; for each position. Review your selections thoroughly before final submission.
+              Select one candidate or choose &quot;Abstain&quot; for each position. Use the horizontal navigation bar below to step through each position.
             </p>
           </div>
 
-          {!voter && (
-            <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl flex items-center space-x-3 text-amber-300">
-              <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-              <div className="text-xs">
-                <span className="font-bold block">Authorization Required</span>
-                <span>You must log in with your CPE Student ID to cast a ballot.</span>
-                <button
-                  onClick={onOpenAuth}
-                  className="mt-1 font-bold underline hover:text-amber-200 block"
-                >
-                  Click here to Authorize &rarr;
-                </button>
-              </div>
-            </div>
-          )}
-
-          {voter && voter.hasVoted && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl flex items-center space-x-3 text-emerald-300">
-              <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-400" />
-              <div className="text-xs">
-                <span className="font-bold block">Ballot Already Cast</span>
-                <span>Your student ID ({voter.id}) has already submitted a ballot for this election cycle.</span>
-              </div>
-            </div>
-          )}
+          <div className="flex items-center space-x-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 flex-shrink-0">
+            <button
+              onClick={() => setViewMode('horizontal')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === 'horizontal'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Step-by-Step View</span>
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-cyan-500 text-slate-950 shadow-md'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Grid className="w-3.5 h-3.5" />
+              <span>Show All Positions</span>
+            </button>
+          </div>
         </div>
 
         {/* Multi-Position Voting Rule Alert */}
@@ -135,35 +161,98 @@ export const BallotStation: React.FC<BallotStationProps> = ({
         </div>
       </div>
 
-      {/* Position Cards Loop */}
-      <div className="space-y-10">
-        {positions.map((pos) => {
-          const posCandidates = candidates;
-          const currentChoice = choices[pos.id];
+      {/* Horizontal Position Navigation Stepper Bar */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
+            <Layers className="w-4 h-4 text-cyan-400" />
+            <span>Position Navigation ({activePosIndex + 1} of {totalPositions})</span>
+          </span>
 
-          return (
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={() => setActivePosIndex((prev) => Math.max(0, prev - 1))}
+              disabled={activePosIndex === 0}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center space-x-1 border border-slate-700 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Prev Position</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActivePosIndex((prev) => Math.min(totalPositions - 1, prev + 1))}
+              disabled={activePosIndex === totalPositions - 1}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center space-x-1 border border-slate-700 transition-all"
+            >
+              <span>Next Position</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Horizontal Scrollable Position Tabs */}
+        <div className="flex items-center space-x-2.5 overflow-x-auto pb-2 pt-1 custom-scrollbar">
+          {positions.map((pos, idx) => {
+            const isSelected = !!choices[pos.id];
+            const isActive = idx === activePosIndex;
+            return (
+              <button
+                key={pos.id}
+                type="button"
+                onClick={() => setActivePosIndex(idx)}
+                className={`flex-shrink-0 flex items-center space-x-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border ${
+                  isActive
+                    ? 'bg-cyan-500/15 border-cyan-400 text-cyan-200 ring-2 ring-cyan-500/30 shadow-lg shadow-cyan-500/10'
+                    : isSelected
+                    ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/20'
+                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                }`}
+              >
+                <span
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    isActive
+                      ? 'bg-cyan-400 text-slate-950'
+                      : isSelected
+                      ? 'bg-emerald-500 text-slate-950'
+                      : 'bg-slate-800 text-slate-300'
+                  }`}
+                >
+                  {isSelected ? '✓' : idx + 1}
+                </span>
+                <span className="whitespace-nowrap">{pos.title}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main Ballot Cards Display */}
+      {viewMode === 'horizontal' ? (
+        /* Single Active Position (Horizontal Step View) */
+        <div className="space-y-4">
+          {activePosition && (
             <div
-              key={pos.id}
-              id={`pos-${pos.id}`}
-              className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg relative"
+              key={activePosition.id}
+              className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl relative transition-all duration-300 animate-in fade-in slide-in-from-right-2"
             >
               {/* Position Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-2 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-3 mb-6">
                 <div>
                   <div className="flex items-center space-x-2">
                     <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
-                      {pos.category}
+                      Position {activePosIndex + 1} of {totalPositions} • {activePosition.category}
                     </span>
-                    <h3 className="text-xl font-bold text-slate-100">{pos.title}</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-100">{activePosition.title}</h3>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">{pos.description}</p>
+                  <p className="text-xs text-slate-400 mt-1">{activePosition.description}</p>
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {currentChoice ? (
+                  {choices[activePosition.id] ? (
                     <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Selected</span>
+                      <span>Choice Selected</span>
                     </span>
                   ) : (
                     <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400">
@@ -173,23 +262,22 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                 </div>
               </div>
 
-              {/* Candidates Grid */}
+              {/* Candidates Grid for Active Position */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {posCandidates.length === 0 ? (
+                {candidates.length === 0 ? (
                   <div className="md:col-span-2 bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center">
-                    <p className="font-semibold text-slate-300">No candidates nominated for {pos.title} yet.</p>
-                    <p className="mt-1 text-slate-500">Use the Candidates & Nominations tab to submit real nominees.</p>
+                    <p className="font-semibold text-slate-300">No candidates nominated for {activePosition.title} yet.</p>
                   </div>
                 ) : (
-                  posCandidates.map((cand) => {
-                    const isSelected = currentChoice === cand.id;
-                    const otherPosition = getSelectedOtherPosition(cand, pos.id);
+                  candidates.map((cand) => {
+                    const isSelected = choices[activePosition.id] === cand.id;
+                    const otherPosition = getSelectedOtherPosition(cand, activePosition.id);
                     const isUnavailable = !!otherPosition && !isSelected;
 
                     return (
                       <div
                         key={cand.id}
-                        onClick={() => handleCandidateClick(pos.id, cand)}
+                        onClick={() => handleCandidateClick(activePosition.id, cand)}
                         className={`relative rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between group ${
                           isSelected
                             ? 'bg-slate-950 border-cyan-500 ring-2 ring-cyan-500/30 shadow-xl shadow-cyan-500/10'
@@ -274,11 +362,14 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                   <div
                     onClick={() => {
                       if (!voter?.hasVoted) {
-                        onSelectCandidate(pos.id, 'ABSTAIN');
+                        onSelectCandidate(activePosition.id, 'ABSTAIN');
+                        if (activePosIndex < totalPositions - 1) {
+                          setTimeout(() => setActivePosIndex((prev) => prev + 1), 350);
+                        }
                       }
                     }}
                     className={`rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
-                      currentChoice === 'ABSTAIN'
+                      choices[activePosition.id] === 'ABSTAIN'
                         ? 'bg-slate-950 border-amber-500 ring-2 ring-amber-500/20 shadow-lg'
                         : 'bg-slate-950/40 border-slate-800/80 hover:border-slate-700'
                     }`}
@@ -290,12 +381,12 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                         </span>
                         <div
                           className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                            currentChoice === 'ABSTAIN'
+                            choices[activePosition.id] === 'ABSTAIN'
                               ? 'border-amber-400 bg-amber-500 text-slate-950'
                               : 'border-slate-700 bg-slate-900'
                           }`}
                         >
-                          {currentChoice === 'ABSTAIN' && <Ban className="w-3.5 h-3.5 text-slate-950" />}
+                          {choices[activePosition.id] === 'ABSTAIN' && <Ban className="w-3.5 h-3.5 text-slate-950" />}
                         </div>
                       </div>
 
@@ -304,7 +395,7 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                           <Ban className="w-6 h-6" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-200 text-sm">Abstain for {pos.title}</h4>
+                          <h4 className="font-bold text-slate-200 text-sm">Abstain for {activePosition.title}</h4>
                           <p className="text-xs text-slate-400">Choose not to vote for any candidate</p>
                         </div>
                       </div>
@@ -315,10 +406,230 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* Horizontal Position In-Card Footer Controls */}
+              <div className="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setActivePosIndex((prev) => Math.max(0, prev - 1))}
+                  disabled={activePosIndex === 0}
+                  className="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Previous Position</span>
+                </button>
+
+                <div className="text-xs font-mono text-slate-400">
+                  {activePosIndex + 1} / {totalPositions}
+                </div>
+
+                {activePosIndex < totalPositions - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setActivePosIndex((prev) => Math.min(totalPositions - 1, prev + 1))}
+                    className="flex items-center space-x-2 px-5 py-2 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-md transition-all"
+                  >
+                    <span>Next Position</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onOpenReview}
+                    className="flex items-center space-x-2 px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-md transition-all"
+                  >
+                    <span>Review & Cast Ballot</span>
+                    <ShieldCheck className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      ) : (
+        /* All Positions Stacked List View (Grid) */
+        <div className="space-y-8">
+          {positions.map((pos, pIdx) => {
+            const currentChoice = choices[pos.id];
+
+            return (
+              <div
+                key={pos.id}
+                id={`pos-${pos.id}`}
+                className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg relative"
+              >
+                {/* Position Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-2 mb-6">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                        {pIdx + 1}. {pos.category}
+                      </span>
+                      <h3 className="text-xl font-bold text-slate-100">{pos.title}</h3>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">{pos.description}</p>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    {currentChoice ? (
+                      <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Selected</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400">
+                        <span>Pending Selection</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Candidates Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {candidates.length === 0 ? (
+                    <div className="md:col-span-2 bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center">
+                      <p className="font-semibold text-slate-300">No candidates nominated for {pos.title} yet.</p>
+                    </div>
+                  ) : (
+                    candidates.map((cand) => {
+                      const isSelected = currentChoice === cand.id;
+                      const otherPosition = getSelectedOtherPosition(cand, pos.id);
+                      const isUnavailable = !!otherPosition && !isSelected;
+
+                      return (
+                        <div
+                          key={cand.id}
+                          onClick={() => handleCandidateClick(pos.id, cand)}
+                          className={`relative rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between group ${
+                            isSelected
+                              ? 'bg-slate-950 border-cyan-500 ring-2 ring-cyan-500/30 shadow-xl shadow-cyan-500/10'
+                              : isUnavailable
+                              ? 'bg-slate-950/40 border-amber-500/30 opacity-60 hover:opacity-85'
+                              : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-950/90'
+                          }`}
+                        >
+                          <div>
+                            {/* Top Radio / Unavailable Indicator */}
+                            <div className="flex items-start justify-end mb-3">
+                              {isUnavailable ? (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center space-x-1">
+                                  <AlertCircle className="w-3 h-3" />
+                                  <span>Selected for {otherPosition.title}</span>
+                                </span>
+                              ) : (
+                                <div
+                                  className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                                    isSelected
+                                      ? 'border-cyan-400 bg-cyan-500 text-slate-950'
+                                      : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
+                                  }`}
+                                >
+                                  {isSelected && <CheckCircle2 className="w-4 h-4 text-slate-950" />}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Candidate Avatar & Name */}
+                            <div className="flex items-center space-x-3 mb-3">
+                              <img
+                                src={cand.avatarUrl}
+                                alt={cand.name}
+                                referrerPolicy="no-referrer"
+                                className="w-14 h-14 rounded-xl object-cover border border-slate-700 shadow-md flex-shrink-0"
+                              />
+                              <div>
+                                <h4 className="font-bold text-slate-100 text-sm group-hover:text-cyan-400 transition-colors">
+                                  {cand.name}
+                                </h4>
+                                {cand.nickname && (
+                                  <p className="text-xs text-cyan-400/90 font-medium">&quot;{cand.nickname}&quot;</p>
+                                )}
+                                <p className="text-xs text-slate-400">{cand.yearLevel} Computer Engineering</p>
+                              </div>
+                            </div>
+
+                            {/* Platform Heading */}
+                            <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800/80 mb-3">
+                              <p className="text-xs font-semibold text-slate-200 line-clamp-2">
+                                🚀 {cand.platformHeading}
+                              </p>
+                            </div>
+
+                            {isUnavailable && (
+                              <div className="bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg text-[11px] text-amber-300 font-medium mb-2">
+                                Unavailable: Selected for {otherPosition.title}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Modal Trigger */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCandidateModal(cand);
+                            }}
+                            className="mt-2 w-full flex items-center justify-center space-x-1.5 py-1.5 text-xs font-medium text-slate-400 hover:text-cyan-400 hover:bg-slate-900 rounded-lg transition-colors border border-transparent hover:border-slate-800"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>View Full Advocacy & Bio</span>
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+
+                  {/* Abstain Option */}
+                  {settings.allowAbstain && (
+                    <div
+                      onClick={() => {
+                        if (!voter?.hasVoted) {
+                          onSelectCandidate(pos.id, 'ABSTAIN');
+                        }
+                      }}
+                      className={`rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
+                        currentChoice === 'ABSTAIN'
+                          ? 'bg-slate-950 border-amber-500 ring-2 ring-amber-500/20 shadow-lg'
+                          : 'bg-slate-950/40 border-slate-800/80 hover:border-slate-700'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            Neutral Option
+                          </span>
+                          <div
+                            className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                              currentChoice === 'ABSTAIN'
+                                ? 'border-amber-400 bg-amber-500 text-slate-950'
+                                : 'border-slate-700 bg-slate-900'
+                            }`}
+                          >
+                            {currentChoice === 'ABSTAIN' && <Ban className="w-3.5 h-3.5 text-slate-950" />}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3 my-2">
+                          <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                            <Ban className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-slate-200 text-sm">Abstain for {pos.title}</h4>
+                            <p className="text-xs text-slate-400">Choose not to vote for any candidate</p>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-4 italic">
+                        Your vote will count towards overall turnout without endorsing a candidate.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Sticky Bottom Progress & Review Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-30 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 py-3.5 px-4 shadow-2xl">
@@ -488,4 +799,3 @@ export const BallotStation: React.FC<BallotStationProps> = ({
     </div>
   );
 };
-
