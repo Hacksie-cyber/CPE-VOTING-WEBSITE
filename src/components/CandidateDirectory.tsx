@@ -10,7 +10,6 @@ interface CandidateDirectoryProps {
 
 export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ positions, candidates, onRefreshData }) => {
   const [selectedPositionId, setSelectedPositionId] = useState<string>('all');
-  const [selectedParty, setSelectedParty] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Nominations State
@@ -101,14 +100,12 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
 
   const filteredCandidates = candidates.filter((cand) => {
     const matchesPosition = selectedPositionId === 'all' || cand.positionId === selectedPositionId;
-    const matchesParty = selectedParty === 'all' || cand.party === selectedParty;
     const matchesQuery =
       searchQuery.trim() === '' ||
       cand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cand.platformHeading.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cand.party.toLowerCase().includes(searchQuery.toLowerCase());
+      cand.platformHeading.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesPosition && matchesParty && matchesQuery;
+    return matchesPosition && matchesQuery;
   });
 
   const handleRunAiComparison = async () => {
@@ -272,7 +269,7 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search candidates by name, party, or platform..."
+            placeholder="Search candidates by name or platform..."
             className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
           />
         </div>
@@ -284,24 +281,12 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
             onChange={(e) => setSelectedPositionId(e.target.value)}
             className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
           >
-            <option value="all">All Positions ({positions.length})</option>
+            <option value="all">All Candidates ({candidates.length})</option>
             {positions.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.title}
               </option>
             ))}
-          </select>
-
-          {/* Party Filter */}
-          <select
-            value={selectedParty}
-            onChange={(e) => setSelectedParty(e.target.value)}
-            className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
-          >
-            <option value="all">All Parties</option>
-            <option value="ByteCraft Alliance">ByteCraft Alliance</option>
-            <option value="Synapse Union">Synapse Union</option>
-            <option value="Independent Circuit">Independent Circuit</option>
           </select>
         </div>
       </div>
@@ -315,7 +300,7 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
           <div className="max-w-md mx-auto space-y-1">
             <h3 className="text-lg font-bold text-slate-100">No Nominees Registered Yet</h3>
             <p className="text-xs text-slate-400">
-              Demo candidates have been cleared. Be the first to nominate real candidates for Governor, Vice-Governor, Secretary, Treasurer, Auditor, P.I.O, or Muse!
+              Be the first to register a candidate!
             </p>
           </div>
           <button
@@ -323,38 +308,18 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
             className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-xs inline-flex items-center space-x-2 shadow-lg shadow-cyan-500/20 transition-all transform hover:-translate-y-0.5"
           >
             <UserPlus className="w-4 h-4" />
-            <span>Nominate Real Candidate Now</span>
+            <span>Register Candidate Now</span>
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredCandidates.map((cand) => {
-          const position = positions.find((p) => p.id === cand.positionId);
-
           return (
             <div
               key={cand.id}
               className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition-all shadow-lg flex flex-col justify-between group"
             >
               <div>
-                {/* Position & Party header */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-slate-800 text-cyan-300 border border-slate-700">
-                    {position?.title}
-                  </span>
-                  <span
-                    className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-md ${
-                      cand.party === 'ByteCraft Alliance'
-                        ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30'
-                        : cand.party === 'Synapse Union'
-                        ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                        : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                    }`}
-                  >
-                    {cand.party}
-                  </span>
-                </div>
-
                 {/* Avatar & Name */}
                 <div className="flex items-center space-x-3 mb-4">
                   <img
@@ -552,9 +517,6 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
                 className="w-16 h-16 rounded-2xl object-cover border border-slate-700"
               />
               <div>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                  {modalCandidate.party}
-                </span>
                 <h3 className="text-lg font-bold text-slate-100 mt-1">{modalCandidate.name}</h3>
                 <p className="text-xs text-slate-400">{modalCandidate.yearLevel} Computer Engineering</p>
               </div>

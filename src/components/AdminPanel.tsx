@@ -534,7 +534,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-bold text-slate-100 truncate">{cand.name}</h4>
                       <p className="text-[11px] text-cyan-400 font-medium">
-                        {positions.find((p) => p.id === cand.positionId)?.title || 'Candidate'}
+                        {cand.yearLevel} CPE Candidate
                       </p>
                       <p className="text-[10px] text-slate-400 truncate mt-0.5">{cand.manifesto || cand.platformHeading}</p>
                     </div>

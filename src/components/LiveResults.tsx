@@ -348,7 +348,6 @@ export const LiveResults: React.FC<LiveResultsProps> = ({ settings }) => {
                             <span className="font-bold text-slate-100 text-xs block leading-tight">
                               {cand.name}
                             </span>
-                            <span className="text-[10px] text-slate-400">{cand.party}</span>
                           </div>
                         </div>
 

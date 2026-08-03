@@ -1,0 +1,40 @@
+{
+  "entities": {
+    "Candidate": {
+      "title": "Candidate",
+      "description": "Registered election candidate in CPE Department Elections",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "positionId": { "type": "string" },
+        "name": { "type": "string" },
+        "nickname": { "type": "string" },
+        "party": { "type": "string" },
+        "yearLevel": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "platformHeading": { "type": "string" },
+        "manifesto": { "type": "string" },
+        "bio": { "type": "string" }
+      },
+      "required": ["id", "positionId", "name"]
+    },
+    "Election": {
+      "title": "Election",
+      "description": "Main election record containing settings, candidates, positions, voters, and votes",
+      "type": "object",
+      "properties": {
+        "updatedAt": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/elections/{electionId}": {
+      "schema": { "$ref": "#/entities/Election" },
+      "description": "Main election record"
+    },
+    "/candidates/{candidateId}": {
+      "schema": { "$ref": "#/entities/Candidate" },
+      "description": "Collection of candidates"
+    }
+  }
+}

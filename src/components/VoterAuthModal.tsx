@@ -8,7 +8,6 @@ interface VoterAuthModalProps {
   onClose: () => void;
   onLoginSuccess: (voter: Voter) => void;
   preventClose?: boolean;
-  onSwitchToAdmin?: () => void;
 }
 
 export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
@@ -16,7 +15,6 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
   onClose,
   onLoginSuccess,
   preventClose = false,
-  onSwitchToAdmin,
 }) => {
   const [step, setStep] = useState<'email' | 'details'>('email');
   const [email, setEmail] = useState('');
@@ -323,17 +321,8 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
           </form>
         )}
 
-        <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-500 text-center flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-500 text-center flex items-center justify-center">
           <span>🔒 Mandatory Voter Verification</span>
-          {onSwitchToAdmin && (
-            <button
-              type="button"
-              onClick={onSwitchToAdmin}
-              className="text-cyan-400 hover:underline font-semibold text-[11px]"
-            >
-              Admin Console Access →
-            </button>
-          )}
         </div>
       </div>
     </div>

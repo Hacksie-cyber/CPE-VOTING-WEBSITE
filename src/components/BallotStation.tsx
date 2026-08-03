@@ -199,20 +199,8 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                         }`}
                       >
                         <div>
-                          {/* Top Badge & Radio / Unavailable Indicator */}
-                          <div className="flex items-start justify-between mb-3">
-                            <span
-                              className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${
-                                cand.party === 'ByteCraft Alliance'
-                                  ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30'
-                                  : cand.party === 'Synapse Union'
-                                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                                  : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                              }`}
-                            >
-                              {cand.party}
-                            </span>
-
+                          {/* Top Radio / Unavailable Indicator */}
+                          <div className="flex items-start justify-end mb-3">
                             {isUnavailable ? (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center space-x-1">
                                 <AlertCircle className="w-3 h-3" />

@@ -1,12 +1,12 @@
 {
-  "projectId": "gen-lang-client-0544605864",
-  "appId": "1:841862565435:web:2bd950947f8ecec031161e",
-  "apiKey": "AIzaSyBTfsyK4baxpqOUTctWj2OgruW13UoDIc8",
-  "authDomain": "gen-lang-client-0544605864.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-cpedepartmentoff-b2c75f6e-1b3f-44d5-8f95-46cd1748261b",
-  "storageBucket": "gen-lang-client-0544605864.firebasestorage.app",
-  "messagingSenderId": "841862565435",
-  "measurementId": "",
-  "oAuthClientId": "841862565435-7mc2g0u0sh8pcr8r324jsksu7o0usr6j.apps.googleusercontent.com",
+  "projectId": "cpe-voting-website",
+  "appId": "1:316255839130:web:ca4a61e33c6555dac39023",
+  "apiKey": "AIzaSyAOT_2VW4VYSWjILqaC-4qqCkBmk2xSGJ8",
+  "authDomain": "cpe-voting-website.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "cpe-voting-website.firebasestorage.app",
+  "messagingSenderId": "316255839130",
+  "measurementId": "G-HQJX6DJ6JH",
+  "oAuthClientId": "",
   "recaptchaSiteKey": ""
 }

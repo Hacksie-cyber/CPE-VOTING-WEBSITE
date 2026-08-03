@@ -4,7 +4,7 @@ import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import {
   INITIAL_POSITIONS,
   INITIAL_CANDIDATES,
@@ -38,21 +38,21 @@ try {
 
 // Firebase Database Configuration
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY || firebaseAppletConfig?.apiKey || "AIzaSyBTfsyK4baxpqOUTctWj2OgruW13UoDIc8",
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseAppletConfig?.authDomain || "gen-lang-client-0544605864.firebaseapp.com",
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID || firebaseAppletConfig?.projectId || "gen-lang-client-0544605864",
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseAppletConfig?.storageBucket || "gen-lang-client-0544605864.firebasestorage.app",
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseAppletConfig?.messagingSenderId || "841862565435",
-  appId: process.env.VITE_FIREBASE_APP_ID || firebaseAppletConfig?.appId || "1:841862565435:web:2bd950947f8ecec031161e",
-  measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseAppletConfig?.measurementId || ""
+  apiKey: process.env.VITE_FIREBASE_API_KEY || firebaseAppletConfig?.apiKey || "AIzaSyAOT_2VW4VYSWjILqaC-4qqCkBmk2xSGJ8",
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseAppletConfig?.authDomain || "cpe-voting-website.firebaseapp.com",
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || firebaseAppletConfig?.projectId || "cpe-voting-website",
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseAppletConfig?.storageBucket || "cpe-voting-website.firebasestorage.app",
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseAppletConfig?.messagingSenderId || "316255839130",
+  appId: process.env.VITE_FIREBASE_APP_ID || firebaseAppletConfig?.appId || "1:316255839130:web:ca4a61e33c6555dac39023",
+  measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseAppletConfig?.measurementId || "G-HQJX6DJ6JH"
 };
 
+let firebaseAppInstance: any = null;
 let db: ReturnType<typeof getFirestore> | null = null;
 try {
-  const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  const dbId = firebaseAppletConfig?.firestoreDatabaseId;
-  db = dbId && dbId !== '(default)' ? getFirestore(firebaseApp, dbId) : getFirestore(firebaseApp);
-  console.log('Firebase Firestore successfully initialized for project:', firebaseConfig.projectId);
+  firebaseAppInstance = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  db = getFirestore(firebaseAppInstance);
+  console.log('Firebase Firestore initialized for project:', firebaseConfig.projectId);
 } catch (e) {
   console.error('Firebase Firestore init error:', e);
 }
@@ -79,13 +79,13 @@ async function loadStateFromFirestore() {
       if (Array.isArray(data.voters)) voters = data.voters;
       if (Array.isArray(data.votes)) votes = data.votes;
       if (Array.isArray(data.nominations)) nominations = data.nominations;
-      console.log('Firebase Firestore: Loaded election state successfully.');
+      console.log('Firebase Firestore: Loaded election state successfully. Candidate count:', candidates.length);
     } else {
       console.log('Firebase Firestore: Initializing new election record for cpe2026');
       await saveStateToFirestore();
     }
-  } catch (e) {
-    console.error('Firebase Firestore load error:', e);
+  } catch (e: any) {
+    console.warn('Firebase Firestore load note:', e?.message || e);
   }
 }
 
@@ -102,9 +102,17 @@ async function saveStateToFirestore() {
       nominations,
       updatedAt: new Date().toISOString()
     });
-    console.log('Firebase Firestore: Election state saved successfully.');
-  } catch (e) {
-    console.error('Firebase Firestore save error:', e);
+
+    for (const cand of candidates) {
+      const candRef = doc(db, 'candidates', cand.id);
+      await setDoc(candRef, {
+        ...cand,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    console.log('Firebase Firestore: Saved candidate and election state successfully.');
+  } catch (e: any) {
+    console.warn('Firebase Firestore save note:', e?.message || e);
   }
 }
 
@@ -260,7 +268,7 @@ async function startServer() {
   });
 
   // Nominate Candidate Endpoint
-  app.post('/api/election/nominate', (req, res) => {
+  app.post('/api/election/nominate', async (req, res) => {
     const {
       nominatorName,
       nominatorStudentId,
@@ -294,7 +302,7 @@ async function startServer() {
       positionId: pos.id,
       nomineeName: nomineeName.trim(),
       nomineeNickname: nomineeNickname?.trim() || nomineeName.trim().split(' ')[0],
-      party: party || 'Independent Circuit',
+      party: party || 'Independent',
       yearLevel: yearLevel || '3rd Year',
       platformHeading: effectiveHeading,
       manifesto: effectiveDescription,
@@ -332,7 +340,7 @@ async function startServer() {
       candidates.push(newCand);
     }
 
-    saveStateToFirestore();
+    await saveStateToFirestore();
 
     res.json({
       success: true,
@@ -644,7 +652,7 @@ async function startServer() {
   });
 
   // Admin Add / Update Candidate
-  app.post('/api/admin/candidate', (req, res) => {
+  app.post('/api/admin/candidate', async (req, res) => {
     if (!verifyAdminAuth(req, res)) return;
 
     const { candidate } = req.body;
@@ -666,24 +674,33 @@ async function startServer() {
       candidates.push(newCand);
     }
 
-    saveStateToFirestore();
+    await saveStateToFirestore();
 
     res.json({ success: true, candidates });
   });
 
   // Admin Delete Candidate
-  app.delete('/api/admin/candidate/:id', (req, res) => {
+  app.delete('/api/admin/candidate/:id', async (req, res) => {
     if (!verifyAdminAuth(req, res)) return;
 
     const candId = req.params.id;
     candidates = candidates.filter((c) => c.id !== candId);
-    saveStateToFirestore();
+
+    if (db) {
+      try {
+        await deleteDoc(doc(db, 'candidates', candId));
+      } catch (err) {
+        console.warn(`Failed to delete candidate document ${candId} from Firestore:`, err);
+      }
+    }
+
+    await saveStateToFirestore();
 
     res.json({ success: true, candidates });
   });
 
   // Admin Emergency Demo Reset
-  app.post('/api/admin/reset-demo', (req, res) => {
+  app.post('/api/admin/reset-demo', async (req, res) => {
     if (!verifyAdminAuth(req, res)) return;
 
     settings = { ...INITIAL_ELECTION_SETTINGS };
@@ -693,7 +710,7 @@ async function startServer() {
     votes = [...INITIAL_VOTES];
     nominations = [...SAMPLE_NOMINATIONS];
 
-    saveStateToFirestore();
+    await saveStateToFirestore();
 
     res.json({ success: true, message: 'Election data reset to initial official state.' });
   });

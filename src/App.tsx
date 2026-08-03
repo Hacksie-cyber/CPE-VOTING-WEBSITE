@@ -73,11 +73,11 @@ export default function App() {
 
   useEffect(() => {
     const isAdminUser = voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com';
-    if (voter && !isAdminUser && activeTab !== 'ballot') {
-      setActiveTab('ballot');
-    }
-    if (!voter && activeTab !== 'admin') {
-      setIsAuthModalOpen(true);
+    if ((activeTab === 'admin' || activeTab === 'results') && !isAdminUser) {
+      setActiveTab(voter ? 'ballot' : 'candidates');
+      if (!voter) {
+        setIsAuthModalOpen(true);
+      }
     }
   }, [voter, activeTab]);
 
@@ -160,7 +160,7 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'results' && <LiveResults settings={settings} />}
+        {activeTab === 'results' && voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com' && <LiveResults settings={settings} />}
 
         {activeTab === 'verify' && <ReceiptVerifier />}
 
@@ -210,7 +210,7 @@ export default function App() {
 
       {/* Modals */}
       <VoterAuthModal
-        isOpen={isAuthModalOpen && activeTab !== 'admin'}
+        isOpen={isAuthModalOpen}
         onClose={() => {
           if (voter) {
             setIsAuthModalOpen(false);
@@ -218,10 +218,6 @@ export default function App() {
         }}
         onLoginSuccess={handleLoginSuccess}
         preventClose={!voter}
-        onSwitchToAdmin={() => {
-          setActiveTab('admin');
-          setIsAuthModalOpen(false);
-        }}
       />
 
       {voter && (
