@@ -1,5 +1,5 @@
 import React from 'react';
-import { Vote, Users, BarChart3, ShieldCheck, Settings, LogIn, LogOut, CheckCircle2, Cpu } from 'lucide-react';
+import { Vote, Users, BarChart3, ShieldCheck, Settings, LogIn, LogOut, CheckCircle2, Cpu, FileText } from 'lucide-react';
 import { Voter, ElectionSettings } from '../types';
 
 interface NavbarProps {
@@ -9,6 +9,7 @@ interface NavbarProps {
   settings: ElectionSettings;
   onOpenAuth: () => void;
   onLogout: () => void;
+  onOpenTermsPrivacy?: (tab?: 'terms' | 'privacy') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -18,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   settings,
   onOpenAuth,
   onLogout,
+  onOpenTermsPrivacy,
 }) => {
   const isAdmin = voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com';
 
@@ -66,6 +68,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <ShieldCheck className="w-4 h-4" />
               <span>Audit Receipt</span>
+            </button>
+
+            <button
+              onClick={() => onOpenTermsPrivacy?.('terms')}
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"
+            >
+              <FileText className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Terms & Privacy</span>
             </button>
 
             {isAdmin && (

@@ -8,6 +8,7 @@ interface VoterAuthModalProps {
   onClose: () => void;
   onLoginSuccess: (voter: Voter) => void;
   preventClose?: boolean;
+  onOpenTermsPrivacy?: (tab?: 'terms' | 'privacy') => void;
 }
 
 export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
@@ -15,6 +16,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
   onClose,
   onLoginSuccess,
   preventClose = false,
+  onOpenTermsPrivacy,
 }) => {
   const [step, setStep] = useState<'email' | 'details'>('email');
   const [email, setEmail] = useState('');
@@ -387,8 +389,31 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
           </form>
         )}
 
-        <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-500 text-center flex items-center justify-center">
-          <span>🔒 Mandatory Voter Verification</span>
+        <div className="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 text-center flex flex-col items-center justify-center space-y-1">
+          <div className="flex items-center space-x-1.5 text-emerald-400 font-semibold">
+            <span>🔒 Official CPE Election Portal</span>
+            <span>•</span>
+            <span>Data Privacy Compliant</span>
+          </div>
+          <p className="text-[10px] text-slate-500">
+            By signing in, you agree to our{' '}
+            <button
+              type="button"
+              onClick={() => onOpenTermsPrivacy?.('terms')}
+              className="text-cyan-400 hover:underline font-medium"
+            >
+              Terms of Service
+            </button>{' '}
+            &{' '}
+            <button
+              type="button"
+              onClick={() => onOpenTermsPrivacy?.('privacy')}
+              className="text-cyan-400 hover:underline font-medium"
+            >
+              Privacy Policy
+            </button>
+            .
+          </p>
         </div>
       </div>
     </div>

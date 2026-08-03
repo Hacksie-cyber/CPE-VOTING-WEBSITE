@@ -7,6 +7,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { VoterAuthModal } from './components/VoterAuthModal';
 import { BallotConfirmationModal } from './components/BallotConfirmationModal';
 import { VoteReceiptModal } from './components/VoteReceiptModal';
+import { TermsPrivacyModal } from './components/TermsPrivacyModal';
 import { Position, Candidate, Voter, VoteChoices, ElectionSettings } from './types';
 import { INITIAL_ELECTION_SETTINGS } from './data/initialData';
 import { loadElectionDataFromFirestore, subscribeToElectionData } from './lib/firebase';
@@ -51,6 +52,15 @@ export default function App() {
   const [lastReceiptHash, setLastReceiptHash] = useState('');
   const [lastReceiptTime, setLastReceiptTime] = useState('');
 
+  // Terms & Privacy Modal State
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [termsModalTab, setTermsModalTab] = useState<'terms' | 'privacy'>('terms');
+
+  const openTermsPrivacy = (tab: 'terms' | 'privacy' = 'terms') => {
+    setTermsModalTab(tab);
+    setIsTermsModalOpen(true);
+  };
+
   // Fetch Candidates & Election Info
   const fetchData = async () => {
     try {
@@ -87,6 +97,26 @@ export default function App() {
         if (Array.isArray(data.positions) && data.positions.length > 0) setPositions(data.positions);
         if (Array.isArray(data.candidates)) setCandidates(data.candidates);
         if (data.settings) setSettings(data.settings);
+
+        if (Array.isArray(data.voters) && voter) {
+          const normName = voter.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+          const match = data.voters.find(
+            (v: Voter) =>
+              v.id.toUpperCase() === voter.id.toUpperCase() ||
+              (v.email && voter.email && v.email.toLowerCase() === voter.email.toLowerCase()) ||
+              (normName.length > 2 && v.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ') === normName)
+          );
+          if (match && match.hasVoted && !voter.hasVoted) {
+            const updated: Voter = {
+              ...voter,
+              hasVoted: true,
+              votedAt: match.votedAt || voter.votedAt,
+              receiptHash: match.receiptHash || voter.receiptHash,
+            };
+            setVoter(updated);
+            localStorage.setItem('cpe_voter', JSON.stringify(updated));
+          }
+        }
       }
     });
 
@@ -128,14 +158,15 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
-  const handleCastSuccess = (receiptHash: string, timestamp: string) => {
+  const handleCastSuccess = (receiptHash: string, timestamp: string, serverVoter?: Voter) => {
     setLastReceiptHash(receiptHash);
     setLastReceiptTime(timestamp);
 
     // Update local voter state
-    if (voter) {
+    const targetVoter = serverVoter || voter;
+    if (targetVoter) {
       const updatedVoter: Voter = {
-        ...voter,
+        ...targetVoter,
         hasVoted: true,
         votedAt: timestamp,
         receiptHash,
@@ -158,6 +189,7 @@ export default function App() {
         settings={settings}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
+        onOpenTermsPrivacy={openTermsPrivacy}
       />
 
       {/* Main Content Area */}
@@ -191,35 +223,37 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-6 text-xs text-center">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-left">
             <p className="font-semibold text-slate-300">
               Computer Engineering Department Commission on Elections &copy; 2026
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Secure Digital Voting & Cryptographic Ledger Audit System
+              Official Institutional Voting System • Cryptographic Ledger Verification
             </p>
           </div>
 
-          {!voter ? (
-            <div className="flex items-center space-x-4 text-slate-400 text-[11px]">
-              <button onClick={() => setActiveTab('verify')} className="hover:text-cyan-400">
-                Receipt Audit
-              </button>
-              <span>•</span>
-              <button onClick={() => setActiveTab('candidates')} className="hover:text-cyan-400">
-                Candidates
-              </button>
-              <span>•</span>
-              <button onClick={() => setIsAuthModalOpen(true)} className="hover:text-cyan-400">
-                Voter Portal
-              </button>
-            </div>
-          ) : (
-            <div className="text-[11px] text-cyan-400 font-semibold tracking-wide">
-              🔒 Student Voting Portal • Official Ballot Station
-            </div>
-          )}
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-slate-400 text-[11px]">
+            <button onClick={() => openTermsPrivacy('terms')} className="hover:text-cyan-400 transition-colors font-medium">
+              Terms of Service
+            </button>
+            <span>•</span>
+            <button onClick={() => openTermsPrivacy('privacy')} className="hover:text-cyan-400 transition-colors font-medium">
+              Privacy Policy
+            </button>
+            <span>•</span>
+            <button onClick={() => setActiveTab('verify')} className="hover:text-cyan-400 transition-colors">
+              Receipt Audit
+            </button>
+            {!voter && (
+              <>
+                <span>•</span>
+                <button onClick={() => setIsAuthModalOpen(true)} className="hover:text-cyan-400 transition-colors">
+                  Voter Portal
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </footer>
 
@@ -229,6 +263,7 @@ export default function App() {
         onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
         preventClose={!voter}
+        onOpenTermsPrivacy={openTermsPrivacy}
       />
 
       {voter && (
@@ -250,6 +285,12 @@ export default function App() {
         timestamp={lastReceiptTime}
         onViewResults={() => setActiveTab('results')}
         isVoterLoggedIn={!!voter}
+      />
+
+      <TermsPrivacyModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
+        defaultTab={termsModalTab}
       />
     </div>
   );
