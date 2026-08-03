@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { BallotStation } from './components/BallotStation';
-import { CandidateDirectory } from './components/CandidateDirectory';
 import { LiveResults } from './components/LiveResults';
 import { ReceiptVerifier } from './components/ReceiptVerifier';
 import { AdminPanel } from './components/AdminPanel';
@@ -13,7 +12,7 @@ import { INITIAL_ELECTION_SETTINGS } from './data/initialData';
 import { loadElectionDataFromFirestore, subscribeToElectionData } from './lib/firebase';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'ballot' | 'candidates' | 'results' | 'verify' | 'admin'>(() => {
+  const [activeTab, setActiveTab] = useState<'ballot' | 'results' | 'verify' | 'admin'>(() => {
     const saved = localStorage.getItem('cpe_voter');
     if (saved) {
       try {
@@ -97,7 +96,7 @@ export default function App() {
   useEffect(() => {
     const isAdminUser = voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com';
     if ((activeTab === 'admin' || activeTab === 'results') && !isAdminUser) {
-      setActiveTab(voter ? 'ballot' : 'candidates');
+      setActiveTab('ballot');
       if (!voter) {
         setIsAuthModalOpen(true);
       }
@@ -173,14 +172,6 @@ export default function App() {
             onSelectCandidate={handleSelectCandidate}
             onOpenReview={() => setIsReviewModalOpen(true)}
             onOpenAuth={() => setIsAuthModalOpen(true)}
-          />
-        )}
-
-        {activeTab === 'candidates' && (
-          <CandidateDirectory
-            positions={positions}
-            candidates={candidates}
-            onRefreshData={fetchData}
           />
         )}
 

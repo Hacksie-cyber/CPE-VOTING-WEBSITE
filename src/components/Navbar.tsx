@@ -3,8 +3,8 @@ import { Vote, Users, BarChart3, ShieldCheck, Settings, LogIn, LogOut, CheckCirc
 import { Voter, ElectionSettings } from '../types';
 
 interface NavbarProps {
-  activeTab: 'ballot' | 'candidates' | 'results' | 'verify' | 'admin';
-  setActiveTab: (tab: 'ballot' | 'candidates' | 'results' | 'verify' | 'admin') => void;
+  activeTab: 'ballot' | 'results' | 'verify' | 'admin';
+  setActiveTab: (tab: 'ballot' | 'results' | 'verify' | 'admin') => void;
   voter: Voter | null;
   settings: ElectionSettings;
   onOpenAuth: () => void;
@@ -37,18 +37,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <h1 className="font-bold text-lg text-slate-100 tracking-tight leading-none">
                   CPE <span className="text-cyan-400">ELECTIONS 2026</span>
                 </h1>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                  settings.status === 'VOTING_OPEN'
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                    : settings.status === 'PAUSED'
-                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                    : 'bg-slate-800 text-slate-400 border border-slate-700'
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                    settings.status === 'VOTING_OPEN' ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
-                  }`} />
-                  {settings.status === 'VOTING_OPEN' ? 'POLLS LIVE' : settings.status}
-                </span>
               </div>
               <p className="text-xs text-slate-400 font-medium">Computer Engineering Department Council</p>
             </div>
@@ -66,18 +54,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Vote className="w-4 h-4" />
               <span>Official Ballot</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('candidates')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'candidates'
-                  ? 'bg-cyan-500 text-slate-950 font-semibold shadow-md shadow-cyan-500/20'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span>Candidates</span>
             </button>
 
             <button
@@ -170,15 +146,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Vote className="w-4 h-4" />
             <span>Official Ballot</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('candidates')}
-            className={`flex flex-col items-center space-y-1 ${
-              activeTab === 'candidates' ? 'text-cyan-400 font-bold' : 'text-slate-400'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Candidates</span>
           </button>
           <button
             onClick={() => setActiveTab('verify')}
