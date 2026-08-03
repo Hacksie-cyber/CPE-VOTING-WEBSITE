@@ -243,7 +243,8 @@ async function startServer() {
 
 
   // Get Election Metadata & Settings
-  app.get('/api/election/info', (req, res) => {
+  app.get('/api/election/info', async (req, res) => {
+    await loadStateFromFirestore();
     res.json({
       settings,
       totalPositions: positions.length,
@@ -253,7 +254,8 @@ async function startServer() {
   });
 
   // Get All Candidates & Positions
-  app.get('/api/election/candidates', (req, res) => {
+  app.get('/api/election/candidates', async (req, res) => {
+    await loadStateFromFirestore();
     res.json({
       positions: [...positions].sort((a, b) => a.order - b.order),
       candidates,
@@ -261,7 +263,8 @@ async function startServer() {
   });
 
   // Get Nominations
-  app.get('/api/election/nominations', (req, res) => {
+  app.get('/api/election/nominations', async (req, res) => {
+    await loadStateFromFirestore();
     res.json({
       nominations,
     });
@@ -269,6 +272,7 @@ async function startServer() {
 
   // Nominate Candidate Endpoint
   app.post('/api/election/nominate', async (req, res) => {
+    await loadStateFromFirestore();
     const {
       nominatorName,
       nominatorStudentId,
@@ -351,7 +355,8 @@ async function startServer() {
   });
 
   // Get Real-Time Results
-  app.get('/api/election/results', (req, res) => {
+  app.get('/api/election/results', async (req, res) => {
+    await loadStateFromFirestore();
     const { positionResults, turnoutStats } = calculateResults();
     res.json({
       settings,
@@ -362,7 +367,8 @@ async function startServer() {
   });
 
   // Voter Registration via Email + Full Name + Student ID + Year Level
-  app.post('/api/voter/register-email', (req, res) => {
+  app.post('/api/voter/register-email', async (req, res) => {
+    await loadStateFromFirestore();
     const { email, studentNumber, name, yearLevel } = req.body;
 
     if (!email || !email.includes('@')) {
@@ -401,7 +407,7 @@ async function startServer() {
       voters.push(voter);
     }
 
-    saveStateToFirestore();
+    await saveStateToFirestore();
 
     res.json({
       success: true,
@@ -411,7 +417,8 @@ async function startServer() {
   });
 
   // Voter Authentication (Student Number & PIN / Email)
-  app.post('/api/voter/login', (req, res) => {
+  app.post('/api/voter/login', async (req, res) => {
+    await loadStateFromFirestore();
     const { studentNumber, pin } = req.body;
 
     if (!studentNumber) {
@@ -431,7 +438,7 @@ async function startServer() {
         hasVoted: false,
       };
       voters.push(voter);
-      saveStateToFirestore();
+      await saveStateToFirestore();
     }
 
     res.json({
@@ -442,7 +449,8 @@ async function startServer() {
   });
 
   // Voter Google Account Authentication
-  app.post('/api/voter/google-login', (req, res) => {
+  app.post('/api/voter/google-login', async (req, res) => {
+    await loadStateFromFirestore();
     const { email, name } = req.body;
 
     if (!email) {
@@ -464,7 +472,7 @@ async function startServer() {
         hasVoted: false,
       };
       voters.push(voter);
-      saveStateToFirestore();
+      await saveStateToFirestore();
     }
 
     res.json({
@@ -501,7 +509,8 @@ async function startServer() {
   });
 
   // Cast Vote
-  app.post('/api/vote/cast', (req, res) => {
+  app.post('/api/vote/cast', async (req, res) => {
+    await loadStateFromFirestore();
     const { voterId, choices } = req.body;
 
     if (settings.status !== 'VOTING_OPEN') {
@@ -567,7 +576,7 @@ async function startServer() {
     voters[voterIndex].votedAt = timestamp;
     voters[voterIndex].receiptHash = receiptHash;
 
-    saveStateToFirestore();
+    await saveStateToFirestore();
 
     res.json({
       success: true,
@@ -579,7 +588,8 @@ async function startServer() {
   });
 
   // Verify Vote Receipt
-  app.get('/api/vote/verify/:receiptHash', (req, res) => {
+  app.get('/api/vote/verify/:receiptHash', async (req, res) => {
+    await loadStateFromFirestore();
     const hash = req.params.receiptHash.trim().toUpperCase();
     const voteRecord = votes.find((v) => v.receiptHash.toUpperCase() === hash);
 
@@ -637,16 +647,17 @@ async function startServer() {
   }
 
   // Admin Settings Endpoint
-  app.post('/api/admin/settings', (req, res) => {
+  app.post('/api/admin/settings', async (req, res) => {
     if (!verifyAdminAuth(req, res)) return;
 
+    await loadStateFromFirestore();
     const { newSettings } = req.body;
     settings = {
       ...settings,
       ...newSettings,
     };
 
-    saveStateToFirestore();
+    await saveStateToFirestore();
 
     res.json({ success: true, settings });
   });

@@ -101,7 +101,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
     }
   };
 
-  const handleStep1EmailSubmit = (e: React.FormEvent) => {
+  const handleStep1EmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
@@ -111,9 +111,31 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
     setError(null);
     if (cleanEmail === 'bamuyahacksie@gmail.com') {
       performDirectLogin(cleanEmail);
-    } else {
-      setStep('details');
+      return;
     }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/voter/google-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.voter) {
+          onLoginSuccess(data.voter);
+          onClose();
+          return;
+        }
+      }
+    } catch {
+      // ignore network issue and fall through to details step
+    } finally {
+      setLoading(false);
+    }
+
+    setStep('details');
   };
 
   const handleGoogleSignIn = async () => {
@@ -127,6 +149,25 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
         if (user.displayName) {
           setFullName(user.displayName);
         }
+
+        try {
+          const res = await fetch('/api/voter/google-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: cleanEmail, name: user.displayName }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.voter) {
+              onLoginSuccess(data.voter);
+              onClose();
+              return;
+            }
+          }
+        } catch {
+          // ignore network issue
+        }
+
         if (cleanEmail === 'bamuyahacksie@gmail.com') {
           await performDirectLogin(cleanEmail, user.displayName || undefined);
         } else {

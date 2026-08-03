@@ -91,6 +91,7 @@ export default function App() {
   const handleLoginSuccess = (authenticatedVoter: Voter) => {
     setVoter(authenticatedVoter);
     localStorage.setItem('cpe_voter', JSON.stringify(authenticatedVoter));
+    setIsAuthModalOpen(false);
     if (authenticatedVoter.email?.toLowerCase() === 'bamuyahacksie@gmail.com') {
       setActiveTab('admin');
     } else {
@@ -211,11 +212,7 @@ export default function App() {
       {/* Modals */}
       <VoterAuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => {
-          if (voter) {
-            setIsAuthModalOpen(false);
-          }
-        }}
+        onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
         preventClose={!voter}
       />
