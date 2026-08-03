@@ -121,9 +121,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <CheckCircle2 className="w-4 h-4 text-emerald-400" title="Voted Successfully" />
                     )}
                   </div>
-                  <p className="text-xs text-slate-400 font-mono">
-                    {voter.id} • <span className="text-cyan-400">{voter.yearLevel}</span>
-                  </p>
+                  {!isAdmin && (
+                    <p className="text-xs text-slate-400 font-mono">
+                      {voter.id} • <span className="text-cyan-400">{voter.yearLevel}</span>
+                    </p>
+                  )}
                 </div>
 
                 <button
