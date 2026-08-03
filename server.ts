@@ -22,6 +22,7 @@ import {
   PositionResult,
   VoterTurnoutStats,
   YearLevel,
+  Gender,
   CandidateNomination,
 } from './src/types';
 
@@ -76,7 +77,7 @@ async function loadStateFromFirestore() {
       if (data.settings) settings = data.settings;
       if (Array.isArray(data.candidates)) candidates = data.candidates;
       if (Array.isArray(data.positions)) positions = data.positions;
-      if (Array.isArray(data.voters)) voters = data.voters;
+      if (Array.isArray(data.voters)) voters = data.voters.filter(isActualAccount);
       if (Array.isArray(data.votes)) votes = data.votes;
       if (Array.isArray(data.nominations)) nominations = data.nominations;
       console.log('Firebase Firestore: Loaded election state successfully. Candidate count:', candidates.length);
@@ -120,6 +121,17 @@ function normalizeName(name: string): string {
     .replace(/\s+/g, ' ');
 }
 
+// Helper to filter out mock/demo voters so only actual student accounts are kept
+function isActualAccount(v: Voter): boolean {
+  if (!v || !v.name) return false;
+  const nameLower = v.name.toLowerCase();
+  if (nameLower.includes('demo')) return false;
+  if (v.email && v.email.toLowerCase().includes('demo')) return false;
+  const sampleIds = ['2023-10001', '2023-10002', '2022-10045', '2024-10112', '2025-10889', '2023-10555', '2022-10999'];
+  if (sampleIds.includes(v.id)) return false;
+  return true;
+}
+
 // Helper to generate cryptographic-like receipt hash
 function generateReceiptHash(): string {
   const chars = 'ABCDEF0123456789';
@@ -133,16 +145,24 @@ function calculateResults(): {
   positionResults: PositionResult[];
   turnoutStats: VoterTurnoutStats;
 } {
-  const totalVotesCast = votes.length;
+  // Only count valid votes (excluding votes from invalidated voters or invalidated votes)
+  const validVotes = votes.filter((v) => {
+    if (v.isInvalidated) return false;
+    const voter = voters.find((vr) => (v.voterId && vr.id === v.voterId) || (v.receiptHash && vr.receiptHash === v.receiptHash));
+    if (voter && voter.isInvalidated) return false;
+    return true;
+  });
+
+  const totalVotesCast = validVotes.length;
 
   const positionResults: PositionResult[] = positions.map((pos) => {
-    const posCandidates = candidates;
+    const posCandidates = candidates.filter((c) => c.positionId === pos.id);
 
     let abstainCount = 0;
     const candidateVoteCounts: Record<string, number> = {};
     posCandidates.forEach((c) => (candidateVoteCounts[c.id] = 0));
 
-    votes.forEach((vote) => {
+    validVotes.forEach((vote) => {
       const choice = vote.choices[pos.id];
       if (!choice || choice === 'ABSTAIN') {
         abstainCount++;
@@ -183,9 +203,8 @@ function calculateResults(): {
   // Calculate Turnout by Year Level
   const yearLevels: YearLevel[] = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
   const byYearLevel = yearLevels.map((yl) => {
-    // Total registered estimation for year level
     const registeredForYL = Math.floor(settings.totalRegisteredVoters / 4);
-    const votedCountForYL = votes.filter((v) => v.yearLevel === yl).length;
+    const votedCountForYL = validVotes.filter((v) => v.yearLevel === yl).length;
     return {
       yearLevel: yl,
       registered: registeredForYL,
@@ -284,6 +303,7 @@ async function startServer() {
       nomineeNickname,
       party,
       yearLevel,
+      gender,
       platformHeading,
       manifesto,
       description,
@@ -302,6 +322,16 @@ async function startServer() {
 
     const pos = positions.find((p) => p.id === effectivePositionId) || positions[0];
 
+    const effectiveGender = (gender || 'Female') as Gender;
+    const isMusePosition = pos.id === 'muse' || pos.title.toLowerCase().includes('muse');
+
+    if (isMusePosition && effectiveGender !== 'Female') {
+      return res.status(400).json({
+        success: false,
+        message: 'Eligibility Rule Violation: Only female candidates are allowed to register or be nominated for the Muse position.',
+      });
+    }
+
     const newNomination: CandidateNomination = {
       id: `nom-${Date.now()}`,
       nominatorName: nominatorName || 'Anonymous CPE Student',
@@ -311,6 +341,7 @@ async function startServer() {
       nomineeNickname: nomineeNickname?.trim() || nomineeName.trim().split(' ')[0],
       party: party || 'Independent',
       yearLevel: yearLevel || '3rd Year',
+      gender: effectiveGender,
       platformHeading: effectiveHeading,
       manifesto: effectiveDescription,
       status: 'APPROVED',
@@ -332,6 +363,7 @@ async function startServer() {
         nickname: nomineeNickname?.trim() || nomineeName.trim().split(' ')[0],
         party: party || 'Independent Circuit',
         yearLevel: yearLevel || '3rd Year',
+        gender: effectiveGender,
         avatarUrl:
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
         platformHeading: effectiveHeading,
@@ -341,7 +373,7 @@ async function startServer() {
           'Dedicated to serving Computer Engineering students.',
         ],
         manifesto: effectiveDescription,
-        bio: `${yearLevel || '3rd Year'} Computer Engineering candidate. ${effectiveDescription}`,
+        bio: `${yearLevel || '3rd Year'} (${effectiveGender}) Computer Engineering candidate. ${effectiveDescription}`,
         achievements: ['CPE Registered Candidate 2026'],
       };
       candidates.push(newCand);
@@ -637,13 +669,16 @@ async function startServer() {
     const receiptHash = generateReceiptHash();
     const timestamp = new Date().toISOString();
 
-    // Save vote record anonymously
+    // Save vote record
     const newVote: VoteRecord = {
       id: `vote-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       receiptHash,
+      voterId: currentVoter.id,
       timestamp,
       yearLevel: currentVoter.yearLevel,
       choices,
+      isInvalidated: currentVoter.isInvalidated || false,
+      invalidatedReason: currentVoter.invalidatedReason,
     };
     votes.push(newVote);
 
@@ -689,6 +724,10 @@ async function startServer() {
       });
     }
 
+    const voter = voters.find((vr) => vr.receiptHash?.toUpperCase() === hash || (voteRecord.voterId && vr.id === voteRecord.voterId));
+    const isInvalidated = voteRecord.isInvalidated || (voter && voter.isInvalidated);
+    const invalidatedReason = voteRecord.invalidatedReason || (voter && voter.invalidatedReason) || 'Flagged during audit by the Commission on Elections';
+
     // Map candidate IDs to readable names
     const choicesDetails: Record<string, { positionTitle: string; selectedChoice: string }> = {};
     positions.forEach((pos) => {
@@ -712,7 +751,9 @@ async function startServer() {
       timestamp: voteRecord.timestamp,
       yearLevel: voteRecord.yearLevel,
       choicesDetails,
-      status: 'VERIFIED_TAMPER_PROOF',
+      status: isInvalidated ? 'INVALIDATED_BY_COMMISSION' : 'VERIFIED_TAMPER_PROOF',
+      isInvalidated: !!isInvalidated,
+      invalidatedReason: isInvalidated ? invalidatedReason : undefined,
     });
   });
 
@@ -760,12 +801,24 @@ async function startServer() {
       return res.status(400).json({ success: false, message: 'Missing candidate fields.' });
     }
 
+    const pos = positions.find((p) => p.id === candidate.positionId);
+    const isMusePosition = pos ? (pos.id === 'muse' || pos.title.toLowerCase().includes('muse')) : (candidate.positionId === 'muse');
+    const candGender = candidate.gender || 'Female';
+
+    if (isMusePosition && candGender !== 'Female') {
+      return res.status(400).json({
+        success: false,
+        message: 'Eligibility Rule Violation: Only female candidates are allowed to run for the Muse position.',
+      });
+    }
+
     const existingIndex = candidates.findIndex((c) => c.id === candidate.id);
     if (existingIndex >= 0) {
-      candidates[existingIndex] = { ...candidates[existingIndex], ...candidate };
+      candidates[existingIndex] = { ...candidates[existingIndex], ...candidate, gender: candGender };
     } else {
       const newCand: Candidate = {
         ...candidate,
+        gender: candGender,
         id: candidate.id || `cand-custom-${Date.now()}`,
         avatarUrl:
           candidate.avatarUrl ||
@@ -813,6 +866,153 @@ async function startServer() {
     await saveStateToFirestore();
 
     res.json({ success: true, message: 'Election data reset to initial official state.' });
+  });
+
+  // Admin Get All Registered Voters & Audit Info
+  app.get('/api/admin/voters', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+
+    await loadStateFromFirestore();
+    const actualVoters = voters.filter(isActualAccount);
+    const totalInvalidated = actualVoters.filter((v) => v.isInvalidated).length;
+    res.json({
+      success: true,
+      voters: actualVoters,
+      totalRegistered: actualVoters.length,
+      totalVoted: actualVoters.filter((v) => v.hasVoted).length,
+      totalInvalidated,
+    });
+  });
+
+  // Admin Invalidate / Restore Suspicious Voter Account & Votes
+  app.post('/api/admin/voter/invalidate', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+
+    await loadStateFromFirestore();
+    const { voterId, invalidate = true, reason } = req.body;
+
+    if (!voterId) {
+      return res.status(400).json({ success: false, message: 'Voter ID is required.' });
+    }
+
+    const cleanId = voterId.toString().trim();
+    const targetVoter = voters.find(
+      (v) => v.id.toUpperCase() === cleanId.toUpperCase() || v.email.toLowerCase() === cleanId.toLowerCase() || (v.receiptHash && v.receiptHash.toUpperCase() === cleanId.toUpperCase())
+    );
+
+    if (!targetVoter) {
+      return res.status(404).json({ success: false, message: `Voter record "${voterId}" not found.` });
+    }
+
+    const effectiveReason = invalidate
+      ? (reason && reason.trim()) || 'Suspicious activity / unverified account flagged by Election Commission'
+      : undefined;
+
+    const normName = normalizeName(targetVoter.name);
+
+    // Update target voter and any duplicate profiles matching name or email
+    voters.forEach((v) => {
+      if (
+        v.id.toUpperCase() === targetVoter.id.toUpperCase() ||
+        (v.email && targetVoter.email && v.email.toLowerCase() === targetVoter.email.toLowerCase()) ||
+        (normName.length > 2 && normalizeName(v.name) === normName)
+      ) {
+        v.isInvalidated = invalidate;
+        v.invalidatedReason = effectiveReason;
+        v.invalidatedAt = invalidate ? new Date().toISOString() : undefined;
+      }
+    });
+
+    // Update associated votes in election ledger
+    votes.forEach((v) => {
+      const matchVoterId = v.voterId && v.voterId.toUpperCase() === targetVoter.id.toUpperCase();
+      const matchHash = targetVoter.receiptHash && v.receiptHash.toUpperCase() === targetVoter.receiptHash.toUpperCase();
+      if (matchVoterId || matchHash) {
+        v.isInvalidated = invalidate;
+        v.invalidatedReason = effectiveReason;
+        v.invalidatedAt = invalidate ? new Date().toISOString() : undefined;
+      }
+    });
+
+    await saveStateToFirestore();
+
+    const { positionResults, turnoutStats } = calculateResults();
+    const actualVoters = voters.filter(isActualAccount);
+
+    res.json({
+      success: true,
+      message: invalidate
+        ? `Account ${targetVoter.name} (${targetVoter.id}) has been invalidated. Votes deducted from real-time tally.`
+        : `Account ${targetVoter.name} (${targetVoter.id}) has been re-validated. Votes restored to real-time tally.`,
+      voter: targetVoter,
+      voters: actualVoters,
+      turnoutStats,
+      positionResults,
+    });
+  });
+
+  // Admin Bulk Invalidate / Restore Voters
+  app.post('/api/admin/voter/bulk-invalidate', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+
+    await loadStateFromFirestore();
+    const { voterIds, invalidate = true, reason } = req.body;
+
+    if (!Array.isArray(voterIds) || voterIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'An array of voterIds is required.' });
+    }
+
+    const effectiveReason = invalidate
+      ? (reason && reason.trim()) || 'Bulk invalidation by Commission on Elections for suspicious activity'
+      : undefined;
+
+    let updatedCount = 0;
+
+    voterIds.forEach((idStr) => {
+      const cleanId = idStr.toString().trim().toUpperCase();
+      const target = voters.find(
+        (v) => v.id.toUpperCase() === cleanId || v.email.toUpperCase() === cleanId || (v.receiptHash && v.receiptHash.toUpperCase() === cleanId)
+      );
+
+      if (target) {
+        updatedCount++;
+        const normName = normalizeName(target.name);
+        voters.forEach((v) => {
+          if (
+            v.id.toUpperCase() === target.id.toUpperCase() ||
+            (v.email && target.email && v.email.toLowerCase() === target.email.toLowerCase()) ||
+            (normName.length > 2 && normalizeName(v.name) === normName)
+          ) {
+            v.isInvalidated = invalidate;
+            v.invalidatedReason = effectiveReason;
+            v.invalidatedAt = invalidate ? new Date().toISOString() : undefined;
+          }
+        });
+
+        votes.forEach((v) => {
+          const matchVoterId = v.voterId && v.voterId.toUpperCase() === target.id.toUpperCase();
+          const matchHash = target.receiptHash && v.receiptHash.toUpperCase() === target.receiptHash.toUpperCase();
+          if (matchVoterId || matchHash) {
+            v.isInvalidated = invalidate;
+            v.invalidatedReason = effectiveReason;
+            v.invalidatedAt = invalidate ? new Date().toISOString() : undefined;
+          }
+        });
+      }
+    });
+
+    await saveStateToFirestore();
+
+    const { positionResults, turnoutStats } = calculateResults();
+    const actualVoters = voters.filter(isActualAccount);
+
+    res.json({
+      success: true,
+      message: `${updatedCount} voter account(s) successfully ${invalidate ? 'invalidated' : 're-validated'}.`,
+      voters: actualVoters,
+      turnoutStats,
+      positionResults,
+    });
   });
 
 

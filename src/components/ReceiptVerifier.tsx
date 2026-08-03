@@ -102,18 +102,45 @@ export const ReceiptVerifier: React.FC = () => {
 
         {/* Verification Result Card */}
         {verificationResult && (
-          <div className="mt-6 bg-slate-950 p-6 rounded-2xl border border-emerald-500/40 space-y-4 animate-in fade-in duration-200">
+          <div className={`mt-6 bg-slate-950 p-6 rounded-2xl border ${verificationResult.isInvalidated ? 'border-rose-500/50' : 'border-emerald-500/40'} space-y-4 animate-in fade-in duration-200`}>
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                <span className="font-bold text-emerald-400 text-sm uppercase tracking-wider">
-                  Verified Audit Record Found
-                </span>
+                {verificationResult.isInvalidated ? (
+                  <>
+                    <AlertCircle className="w-5 h-5 text-rose-400" />
+                    <span className="font-bold text-rose-400 text-sm uppercase tracking-wider">
+                      Ballot Invalidated by Commission
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    <span className="font-bold text-emerald-400 text-sm uppercase tracking-wider">
+                      Verified Audit Record Found
+                    </span>
+                  </>
+                )}
               </div>
-              <span className="text-xs font-mono px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span className={`text-xs font-mono px-2.5 py-0.5 rounded border ${
+                verificationResult.isInvalidated
+                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              }`}>
                 {verificationResult.status}
               </span>
             </div>
+
+            {verificationResult.isInvalidated && (
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs space-y-1">
+                <div className="font-bold flex items-center space-x-1 text-rose-400">
+                  <span>🚫 Account / Vote Invalidated</span>
+                </div>
+                <p><strong>Reason:</strong> {verificationResult.invalidatedReason || 'Suspicious activity or unverified credentials.'}</p>
+                <p className="text-[11px] text-rose-300/80">
+                  Note: The choices below have been excluded from the final election tally and turnout calculation.
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>

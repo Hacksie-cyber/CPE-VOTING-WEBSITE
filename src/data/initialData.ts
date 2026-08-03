@@ -64,15 +64,7 @@ export const INITIAL_ELECTION_SETTINGS: ElectionSettings = {
   totalRegisteredVoters: 520,
 };
 
-export const SAMPLE_VOTERS: Voter[] = [
-  { id: '2023-10001', name: 'Alex Johnson', email: 'a.johnson@cpe.edu.ph', yearLevel: '3rd Year', hasVoted: false },
-  { id: '2023-10002', name: 'Maria Santos', email: 'm.santos@cpe.edu.ph', yearLevel: '3rd Year', hasVoted: false },
-  { id: '2022-10045', name: 'Carlos Mendoza', email: 'c.mendoza@cpe.edu.ph', yearLevel: '4th Year', hasVoted: false },
-  { id: '2024-10112', name: 'Sofia Garcia', email: 's.garcia@cpe.edu.ph', yearLevel: '2nd Year', hasVoted: false },
-  { id: '2025-10889', name: 'Ethan Perez', email: 'e.perez@cpe.edu.ph', yearLevel: '1st Year', hasVoted: false },
-  { id: '2023-10555', name: 'Jessica Reyes', email: 'j.reyes@cpe.edu.ph', yearLevel: '3rd Year', hasVoted: false },
-  { id: '2022-10999', name: 'Daniel Cruz', email: 'd.cruz@cpe.edu.ph', yearLevel: '4th Year', hasVoted: false },
-];
+export const SAMPLE_VOTERS: Voter[] = [];
 
 export const INITIAL_VOTES: VoteRecord[] = [];
 

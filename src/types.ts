@@ -1,5 +1,7 @@
 export type YearLevel = '1st Year' | '2nd Year' | '3rd Year' | '4th Year';
 
+export type Gender = 'Female' | 'Male' | 'Non-binary' | 'Other';
+
 export type PartyAffiliation = 'ByteCraft Alliance' | 'Synapse Union' | 'Independent Circuit';
 
 export interface CandidateNomination {
@@ -11,6 +13,7 @@ export interface CandidateNomination {
   nomineeNickname?: string;
   party: PartyAffiliation;
   yearLevel: YearLevel;
+  gender?: Gender;
   platformHeading: string;
   manifesto: string;
   status: 'APPROVED' | 'PENDING' | 'REJECTED';
@@ -32,6 +35,7 @@ export interface Candidate {
   nickname?: string;
   party: PartyAffiliation;
   yearLevel: YearLevel;
+  gender?: Gender;
   avatarUrl: string;
   platformHeading: string;
   platformPoints: string[];
@@ -48,6 +52,9 @@ export interface Voter {
   hasVoted: boolean;
   votedAt?: string;
   receiptHash?: string;
+  isInvalidated?: boolean;
+  invalidatedReason?: string;
+  invalidatedAt?: string;
 }
 
 export interface VoteChoices {
@@ -60,6 +67,10 @@ export interface VoteRecord {
   timestamp: string;
   choices: VoteChoices;
   yearLevel: YearLevel;
+  voterId?: string;
+  isInvalidated?: boolean;
+  invalidatedReason?: string;
+  invalidatedAt?: string;
 }
 
 export interface CandidateResult extends Candidate {

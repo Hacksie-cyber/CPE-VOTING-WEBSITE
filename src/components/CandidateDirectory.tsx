@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Position, Candidate, CandidateNomination, AIComparisonResponse } from '../types';
+import { Position, Candidate, CandidateNomination, AIComparisonResponse, Gender } from '../types';
 import { Search, Sparkles, Award, FileText, Bot, UserPlus, CheckCircle2, UserCheck, AlertCircle } from 'lucide-react';
 
 interface CandidateDirectoryProps {
@@ -20,9 +20,17 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
   const [isSubmittingNomination, setIsSubmittingNomination] = useState<boolean>(false);
 
   // Nomination Form State
-  const [nomForm, setNomForm] = useState({
+  const [nomForm, setNomForm] = useState<{
+    nomineeName: string;
+    positionId: string;
+    yearLevel: '1st Year' | '2nd Year' | '3rd Year' | '4th Year';
+    gender: Gender;
+    description: string;
+  }>({
     nomineeName: '',
-    yearLevel: '3rd Year' as const,
+    positionId: positions[0]?.id || 'gov',
+    yearLevel: '3rd Year',
+    gender: 'Female',
     description: '',
   });
 
@@ -58,6 +66,14 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
       return;
     }
 
+    const targetPos = positions.find((p) => p.id === nomForm.positionId) || positions[0];
+    const isMuse = targetPos ? (targetPos.id === 'muse' || targetPos.title.toLowerCase().includes('muse')) : (nomForm.positionId === 'muse');
+
+    if (isMuse && nomForm.gender !== 'Female') {
+      setNominateError('Eligibility Rule Violation: Only female candidates are allowed for the Muse position.');
+      return;
+    }
+
     setIsSubmittingNomination(true);
     setNominateError(null);
 
@@ -67,7 +83,9 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           nomineeName: nomForm.nomineeName,
+          positionId: nomForm.positionId,
           yearLevel: nomForm.yearLevel,
+          gender: nomForm.gender,
           description: nomForm.description,
           platformHeading: nomForm.description,
           manifesto: nomForm.description,
@@ -80,7 +98,9 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
         setShowNominateModal(false);
         setNomForm({
           nomineeName: '',
+          positionId: positions[0]?.id || 'gov',
           yearLevel: '3rd Year',
+          gender: 'Female',
           description: '',
         });
 
@@ -449,18 +469,55 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">School Year *</label>
+                <label className="block text-slate-300 font-semibold mb-1">Target Position *</label>
                 <select
-                  value={nomForm.yearLevel}
-                  onChange={(e) => setNomForm({ ...nomForm, yearLevel: e.target.value as any })}
+                  value={nomForm.positionId}
+                  onChange={(e) => setNomForm({ ...nomForm, positionId: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-cyan-500"
                 >
-                  <option value="1st Year">1st Year</option>
-                  <option value="2nd Year">2nd Year</option>
-                  <option value="3rd Year">3rd Year</option>
-                  <option value="4th Year">4th Year</option>
+                  {positions.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title} {p.id === 'muse' || p.title.toLowerCase().includes('muse') ? '(Female candidates only)' : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Gender *</label>
+                  <select
+                    value={nomForm.gender}
+                    onChange={(e) => setNomForm({ ...nomForm, gender: e.target.value as Gender })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-cyan-500"
+                  >
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Non-binary">Non-binary</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">School Year *</label>
+                  <select
+                    value={nomForm.yearLevel}
+                    onChange={(e) => setNomForm({ ...nomForm, yearLevel: e.target.value as any })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-cyan-500"
+                  >
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                  </select>
+                </div>
+              </div>
+
+              {(nomForm.positionId === 'muse' || positions.find(p => p.id === nomForm.positionId)?.title.toLowerCase().includes('muse')) && (
+                <div className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-300 text-[11px]">
+                  📌 <strong>Muse Position Rule:</strong> Only female candidates are eligible for the Muse position.
+                </div>
+              )}
 
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Brief Description *</label>
