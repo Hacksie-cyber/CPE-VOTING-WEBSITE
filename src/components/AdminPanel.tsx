@@ -7,6 +7,9 @@ import {
   updateVoterInvalidationInFirestore,
   resetVotesInFirestore,
   resetDemoInFirestore,
+  saveCandidateInFirestore,
+  deleteCandidateInFirestore,
+  updateSettingsInFirestore,
 } from '../lib/firebase';
 import {
   INITIAL_POSITIONS,
@@ -294,18 +297,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           newSettings: { status: newStatus },
         }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSelectedStatus(newStatus);
+          setSuccessMsg(`Election Status successfully updated to ${newStatus}`);
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 3000);
+          return;
+        }
+      }
+    } catch {
+      // Backend API unreachable
+    }
+
+    try {
+      const success = await updateSettingsInFirestore({ status: newStatus });
+      if (success) {
         setSelectedStatus(newStatus);
         setSuccessMsg(`Election Status successfully updated to ${newStatus}`);
         onRefreshData();
         setTimeout(() => setSuccessMsg(null), 3000);
-      } else {
-        setError(data.message);
+        return;
       }
     } catch {
-      setError('Error updating election status.');
+      // ignore
     }
+
+    setError('Error updating election status.');
   };
 
   const handleAddCandidate = async (e: React.FormEvent) => {
@@ -323,6 +343,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       return;
     }
 
+    const candObj: Candidate = {
+      id: `cand_${Date.now()}`,
+      name: newCand.name.trim(),
+      positionId: newCand.positionId || positions[0]?.id || 'gov',
+      party: 'Independent Circuit',
+      yearLevel: newCand.yearLevel,
+      gender: newCand.gender,
+      avatarUrl: newCand.avatarUrl.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+      platformHeading: newCand.description.trim(),
+      platformPoints: [newCand.description.trim(), 'Dedicated to serving Computer Engineering students.'],
+      manifesto: newCand.description.trim(),
+      bio: `${newCand.yearLevel} (${newCand.gender}) Computer Engineering candidate. ${newCand.description.trim()}`,
+      achievements: ['CPE Registered Candidate 2026'],
+    };
+
     try {
       const res = await fetch('/api/admin/candidate', {
         method: 'POST',
@@ -330,24 +365,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         body: JSON.stringify({
           adminEmail,
           adminPin,
-          candidate: {
-            name: newCand.name.trim(),
-            positionId: newCand.positionId || positions[0]?.id || 'gov',
-            party: 'Independent Circuit',
-            yearLevel: newCand.yearLevel,
-            gender: newCand.gender,
-            avatarUrl: newCand.avatarUrl.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-            platformHeading: newCand.description.trim(),
-            platformPoints: [newCand.description.trim(), 'Dedicated to serving Computer Engineering students.'],
-            manifesto: newCand.description.trim(),
-            bio: `${newCand.yearLevel} (${newCand.gender}) Computer Engineering candidate. ${newCand.description.trim()}`,
-            achievements: ['CPE Registered Candidate 2026'],
-          },
+          candidate: candObj,
         }),
       });
 
-      const data = await res.json();
-      if (data.success) {
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(`Candidate ${newCand.name} registered successfully!`);
+          setShowAddModal(false);
+          setNewCand({
+            name: '',
+            positionId: positions[0]?.id || 'gov',
+            yearLevel: '3rd Year',
+            gender: 'Female',
+            description: '',
+            avatarUrl: '',
+          });
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 3000);
+          return;
+        }
+      }
+    } catch {
+      // API unreachable
+    }
+
+    try {
+      const success = await saveCandidateInFirestore(candObj);
+      if (success) {
         setSuccessMsg(`Candidate ${newCand.name} registered successfully!`);
         setShowAddModal(false);
         setNewCand({
@@ -360,12 +407,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         });
         onRefreshData();
         setTimeout(() => setSuccessMsg(null), 3000);
-      } else {
-        setError(data.message);
+        return;
       }
     } catch {
-      setError('Failed to register candidate.');
+      // ignore
     }
+
+    setError('Failed to register candidate.');
   };
 
   const handleUpdatePhoto = async (candidate: Candidate) => {
@@ -373,6 +421,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     if (updatedUrl === undefined) return;
 
     setSavingPhotoId(candidate.id);
+    const updatedCandidate = {
+      ...candidate,
+      avatarUrl: updatedUrl.trim() || candidate.avatarUrl,
+    };
+
     try {
       const res = await fetch('/api/admin/candidate', {
         method: 'POST',
@@ -380,25 +433,39 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         body: JSON.stringify({
           adminEmail,
           adminPin,
-          candidate: {
-            ...candidate,
-            avatarUrl: updatedUrl.trim() || candidate.avatarUrl,
-          },
+          candidate: updatedCandidate,
         }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(`Profile photo updated for ${candidate.name}!`);
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 3000);
+          setSavingPhotoId(null);
+          return;
+        }
+      }
+    } catch {
+      // API unreachable
+    }
+
+    try {
+      const success = await saveCandidateInFirestore(updatedCandidate);
+      if (success) {
         setSuccessMsg(`Profile photo updated for ${candidate.name}!`);
         onRefreshData();
         setTimeout(() => setSuccessMsg(null), 3000);
-      } else {
-        setError(data.message || 'Failed to update photo.');
+        setSavingPhotoId(null);
+        return;
       }
     } catch {
-      setError('Error updating candidate photo.');
-    } finally {
-      setSavingPhotoId(null);
+      // ignore
     }
+
+    setError('Error updating candidate photo.');
+    setSavingPhotoId(null);
   };
 
   const handleDeleteCandidate = async (candidateId: string, candidateName: string) => {
@@ -414,17 +481,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         },
         body: JSON.stringify({ adminEmail, adminPin }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(`Candidate ${candidateName} removed.`);
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 3000);
+          return;
+        }
+      }
+    } catch {
+      // API unreachable
+    }
+
+    try {
+      const success = await deleteCandidateInFirestore(candidateId);
+      if (success) {
         setSuccessMsg(`Candidate ${candidateName} removed.`);
         onRefreshData();
         setTimeout(() => setSuccessMsg(null), 3000);
-      } else {
-        setError(data.message || 'Failed to delete candidate.');
+        return;
       }
     } catch {
-      setError('Error deleting candidate.');
+      // ignore
     }
+
+    setError('Error deleting candidate.');
   };
 
   const handleSaveEditCandidate = async (e: React.FormEvent) => {
@@ -440,6 +523,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       return;
     }
 
+    const updatedCand = {
+      ...editingCandidate,
+      gender: candGender,
+    };
+
     try {
       const res = await fetch('/api/admin/candidate', {
         method: 'POST',
@@ -447,24 +535,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         body: JSON.stringify({
           adminEmail,
           adminPin,
-          candidate: {
-            ...editingCandidate,
-            gender: candGender,
-          },
+          candidate: updatedCand,
         }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(`Candidate ${editingCandidate.name} updated successfully!`);
+          setEditingCandidate(null);
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 3000);
+          return;
+        }
+      }
+    } catch {
+      // API unreachable
+    }
+
+    try {
+      const success = await saveCandidateInFirestore(updatedCand);
+      if (success) {
         setSuccessMsg(`Candidate ${editingCandidate.name} updated successfully!`);
         setEditingCandidate(null);
         onRefreshData();
         setTimeout(() => setSuccessMsg(null), 3000);
-      } else {
-        setError(data.message || 'Failed to update candidate info.');
+        return;
       }
     } catch {
-      setError('Error updating candidate details.');
+      // ignore
     }
+
+    setError('Error updating candidate details.');
   };
 
   const handleDownloadPDF = async () => {

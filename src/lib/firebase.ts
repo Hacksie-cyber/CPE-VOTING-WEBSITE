@@ -222,6 +222,73 @@ export const resetDemoInFirestore = async (
   return false;
 };
 
+export const saveCandidateInFirestore = async (candidate: any) => {
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    const data = snap.exists() ? snap.data() : {};
+    const currentCandidates = Array.isArray(data.candidates) ? [...data.candidates] : [];
+
+    const existingIndex = currentCandidates.findIndex((c: any) => c.id === candidate.id);
+    if (existingIndex >= 0) {
+      currentCandidates[existingIndex] = candidate;
+    } else {
+      currentCandidates.push(candidate);
+    }
+
+    await setDoc(docRef, {
+      ...data,
+      candidates: currentCandidates,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    return true;
+  } catch (err) {
+    console.warn('Firestore candidate save error:', err);
+  }
+  return false;
+};
+
+export const deleteCandidateInFirestore = async (candidateId: string) => {
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const currentCandidates = Array.isArray(data.candidates) ? data.candidates : [];
+      const updatedCandidates = currentCandidates.filter((c: any) => c.id !== candidateId);
+
+      await setDoc(docRef, {
+        ...data,
+        candidates: updatedCandidates,
+        updatedAt: new Date().toISOString(),
+      });
+      return true;
+    }
+  } catch (err) {
+    console.warn('Firestore candidate delete error:', err);
+  }
+  return false;
+};
+
+export const updateSettingsInFirestore = async (newSettings: any) => {
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    const data = snap.exists() ? snap.data() : {};
+    const currentSettings = data.settings || {};
+
+    await setDoc(docRef, {
+      ...data,
+      settings: { ...currentSettings, ...newSettings },
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    return true;
+  } catch (err) {
+    console.warn('Firestore settings update error:', err);
+  }
+  return false;
+};
+
 export { signOut };
 export default app;
 
