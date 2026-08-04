@@ -289,7 +289,7 @@ export const updateSettingsInFirestore = async (newSettings: any) => {
   return false;
 };
 
-export const deleteVoterInFirestore = async (voterId: string) => {
+export const deleteVoterInFirestore = async (voterId: string, voterEmail?: string) => {
   try {
     const docRef = doc(db, 'elections', 'cpe2026');
     const snap = await getDoc(docRef);
@@ -298,8 +298,21 @@ export const deleteVoterInFirestore = async (voterId: string) => {
       const currentVoters = Array.isArray(data.voters) ? data.voters : [];
       const currentVotes = Array.isArray(data.votes) ? data.votes : [];
 
-      const updatedVoters = currentVoters.filter((v: any) => v.id !== voterId);
-      const updatedVotes = currentVotes.filter((v: any) => v.voterId !== voterId);
+      const targetIdClean = voterId ? String(voterId).toLowerCase() : '';
+      const targetEmailClean = voterEmail ? String(voterEmail).toLowerCase() : '';
+
+      const updatedVoters = currentVoters.filter((v: any) => {
+        const vId = v.id ? String(v.id).toLowerCase() : '';
+        const vEmail = v.email ? String(v.email).toLowerCase() : '';
+        if (targetIdClean && vId === targetIdClean) return false;
+        if (targetEmailClean && vEmail === targetEmailClean) return false;
+        return true;
+      });
+
+      const updatedVotes = currentVotes.filter((v: any) => {
+        const vId = v.voterId ? String(v.voterId).toLowerCase() : '';
+        return !(targetIdClean && vId === targetIdClean);
+      });
 
       await setDoc(docRef, {
         ...data,

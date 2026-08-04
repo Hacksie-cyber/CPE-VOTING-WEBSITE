@@ -172,14 +172,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setIsSubmittingAction(false);
   };
 
-  // Delete Single Voter Handler (Account Duplication Cleanup)
-  const handleDeleteVoter = async (targetVoter: Voter) => {
-    if (!window.confirm(`Are you sure you want to delete voter account "${targetVoter.name}" (${targetVoter.email})? This action cannot be undone.`)) {
-      return;
-    }
+  // Delete Single Voter State & Handler (Account Duplication Cleanup)
+  const [voterToDelete, setVoterToDelete] = useState<Voter | null>(null);
+
+  const executeDeleteVoter = async () => {
+    if (!voterToDelete) return;
+    const targetVoter = voterToDelete;
     setIsSubmittingAction(true);
     setError(null);
     setSuccessMsg(null);
+
+    // Optimistically update local state so table reflects deletion immediately
+    setVotersList((prev) =>
+      prev.filter(
+        (v) =>
+          v.id !== targetVoter.id &&
+          (!targetVoter.email || v.email?.toLowerCase() !== targetVoter.email.toLowerCase())
+      )
+    );
 
     try {
       const res = await fetch('/api/admin/voter/delete', {
@@ -196,9 +206,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       if (res.ok && contentType && contentType.includes('application/json')) {
         const data = await res.json();
         if (data.success) {
-          setSuccessMsg(`Voter account "${targetVoter.name}" deleted.`);
+          setSuccessMsg(`Voter account "${targetVoter.name}" deleted successfully.`);
           if (data.voters) setVotersList(data.voters);
           onRefreshData();
+          setVoterToDelete(null);
           setTimeout(() => setSuccessMsg(null), 4000);
           setIsSubmittingAction(false);
           return;
@@ -210,11 +221,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
     // Fallback direct Firestore deletion
     try {
-      const updatedVoters = await deleteVoterInFirestore(targetVoter.id);
+      const updatedVoters = await deleteVoterInFirestore(targetVoter.id, targetVoter.email);
       if (updatedVoters) {
         setVotersList(updatedVoters);
         setSuccessMsg(`Student voter account "${targetVoter.name}" permanently deleted.`);
         onRefreshData();
+        setVoterToDelete(null);
         setTimeout(() => setSuccessMsg(null), 4000);
         setIsSubmittingAction(false);
         return;
@@ -223,6 +235,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setError('Failed to delete voter account from database.');
     }
 
+    setVoterToDelete(null);
     setIsSubmittingAction(false);
   };
 
@@ -1414,7 +1427,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => handleDeleteVoter(voter)}
+                                  onClick={() => setVoterToDelete(voter)}
                                   disabled={isSubmittingAction}
                                   className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 border border-slate-700 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 text-xs font-bold transition-all inline-flex items-center space-x-1"
                                   title="Delete Account (Duplicate Account Cleanup)"
@@ -1888,6 +1901,55 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Voter Account Confirmation Modal */}
+      {voterToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-rose-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-100">
+            <button
+              onClick={() => setVoterToDelete(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 text-sm font-bold"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-100">Delete Student Voter Account</h3>
+                <p className="text-xs text-rose-400 font-semibold">Account Duplication Cleanup</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed mb-4">
+              Are you sure you want to permanently delete the voter record for <strong className="text-white">{voterToDelete.name}</strong> (<span className="text-cyan-400">{voterToDelete.email || voterToDelete.studentId || voterToDelete.id}</span>)?
+              <br /><br />
+              This will remove their registration record and any associated votes from the system. This action cannot be undone.
+            </p>
+
+            <div className="pt-2 flex items-center justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setVoterToDelete(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeDeleteVoter}
+                disabled={isSubmittingAction}
+                className="px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 transition-all bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-900/40 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isSubmittingAction ? 'Deleting...' : 'Delete Account'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
