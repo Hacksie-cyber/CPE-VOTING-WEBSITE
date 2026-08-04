@@ -2,7 +2,7 @@ export type YearLevel = '1st Year' | '2nd Year' | '3rd Year' | '4th Year';
 
 export type Gender = 'Female' | 'Male' | 'Non-binary' | 'Other';
 
-export type PartyAffiliation = 'ByteCraft Alliance' | 'Synapse Union' | 'Independent Circuit';
+export type PartyAffiliation = 'ByteCraft Alliance' | 'Synapse Union' | 'Independent Circuit' | 'Progressive CPE Alliance' | 'Tech Innovation Coalition' | (string & {});
 
 export interface CandidateNomination {
   id: string;

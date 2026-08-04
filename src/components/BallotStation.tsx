@@ -263,149 +263,156 @@ export const BallotStation: React.FC<BallotStationProps> = ({
               </div>
 
               {/* Candidates Grid for Active Position */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {candidates.length === 0 ? (
-                  <div className="md:col-span-2 bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center">
-                    <p className="font-semibold text-slate-300">No candidates nominated for {activePosition.title} yet.</p>
-                  </div>
-                ) : (
-                  candidates.map((cand) => {
-                    const isSelected = choices[activePosition.id] === cand.id;
-                    const otherPosition = getSelectedOtherPosition(cand, activePosition.id);
-                    const isUnavailable = !!otherPosition && !isSelected;
+              {(() => {
+                const activePosCandidates = candidates.filter(
+                  (c) => c.positionId === activePosition.id || c.positionId?.toLowerCase() === activePosition.id?.toLowerCase()
+                );
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {activePosCandidates.length === 0 ? (
+                      <div className="md:col-span-2 bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center">
+                        <p className="font-semibold text-slate-300">No candidates nominated for {activePosition.title} yet.</p>
+                      </div>
+                    ) : (
+                      activePosCandidates.map((cand) => {
+                        const isSelected = choices[activePosition.id] === cand.id;
+                        const otherPosition = getSelectedOtherPosition(cand, activePosition.id);
+                        const isUnavailable = !!otherPosition && !isSelected;
 
-                    return (
+                        return (
+                          <div
+                            key={cand.id}
+                            onClick={() => handleCandidateClick(activePosition.id, cand)}
+                            className={`relative rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between group ${
+                              isSelected
+                                ? 'bg-slate-950 border-cyan-500 ring-2 ring-cyan-500/30 shadow-xl shadow-cyan-500/10'
+                                : isUnavailable
+                                ? 'bg-slate-950/40 border-amber-500/30 opacity-60 hover:opacity-85'
+                                : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-950/90'
+                            }`}
+                          >
+                            <div>
+                              {/* Top Radio / Unavailable Indicator */}
+                              <div className="flex items-start justify-end mb-3">
+                                {isUnavailable ? (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center space-x-1">
+                                    <AlertCircle className="w-3 h-3" />
+                                    <span>Selected for {otherPosition.title}</span>
+                                  </span>
+                                ) : (
+                                  <div
+                                    className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                                      isSelected
+                                        ? 'border-cyan-400 bg-cyan-500 text-slate-950'
+                                        : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
+                                    }`}
+                                  >
+                                    {isSelected && <CheckCircle2 className="w-4 h-4 text-slate-950" />}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Candidate Avatar & Name */}
+                              <div className="flex items-center space-x-3 mb-3">
+                                <img
+                                  src={cand.avatarUrl}
+                                  alt={cand.name}
+                                  referrerPolicy="no-referrer"
+                                  className="w-14 h-14 rounded-xl object-cover border border-slate-700 shadow-md flex-shrink-0"
+                                />
+                                <div>
+                                  <h4 className="font-bold text-slate-100 text-sm group-hover:text-cyan-400 transition-colors">
+                                    {cand.name}
+                                  </h4>
+                                  {cand.nickname && (
+                                    <p className="text-xs text-cyan-400/90 font-medium">&quot;{cand.nickname}&quot;</p>
+                                  )}
+                                  <p className="text-xs text-slate-400">{cand.yearLevel} Computer Engineering</p>
+                                </div>
+                              </div>
+
+                              {/* Platform Heading */}
+                              <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800/80 mb-3">
+                                <p className="text-xs font-semibold text-slate-200 line-clamp-2">
+                                  🚀 {cand.platformHeading}
+                                </p>
+                              </div>
+
+                              {isUnavailable && (
+                                <div className="bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg text-[11px] text-amber-300 font-medium mb-2">
+                                  Unavailable: Selected for {otherPosition.title}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Modal Trigger */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCandidateModal(cand);
+                              }}
+                              className="mt-2 w-full flex items-center justify-center space-x-1.5 py-1.5 text-xs font-medium text-slate-400 hover:text-cyan-400 hover:bg-slate-900 rounded-lg transition-colors border border-transparent hover:border-slate-800"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>View Full Advocacy & Bio</span>
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+
+                    {/* Abstain Option */}
+                    {settings.allowAbstain && (
                       <div
-                        key={cand.id}
-                        onClick={() => handleCandidateClick(activePosition.id, cand)}
-                        className={`relative rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between group ${
-                          isSelected
-                            ? 'bg-slate-950 border-cyan-500 ring-2 ring-cyan-500/30 shadow-xl shadow-cyan-500/10'
-                            : isUnavailable
-                            ? 'bg-slate-950/40 border-amber-500/30 opacity-60 hover:opacity-85'
-                            : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-950/90'
+                        onClick={() => {
+                          if (!voter?.hasVoted) {
+                            onSelectCandidate(activePosition.id, 'ABSTAIN');
+                            if (activePosIndex < totalPositions - 1) {
+                              setTimeout(() => setActivePosIndex((prev) => prev + 1), 350);
+                            }
+                          }
+                        }}
+                        className={`rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
+                          choices[activePosition.id] === 'ABSTAIN'
+                            ? 'bg-slate-950 border-amber-500 ring-2 ring-amber-500/20 shadow-lg'
+                            : 'bg-slate-950/40 border-slate-800/80 hover:border-slate-700'
                         }`}
                       >
                         <div>
-                          {/* Top Radio / Unavailable Indicator */}
-                          <div className="flex items-start justify-end mb-3">
-                            {isUnavailable ? (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center space-x-1">
-                                <AlertCircle className="w-3 h-3" />
-                                <span>Selected for {otherPosition.title}</span>
-                              </span>
-                            ) : (
-                              <div
-                                className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                                  isSelected
-                                    ? 'border-cyan-400 bg-cyan-500 text-slate-950'
-                                    : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
-                                }`}
-                              >
-                                {isSelected && <CheckCircle2 className="w-4 h-4 text-slate-950" />}
-                              </div>
-                            )}
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                              Neutral Option
+                            </span>
+                            <div
+                              className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                                choices[activePosition.id] === 'ABSTAIN'
+                                  ? 'border-amber-400 bg-amber-500 text-slate-950'
+                                  : 'border-slate-700 bg-slate-900'
+                              }`}
+                            >
+                              {choices[activePosition.id] === 'ABSTAIN' && <Ban className="w-3.5 h-3.5 text-slate-950" />}
+                            </div>
                           </div>
 
-                          {/* Candidate Avatar & Name */}
-                          <div className="flex items-center space-x-3 mb-3">
-                            <img
-                              src={cand.avatarUrl}
-                              alt={cand.name}
-                              referrerPolicy="no-referrer"
-                              className="w-14 h-14 rounded-xl object-cover border border-slate-700 shadow-md flex-shrink-0"
-                            />
+                          <div className="flex items-center space-x-3 my-2">
+                            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                              <Ban className="w-6 h-6" />
+                            </div>
                             <div>
-                              <h4 className="font-bold text-slate-100 text-sm group-hover:text-cyan-400 transition-colors">
-                                {cand.name}
-                              </h4>
-                              {cand.nickname && (
-                                <p className="text-xs text-cyan-400/90 font-medium">&quot;{cand.nickname}&quot;</p>
-                              )}
-                              <p className="text-xs text-slate-400">{cand.yearLevel} Computer Engineering</p>
+                              <h4 className="font-bold text-slate-200 text-sm">Abstain for {activePosition.title}</h4>
+                              <p className="text-xs text-slate-400">Choose not to vote for any candidate</p>
                             </div>
                           </div>
-
-                          {/* Platform Heading */}
-                          <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800/80 mb-3">
-                            <p className="text-xs font-semibold text-slate-200 line-clamp-2">
-                              🚀 {cand.platformHeading}
-                            </p>
-                          </div>
-
-                          {isUnavailable && (
-                            <div className="bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg text-[11px] text-amber-300 font-medium mb-2">
-                              Unavailable: Selected for {otherPosition.title}
-                            </div>
-                          )}
                         </div>
-
-                        {/* Modal Trigger */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedCandidateModal(cand);
-                          }}
-                          className="mt-2 w-full flex items-center justify-center space-x-1.5 py-1.5 text-xs font-medium text-slate-400 hover:text-cyan-400 hover:bg-slate-900 rounded-lg transition-colors border border-transparent hover:border-slate-800"
-                        >
-                          <FileText className="w-3.5 h-3.5" />
-                          <span>View Full Advocacy & Bio</span>
-                        </button>
+                        <p className="text-[11px] text-slate-500 mt-4 italic">
+                          Your vote will count towards overall turnout without endorsing a candidate.
+                        </p>
                       </div>
-                    );
-                  })
-                )}
-
-                {/* Abstain Option */}
-                {settings.allowAbstain && (
-                  <div
-                    onClick={() => {
-                      if (!voter?.hasVoted) {
-                        onSelectCandidate(activePosition.id, 'ABSTAIN');
-                        if (activePosIndex < totalPositions - 1) {
-                          setTimeout(() => setActivePosIndex((prev) => prev + 1), 350);
-                        }
-                      }
-                    }}
-                    className={`rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
-                      choices[activePosition.id] === 'ABSTAIN'
-                        ? 'bg-slate-950 border-amber-500 ring-2 ring-amber-500/20 shadow-lg'
-                        : 'bg-slate-950/40 border-slate-800/80 hover:border-slate-700'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                          Neutral Option
-                        </span>
-                        <div
-                          className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                            choices[activePosition.id] === 'ABSTAIN'
-                              ? 'border-amber-400 bg-amber-500 text-slate-950'
-                              : 'border-slate-700 bg-slate-900'
-                          }`}
-                        >
-                          {choices[activePosition.id] === 'ABSTAIN' && <Ban className="w-3.5 h-3.5 text-slate-950" />}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-3 my-2">
-                        <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                          <Ban className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-slate-200 text-sm">Abstain for {activePosition.title}</h4>
-                          <p className="text-xs text-slate-400">Choose not to vote for any candidate</p>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-slate-500 mt-4 italic">
-                      Your vote will count towards overall turnout without endorsing a candidate.
-                    </p>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
 
               {/* Horizontal Position In-Card Footer Controls */}
               <div className="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between">
@@ -485,146 +492,153 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                 </div>
 
                 {/* Candidates Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {candidates.length === 0 ? (
-                    <div className="md:col-span-2 bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center">
-                      <p className="font-semibold text-slate-300">No candidates nominated for {pos.title} yet.</p>
-                    </div>
-                  ) : (
-                    candidates.map((cand) => {
-                      const isSelected = currentChoice === cand.id;
-                      const otherPosition = getSelectedOtherPosition(cand, pos.id);
-                      const isUnavailable = !!otherPosition && !isSelected;
+                {(() => {
+                  const posCandidates = candidates.filter(
+                    (c) => c.positionId === pos.id || c.positionId?.toLowerCase() === pos.id?.toLowerCase()
+                  );
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {posCandidates.length === 0 ? (
+                        <div className="md:col-span-2 bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center">
+                          <p className="font-semibold text-slate-300">No candidates nominated for {pos.title} yet.</p>
+                        </div>
+                      ) : (
+                        posCandidates.map((cand) => {
+                          const isSelected = currentChoice === cand.id;
+                          const otherPosition = getSelectedOtherPosition(cand, pos.id);
+                          const isUnavailable = !!otherPosition && !isSelected;
 
-                      return (
+                          return (
+                            <div
+                              key={cand.id}
+                              onClick={() => handleCandidateClick(pos.id, cand)}
+                              className={`relative rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between group ${
+                                isSelected
+                                  ? 'bg-slate-950 border-cyan-500 ring-2 ring-cyan-500/30 shadow-xl shadow-cyan-500/10'
+                                  : isUnavailable
+                                  ? 'bg-slate-950/40 border-amber-500/30 opacity-60 hover:opacity-85'
+                                  : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-950/90'
+                              }`}
+                            >
+                              <div>
+                                {/* Top Radio / Unavailable Indicator */}
+                                <div className="flex items-start justify-end mb-3">
+                                  {isUnavailable ? (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center space-x-1">
+                                      <AlertCircle className="w-3 h-3" />
+                                      <span>Selected for {otherPosition.title}</span>
+                                    </span>
+                                  ) : (
+                                    <div
+                                      className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                                        isSelected
+                                          ? 'border-cyan-400 bg-cyan-500 text-slate-950'
+                                          : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
+                                      }`}
+                                    >
+                                      {isSelected && <CheckCircle2 className="w-4 h-4 text-slate-950" />}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Candidate Avatar & Name */}
+                                <div className="flex items-center space-x-3 mb-3">
+                                  <img
+                                    src={cand.avatarUrl}
+                                    alt={cand.name}
+                                    referrerPolicy="no-referrer"
+                                    className="w-14 h-14 rounded-xl object-cover border border-slate-700 shadow-md flex-shrink-0"
+                                  />
+                                  <div>
+                                    <h4 className="font-bold text-slate-100 text-sm group-hover:text-cyan-400 transition-colors">
+                                      {cand.name}
+                                    </h4>
+                                    {cand.nickname && (
+                                      <p className="text-xs text-cyan-400/90 font-medium">&quot;{cand.nickname}&quot;</p>
+                                    )}
+                                    <p className="text-xs text-slate-400">{cand.yearLevel} Computer Engineering</p>
+                                  </div>
+                                </div>
+
+                                {/* Platform Heading */}
+                                <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800/80 mb-3">
+                                  <p className="text-xs font-semibold text-slate-200 line-clamp-2">
+                                    🚀 {cand.platformHeading}
+                                  </p>
+                                </div>
+
+                                {isUnavailable && (
+                                  <div className="bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg text-[11px] text-amber-300 font-medium mb-2">
+                                    Unavailable: Selected for {otherPosition.title}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Modal Trigger */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCandidateModal(cand);
+                                }}
+                                className="mt-2 w-full flex items-center justify-center space-x-1.5 py-1.5 text-xs font-medium text-slate-400 hover:text-cyan-400 hover:bg-slate-900 rounded-lg transition-colors border border-transparent hover:border-slate-800"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>View Full Advocacy & Bio</span>
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+
+                      {/* Abstain Option */}
+                      {settings.allowAbstain && (
                         <div
-                          key={cand.id}
-                          onClick={() => handleCandidateClick(pos.id, cand)}
-                          className={`relative rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between group ${
-                            isSelected
-                              ? 'bg-slate-950 border-cyan-500 ring-2 ring-cyan-500/30 shadow-xl shadow-cyan-500/10'
-                              : isUnavailable
-                              ? 'bg-slate-950/40 border-amber-500/30 opacity-60 hover:opacity-85'
-                              : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-950/90'
+                          onClick={() => {
+                            if (!voter?.hasVoted) {
+                              onSelectCandidate(pos.id, 'ABSTAIN');
+                            }
+                          }}
+                          className={`rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
+                            currentChoice === 'ABSTAIN'
+                              ? 'bg-slate-950 border-amber-500 ring-2 ring-amber-500/20 shadow-lg'
+                              : 'bg-slate-950/40 border-slate-800/80 hover:border-slate-700'
                           }`}
                         >
                           <div>
-                            {/* Top Radio / Unavailable Indicator */}
-                            <div className="flex items-start justify-end mb-3">
-                              {isUnavailable ? (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center space-x-1">
-                                  <AlertCircle className="w-3 h-3" />
-                                  <span>Selected for {otherPosition.title}</span>
-                                </span>
-                              ) : (
-                                <div
-                                  className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                                    isSelected
-                                      ? 'border-cyan-400 bg-cyan-500 text-slate-950'
-                                      : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
-                                  }`}
-                                >
-                                  {isSelected && <CheckCircle2 className="w-4 h-4 text-slate-950" />}
-                                </div>
-                              )}
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                Neutral Option
+                              </span>
+                              <div
+                                className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                                  currentChoice === 'ABSTAIN'
+                                    ? 'border-amber-400 bg-amber-500 text-slate-950'
+                                    : 'border-slate-700 bg-slate-900'
+                                }`}
+                              >
+                                {currentChoice === 'ABSTAIN' && <Ban className="w-3.5 h-3.5 text-slate-950" />}
+                              </div>
                             </div>
 
-                            {/* Candidate Avatar & Name */}
-                            <div className="flex items-center space-x-3 mb-3">
-                              <img
-                                src={cand.avatarUrl}
-                                alt={cand.name}
-                                referrerPolicy="no-referrer"
-                                className="w-14 h-14 rounded-xl object-cover border border-slate-700 shadow-md flex-shrink-0"
-                              />
+                            <div className="flex items-center space-x-3 my-2">
+                              <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                                <Ban className="w-6 h-6" />
+                              </div>
                               <div>
-                                <h4 className="font-bold text-slate-100 text-sm group-hover:text-cyan-400 transition-colors">
-                                  {cand.name}
-                                </h4>
-                                {cand.nickname && (
-                                  <p className="text-xs text-cyan-400/90 font-medium">&quot;{cand.nickname}&quot;</p>
-                                )}
-                                <p className="text-xs text-slate-400">{cand.yearLevel} Computer Engineering</p>
+                                <h4 className="font-bold text-slate-200 text-sm">Abstain for {pos.title}</h4>
+                                <p className="text-xs text-slate-400">Choose not to vote for any candidate</p>
                               </div>
                             </div>
-
-                            {/* Platform Heading */}
-                            <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800/80 mb-3">
-                              <p className="text-xs font-semibold text-slate-200 line-clamp-2">
-                                🚀 {cand.platformHeading}
-                              </p>
-                            </div>
-
-                            {isUnavailable && (
-                              <div className="bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg text-[11px] text-amber-300 font-medium mb-2">
-                                Unavailable: Selected for {otherPosition.title}
-                              </div>
-                            )}
                           </div>
-
-                          {/* Modal Trigger */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCandidateModal(cand);
-                            }}
-                            className="mt-2 w-full flex items-center justify-center space-x-1.5 py-1.5 text-xs font-medium text-slate-400 hover:text-cyan-400 hover:bg-slate-900 rounded-lg transition-colors border border-transparent hover:border-slate-800"
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            <span>View Full Advocacy & Bio</span>
-                          </button>
+                          <p className="text-[11px] text-slate-500 mt-4 italic">
+                            Your vote will count towards overall turnout without endorsing a candidate.
+                          </p>
                         </div>
-                      );
-                    })
-                  )}
-
-                  {/* Abstain Option */}
-                  {settings.allowAbstain && (
-                    <div
-                      onClick={() => {
-                        if (!voter?.hasVoted) {
-                          onSelectCandidate(pos.id, 'ABSTAIN');
-                        }
-                      }}
-                      className={`rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
-                        currentChoice === 'ABSTAIN'
-                          ? 'bg-slate-950 border-amber-500 ring-2 ring-amber-500/20 shadow-lg'
-                          : 'bg-slate-950/40 border-slate-800/80 hover:border-slate-700'
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                            Neutral Option
-                          </span>
-                          <div
-                            className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                              currentChoice === 'ABSTAIN'
-                                ? 'border-amber-400 bg-amber-500 text-slate-950'
-                                : 'border-slate-700 bg-slate-900'
-                            }`}
-                          >
-                            {currentChoice === 'ABSTAIN' && <Ban className="w-3.5 h-3.5 text-slate-950" />}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-3 my-2">
-                          <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                            <Ban className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-slate-200 text-sm">Abstain for {pos.title}</h4>
-                            <p className="text-xs text-slate-400">Choose not to vote for any candidate</p>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-4 italic">
-                        Your vote will count towards overall turnout without endorsing a candidate.
-                      </p>
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
               </div>
             );
           })}

@@ -75,10 +75,10 @@ async function loadStateFromFirestore() {
     if (snap.exists()) {
       const data = snap.data();
       if (data.settings) settings = data.settings;
-      if (Array.isArray(data.candidates)) candidates = data.candidates;
-      if (Array.isArray(data.positions)) positions = data.positions;
-      if (Array.isArray(data.voters)) voters = data.voters.filter(isActualAccount);
-      if (Array.isArray(data.votes)) votes = data.votes;
+      if (Array.isArray(data.candidates) && data.candidates.length > 0) candidates = data.candidates;
+      if (Array.isArray(data.positions) && data.positions.length > 0) positions = data.positions;
+      if (Array.isArray(data.voters) && data.voters.length > 0) voters = data.voters.filter(isActualAccount);
+      if (Array.isArray(data.votes) && data.votes.length > 0) votes = data.votes;
       if (Array.isArray(data.nominations)) nominations = data.nominations;
       console.log('Firebase Firestore: Loaded election state successfully. Candidate count:', candidates.length);
     } else {
@@ -163,7 +163,7 @@ function calculateResults(): {
     posCandidates.forEach((c) => (candidateVoteCounts[c.id] = 0));
 
     validVotes.forEach((vote) => {
-      const choice = vote.choices[pos.id];
+      const choice = vote.choices ? vote.choices[pos.id] : undefined;
       if (!choice || choice === 'ABSTAIN') {
         abstainCount++;
       } else if (candidateVoteCounts[choice] !== undefined) {

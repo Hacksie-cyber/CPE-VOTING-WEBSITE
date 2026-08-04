@@ -18,49 +18,93 @@ export const generateElectionPDF = (
   const margin = 15;
   let y = 15;
 
-  // Primary Theme Colors (Deep Navy, Cyan Accent, Gold/Amber Highlight)
+  // Primary Theme Colors (Deep Navy, Cyan Accent, Slate Neutral)
   const primaryColor: [number, number, number] = [15, 23, 42]; // Slate 900
   const cyanColor: [number, number, number] = [6, 182, 212];   // Cyan 500
   const darkGray: [number, number, number] = [51, 65, 85];     // Slate 700
   const lightBg: [number, number, number] = [241, 245, 249];   // Slate 100
 
-  // Helper: Check Page Overflow
-  const checkPageBreak = (neededHeight: number) => {
-    if (y + neededHeight > pageHeight - 20) {
-      doc.addPage();
-      y = 15;
-      // Header banner for new page
-      doc.setFillColor(...primaryColor);
-      doc.rect(0, 0, pageWidth, 8, 'F');
+  // Draw Page Top Banner
+  const drawPageHeader = (isFirstPage: boolean) => {
+    doc.setFillColor(...primaryColor);
+    if (isFirstPage) {
+      doc.rect(0, 0, pageWidth, 28, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.text('COMPUTER ENGINEERING STUDENT GOVERNMENT (CPESG)', pageWidth / 2, 11, { align: 'center' });
+
+      doc.setFontSize(10);
+      doc.setTextColor(...cyanColor);
+      doc.text('OFFICIAL ELECTION TALLY & RESULTS CERTIFICATE 2026', pageWidth / 2, 17, { align: 'center' });
+
+      doc.setFontSize(7.5);
+      doc.setTextColor(203, 213, 225);
+      doc.setFont('helvetica', 'normal');
+      const timestampStr = new Date(lastUpdated || Date.now()).toLocaleString('en-US', {
+        dateStyle: 'full',
+        timeStyle: 'medium',
+      });
+      doc.text(`Official System Timestamp: ${timestampStr} | Status: ${settings.status.toUpperCase()}`, pageWidth / 2, 23, { align: 'center' });
+    } else {
+      doc.rect(0, 0, pageWidth, 12, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('CPESG ELECTION 2026 — OFFICIAL TALLY CERTIFICATE (CONTINUED)', pageWidth / 2, 8, { align: 'center' });
     }
   };
 
-  // Header Decorative Banner
-  doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, pageWidth, 28, 'F');
+  const checkPageBreak = (neededHeight: number): boolean => {
+    if (y + neededHeight > pageHeight - 20) {
+      doc.addPage();
+      drawPageHeader(false);
+      y = 18;
+      return true;
+    }
+    return false;
+  };
 
-  // Header Title
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text('COMPUTER ENGINEERING STUDENT GOVERNMENT (CPESG)', pageWidth / 2, 11, { align: 'center' });
+  // Helper to draw position table header
+  const drawTableHeader = (posTitle: string, posCategory: string, totalVotesForPos: number, posIndex: number) => {
+    // Position Header Sub-bar
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(margin, y, pageWidth - margin * 2, 7, 'FD');
 
-  doc.setFontSize(11);
-  doc.setTextColor(...cyanColor);
-  doc.text('OFFICIAL ELECTION TALLY & RESULTS CERTIFICATE 2026', pageWidth / 2, 17, { align: 'center' });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...primaryColor);
+    doc.text(`${posIndex + 1}. ${posTitle.toUpperCase()} (${posCategory})`, margin + 3, y + 5);
 
-  doc.setFontSize(8);
-  doc.setTextColor(203, 213, 225);
-  doc.setFont('helvetica', 'normal');
-  const timestampStr = new Date(lastUpdated || Date.now()).toLocaleString('en-US', {
-    dateStyle: 'full',
-    timeStyle: 'medium',
-  });
-  doc.text(`Official System Timestamp: ${timestampStr} | Status: ${settings.status.toUpperCase()}`, pageWidth / 2, 23, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Total Ballots for Position: ${totalVotesForPos}`, pageWidth - margin - 3, y + 5, { align: 'right' });
 
+    y += 9;
+
+    // Table Column Headers
+    doc.setFillColor(226, 232, 240);
+    doc.rect(margin, y, pageWidth - margin * 2, 6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...darkGray);
+
+    doc.text('CANDIDATE NAME', margin + 4, y + 4);
+    doc.text('PARTY / ALLIANCE', margin + 70, y + 4);
+    doc.text('VOTES', margin + 120, y + 4);
+    doc.text('PERCENTAGE', margin + 145, y + 4);
+    doc.text('STATUS', margin + 168, y + 4);
+
+    y += 6;
+  };
+
+  // 1. First Page Header
+  drawPageHeader(true);
   y = 35;
 
-  // Turnout Summary Box
+  // 2. Turnout Summary Box
   doc.setFillColor(...lightBg);
   doc.setDrawColor(203, 213, 225);
   doc.roundedRect(margin, y, pageWidth - margin * 2, 26, 3, 3, 'FD');
@@ -101,38 +145,23 @@ export const generateElectionPDF = (
 
   y += 11;
 
-  // Loop through Position Results
-  positionResults.forEach((pr, index) => {
-    const tableHeaderHeight = 8;
+  // Sort Position Results by Order
+  const sortedPositionResults = [...positionResults].sort(
+    (a, b) => (a.position?.order || 0) - (b.position?.order || 0)
+  );
+
+  // Loop through Position Results (Governor, Vice-Governor, Secretary, Treasurer, Auditor, PIO, Muse)
+  sortedPositionResults.forEach((pr, index) => {
+    const tableHeaderHeight = 15;
     const rowHeight = 7;
-    const candidatesCount = pr.candidates.length + (pr.abstainCount > 0 ? 1 : 0);
-    const estimatedHeight = 12 + tableHeaderHeight + (candidatesCount * rowHeight) + 4;
+    const candidatesCount = Math.max(1, pr.candidates.length) + (pr.abstainCount > 0 ? 1 : 0);
+    const totalPosBlockHeight = tableHeaderHeight + (candidatesCount * rowHeight) + 6;
 
-    checkPageBreak(estimatedHeight);
+    // Check if whole block or header fits, else break page
+    checkPageBreak(Math.min(totalPosBlockHeight, 35));
 
-    // Position Header Sub-bar
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(226, 232, 240);
-    doc.rect(margin, y, pageWidth - margin * 2, 7, 'FD');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.5);
-    doc.setTextColor(...primaryColor);
-    doc.text(`${index + 1}. ${pr.position.title.toUpperCase()} (${pr.position.category})`, margin + 3, y + 5);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    doc.text(`Total Ballots for Position: ${pr.totalVotesCast}`, pageWidth - margin - 3, y + 5, { align: 'right' });
-
-    y += 9;
-
-    // Table Header
-    doc.setFillColor(226, 232, 240);
-    doc.rect(margin, y, pageWidth - margin * 2, 6, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...darkGray);
+    // Draw position header & table column titles
+    drawTableHeader(pr.position.title, pr.position.category, pr.totalVotesCast, index);
 
     const colCandidate = margin + 4;
     const colParty = margin + 70;
@@ -140,62 +169,76 @@ export const generateElectionPDF = (
     const colPct = margin + 145;
     const colStatus = margin + 168;
 
-    doc.text('CANDIDATE NAME', colCandidate, y + 4);
-    doc.text('PARTY / ALLIANCE', colParty, y + 4);
-    doc.text('VOTES', colVotes, y + 4);
-    doc.text('PERCENTAGE', colPct, y + 4);
-    doc.text('STATUS', colStatus, y + 4);
-
-    y += 6;
-
-    // Candidate Rows
-    pr.candidates.forEach((cand, cIdx) => {
-      checkPageBreak(rowHeight + 2);
-
-      const isEven = cIdx % 2 === 0;
-      doc.setFillColor(isEven ? 255 : 248, isEven ? 255 : 250, isEven ? 255 : 252);
+    // If no candidates registered for position
+    if (pr.candidates.length === 0) {
+      doc.setFillColor(255, 255, 255);
       doc.rect(margin, y, pageWidth - margin * 2, rowHeight, 'F');
-
-      doc.setFont('helvetica', cand.isLeading ? 'bold' : 'normal');
-      doc.setFontSize(8.5);
-      doc.setTextColor(...(cand.isLeading ? primaryColor : darkGray));
-
-      doc.text(cand.name, colCandidate, y + 4.8);
-
-      doc.setFont('helvetica', 'normal');
+      doc.setFont('helvetica', 'italic');
       doc.setFontSize(8);
-      doc.setTextColor(71, 85, 105);
-      doc.text(cand.party, colParty, y + 4.8);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...primaryColor);
-      doc.text(cand.votes.toString(), colVotes, y + 4.8);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(71, 85, 105);
-      doc.text(`${cand.percentage}%`, colPct, y + 4.8);
-
-      if (cand.isLeading) {
-        doc.setFillColor(220, 252, 231); // Soft Green
-        doc.setDrawColor(134, 239, 172);
-        doc.roundedRect(colStatus - 1, y + 1, 18, 5, 1, 1, 'FD');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.setTextColor(22, 101, 52);
-        doc.text('WINNER / LEAD', colStatus + 1, y + 4.3);
-      } else {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
-        doc.setTextColor(148, 163, 184);
-        doc.text('-', colStatus + 5, y + 4.5);
-      }
-
+      doc.setTextColor(148, 163, 184);
+      doc.text('No registered candidates for this position', colCandidate, y + 4.8);
+      doc.text('-', colParty, y + 4.8);
+      doc.text('0', colVotes, y + 4.8);
+      doc.text('0%', colPct, y + 4.8);
+      doc.text('-', colStatus + 5, y + 4.8);
       y += rowHeight;
-    });
+    } else {
+      // Candidate Rows
+      pr.candidates.forEach((cand, cIdx) => {
+        const didBreak = checkPageBreak(rowHeight + 2);
+        if (didBreak) {
+          // Re-draw table header on top of new page for readability
+          drawTableHeader(pr.position.title, pr.position.category, pr.totalVotesCast, index);
+        }
+
+        const isEven = cIdx % 2 === 0;
+        doc.setFillColor(isEven ? 255 : 248, isEven ? 255 : 250, isEven ? 255 : 252);
+        doc.rect(margin, y, pageWidth - margin * 2, rowHeight, 'F');
+
+        doc.setFont('helvetica', cand.isLeading ? 'bold' : 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(...(cand.isLeading ? primaryColor : darkGray));
+
+        doc.text(cand.name, colCandidate, y + 4.8);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(71, 85, 105);
+        doc.text(cand.party, colParty, y + 4.8);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text(cand.votes.toString(), colVotes, y + 4.8);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(71, 85, 105);
+        doc.text(`${cand.percentage}%`, colPct, y + 4.8);
+
+        if (cand.isLeading && cand.votes > 0) {
+          doc.setFillColor(220, 252, 231); // Soft Green
+          doc.setDrawColor(134, 239, 172);
+          doc.roundedRect(colStatus - 1, y + 1, 18, 5, 1, 1, 'FD');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(7);
+          doc.setTextColor(22, 101, 52);
+          doc.text('WINNER / LEAD', colStatus + 1, y + 4.3);
+        } else {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.5);
+          doc.setTextColor(148, 163, 184);
+          doc.text('-', colStatus + 5, y + 4.5);
+        }
+
+        y += rowHeight;
+      });
+    }
 
     // Abstain row if non-zero
     if (pr.abstainCount > 0) {
-      checkPageBreak(rowHeight + 2);
+      const didBreak = checkPageBreak(rowHeight + 2);
+      if (didBreak) {
+        drawTableHeader(pr.position.title, pr.position.category, pr.totalVotesCast, index);
+      }
       doc.setFillColor(254, 243, 199); // Light Amber
       doc.rect(margin, y, pageWidth - margin * 2, rowHeight, 'F');
 
@@ -213,11 +256,11 @@ export const generateElectionPDF = (
       y += rowHeight;
     }
 
-    y += 5; // Spacing after each position block
+    y += 5; // Spacing after position block
   });
 
   // Check overflow for Signatures & Audit Certification Block
-  checkPageBreak(40);
+  checkPageBreak(42);
 
   y += 5;
   doc.setDrawColor(203, 213, 225);
@@ -268,3 +311,4 @@ export const generateElectionPDF = (
   // Save the generated PDF
   doc.save(`CPESG_Election_Results_2026_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
+
