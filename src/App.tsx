@@ -238,36 +238,14 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-6 text-xs text-center">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-left">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-center text-center">
+          <div>
             <p className="font-semibold text-slate-300">
               Computer Engineering Department Commission on Elections &copy; 2026
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
               Official Institutional Voting System • Cryptographic Ledger Verification
             </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-slate-400 text-[11px]">
-            <button onClick={() => openTermsPrivacy('terms')} className="hover:text-cyan-400 transition-colors font-medium">
-              Terms of Service
-            </button>
-            <span>•</span>
-            <button onClick={() => openTermsPrivacy('privacy')} className="hover:text-cyan-400 transition-colors font-medium">
-              Privacy Policy
-            </button>
-            <span>•</span>
-            <button onClick={() => setActiveTab('verify')} className="hover:text-cyan-400 transition-colors">
-              Receipt Audit
-            </button>
-            {!voter && (
-              <>
-                <span>•</span>
-                <button onClick={() => setIsAuthModalOpen(true)} className="hover:text-cyan-400 transition-colors">
-                  Voter Portal
-                </button>
-              </>
-            )}
           </div>
         </div>
       </footer>
