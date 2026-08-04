@@ -1,7 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Position, Candidate, ElectionSettings, Gender, Voter } from '../types';
 import { Settings, ShieldAlert, Key, RefreshCw, Plus, CheckCircle2, AlertCircle, FileText, Camera, Link, Trash2, Image, Pencil, Download, Users, UserX, UserCheck, Search, Filter, CheckSquare, Square, Ban, RotateCcw, AlertTriangle } from 'lucide-react';
-import { signInWithGoogle, loadElectionDataFromFirestore, updateVoterInvalidationInFirestore } from '../lib/firebase';
+import {
+  signInWithGoogle,
+  loadElectionDataFromFirestore,
+  updateVoterInvalidationInFirestore,
+  resetVotesInFirestore,
+  resetDemoInFirestore,
+} from '../lib/firebase';
+import {
+  INITIAL_POSITIONS,
+  INITIAL_CANDIDATES,
+  INITIAL_VOTES,
+  SAMPLE_VOTERS,
+  INITIAL_ELECTION_SETTINGS,
+} from '../data/initialData';
 import { generateElectionPDF } from '../utils/pdfGenerator';
 import { fetchOrCalculateResults } from '../utils/electionResultsHelper';
 
@@ -479,15 +492,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminEmail, adminPin }),
       });
-      const data = await res.json();
-      if (data.success) {
-        setSuccessMsg('Election data successfully reset to clean default state.');
-        onRefreshData();
-        setTimeout(() => setSuccessMsg(null), 3000);
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg('Election data successfully reset to clean default state.');
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 3000);
+          return;
+        }
       }
     } catch {
-      setError('Failed to reset demo.');
+      // Backend unreachable (e.g., on Vercel)
     }
+
+    // Fallback: reset direct in Firestore
+    try {
+      const success = await resetDemoInFirestore(
+        INITIAL_POSITIONS,
+        INITIAL_CANDIDATES,
+        INITIAL_VOTES,
+        SAMPLE_VOTERS,
+        INITIAL_ELECTION_SETTINGS
+      );
+      if (success) {
+        setSuccessMsg('Election data successfully reset to clean default state.');
+        onRefreshData();
+        fetchVoters();
+        setTimeout(() => setSuccessMsg(null), 3000);
+        return;
+      }
+    } catch {
+      // ignore
+    }
+
+    setError('Failed to reset demo.');
   };
 
   const handleResetVotes = async (e?: React.FormEvent) => {
@@ -509,22 +548,61 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           password: resetConfirmInput.trim(),
         }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg('All election votes have been reset to zero. Candidate profiles and positions remain untouched.');
+          setShowResetVotesModal(false);
+          setResetConfirmInput('');
+          onRefreshData();
+          fetchVoters();
+          setTimeout(() => setSuccessMsg(null), 4000);
+          setIsSubmittingAction(false);
+          return;
+        } else {
+          setResetVotesError(data.message || 'Failed to reset votes.');
+          setIsSubmittingAction(false);
+          return;
+        }
+      }
+    } catch {
+      // Backend API unavailable (e.g., static hosting on Vercel)
+    }
+
+    // Fallback: reset votes directly in Firestore & clear local storage voting state
+    try {
+      const success = await resetVotesInFirestore();
+      if (success) {
+        // Clear local storage voter status if stored locally
+        try {
+          const saved = localStorage.getItem('cpe_voter');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            parsed.hasVoted = false;
+            parsed.votedAt = undefined;
+            parsed.receiptHash = undefined;
+            localStorage.setItem('cpe_voter', JSON.stringify(parsed));
+          }
+        } catch {
+          // ignore
+        }
+
         setSuccessMsg('All election votes have been reset to zero. Candidate profiles and positions remain untouched.');
         setShowResetVotesModal(false);
         setResetConfirmInput('');
         onRefreshData();
         fetchVoters();
         setTimeout(() => setSuccessMsg(null), 4000);
-      } else {
-        setResetVotesError(data.message || 'Failed to reset votes.');
+        setIsSubmittingAction(false);
+        return;
       }
     } catch {
-      setResetVotesError('Connection error while resetting votes.');
-    } finally {
-      setIsSubmittingAction(false);
+      // ignore
     }
+
+    setResetVotesError('Failed to reset votes in database.');
+    setIsSubmittingAction(false);
   };
 
   if (!isAuthenticated) {

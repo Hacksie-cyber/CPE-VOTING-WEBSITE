@@ -167,6 +167,61 @@ export const updateVoterInvalidationInFirestore = async (
   return null;
 };
 
+export const resetVotesInFirestore = async () => {
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const currentVoters = Array.isArray(data.voters) ? [...data.voters] : [];
+
+      const resetVoters = currentVoters.map((v: any) => ({
+        ...v,
+        hasVoted: false,
+        votedAt: undefined,
+        receiptHash: undefined,
+        isInvalidated: false,
+        invalidatedReason: undefined,
+      }));
+
+      await setDoc(docRef, {
+        ...data,
+        votes: [],
+        voters: resetVoters,
+        updatedAt: new Date().toISOString(),
+      });
+      return true;
+    }
+  } catch (err) {
+    console.warn('Firestore reset votes error:', err);
+  }
+  return false;
+};
+
+export const resetDemoInFirestore = async (
+  initialPositions: any[],
+  initialCandidates: any[],
+  initialVotes: any[],
+  sampleVoters: any[],
+  initialSettings: any
+) => {
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    await setDoc(docRef, {
+      positions: initialPositions,
+      candidates: initialCandidates,
+      votes: initialVotes,
+      voters: sampleVoters,
+      settings: initialSettings,
+      updatedAt: new Date().toISOString(),
+    });
+    return true;
+  } catch (err) {
+    console.warn('Firestore reset demo error:', err);
+  }
+  return false;
+};
+
 export { signOut };
 export default app;
 
