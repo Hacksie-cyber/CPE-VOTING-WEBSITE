@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PositionResult, VoterTurnoutStats, ElectionSettings } from '../types';
 import { generateElectionPDF } from '../utils/pdfGenerator';
+import { fetchOrCalculateResults } from '../utils/electionResultsHelper';
 import {
   BarChart,
   Bar,
@@ -37,8 +38,7 @@ export const LiveResults: React.FC<LiveResultsProps> = ({ settings }) => {
 
   const fetchResults = async () => {
     try {
-      const res = await fetch('/api/election/results');
-      const data = await res.json();
+      const data = await fetchOrCalculateResults(settings);
       setPositionResults(data.positionResults || []);
       setTurnoutStats(data.turnoutStats || null);
       setLastUpdated(data.lastUpdated || new Date().toISOString());

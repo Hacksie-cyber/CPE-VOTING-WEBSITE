@@ -3,6 +3,7 @@ import { Position, Candidate, ElectionSettings, Gender, Voter } from '../types';
 import { Settings, ShieldAlert, Key, RefreshCw, Plus, CheckCircle2, AlertCircle, FileText, Camera, Link, Trash2, Image, Pencil, Download, Users, UserX, UserCheck, Search, Filter, CheckSquare, Square, Ban, RotateCcw, AlertTriangle } from 'lucide-react';
 import { signInWithGoogle } from '../lib/firebase';
 import { generateElectionPDF } from '../utils/pdfGenerator';
+import { fetchOrCalculateResults } from '../utils/electionResultsHelper';
 
 interface AdminPanelProps {
   settings: ElectionSettings;
@@ -384,8 +385,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const handleDownloadPDF = async () => {
     try {
-      const res = await fetch('/api/election/results');
-      const data = await res.json();
+      const data = await fetchOrCalculateResults(settings);
       generateElectionPDF(
         data.positionResults || [],
         data.turnoutStats || null,

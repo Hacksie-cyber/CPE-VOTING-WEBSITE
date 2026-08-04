@@ -9,7 +9,7 @@ import { BallotConfirmationModal } from './components/BallotConfirmationModal';
 import { VoteReceiptModal } from './components/VoteReceiptModal';
 import { TermsPrivacyModal } from './components/TermsPrivacyModal';
 import { Position, Candidate, Voter, VoteChoices, ElectionSettings } from './types';
-import { INITIAL_ELECTION_SETTINGS } from './data/initialData';
+import { INITIAL_ELECTION_SETTINGS, INITIAL_POSITIONS, INITIAL_CANDIDATES } from './data/initialData';
 import { loadElectionDataFromFirestore, subscribeToElectionData } from './lib/firebase';
 
 export default function App() {
@@ -29,8 +29,8 @@ export default function App() {
   });
 
   // Server Data
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [positions, setPositions] = useState<Position[]>(INITIAL_POSITIONS);
+  const [candidates, setCandidates] = useState<Candidate[]>(INITIAL_CANDIDATES);
   const [settings, setSettings] = useState<ElectionSettings>(INITIAL_ELECTION_SETTINGS);
 
   // User Auth State
