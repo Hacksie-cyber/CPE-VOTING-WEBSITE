@@ -118,6 +118,55 @@ export const saveVoteToFirestoreDirect = async (
   }
 };
 
+export const updateVoterInvalidationInFirestore = async (
+  voterIds: string[],
+  invalidate: boolean,
+  reason?: string
+) => {
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const currentVoters = Array.isArray(data.voters) ? [...data.voters] : [];
+      const currentVotes = Array.isArray(data.votes) ? [...data.votes] : [];
+
+      const updatedVoters = currentVoters.map((v: any) => {
+        if (voterIds.includes(v.id)) {
+          return {
+            ...v,
+            isInvalidated: invalidate,
+            invalidatedReason: invalidate ? reason || 'Flagged by Commission Audit' : undefined,
+          };
+        }
+        return v;
+      });
+
+      const updatedVotes = currentVotes.map((v: any) => {
+        if (voterIds.includes(v.voterId)) {
+          return {
+            ...v,
+            isInvalidated: invalidate,
+            invalidatedReason: invalidate ? reason || 'Flagged by Commission Audit' : undefined,
+          };
+        }
+        return v;
+      });
+
+      await setDoc(docRef, {
+        ...data,
+        voters: updatedVoters,
+        votes: updatedVotes,
+        updatedAt: new Date().toISOString(),
+      });
+      return updatedVoters;
+    }
+  } catch (err) {
+    console.warn('Firestore voter invalidation update note:', err);
+  }
+  return null;
+};
+
 export { signOut };
 export default app;
 

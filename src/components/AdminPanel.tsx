@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Position, Candidate, ElectionSettings, Gender, Voter } from '../types';
 import { Settings, ShieldAlert, Key, RefreshCw, Plus, CheckCircle2, AlertCircle, FileText, Camera, Link, Trash2, Image, Pencil, Download, Users, UserX, UserCheck, Search, Filter, CheckSquare, Square, Ban, RotateCcw, AlertTriangle } from 'lucide-react';
-import { signInWithGoogle } from '../lib/firebase';
+import { signInWithGoogle, loadElectionDataFromFirestore, updateVoterInvalidationInFirestore } from '../lib/firebase';
 import { generateElectionPDF } from '../utils/pdfGenerator';
 import { fetchOrCalculateResults } from '../utils/electionResultsHelper';
 
@@ -46,20 +46,48 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [resetConfirmInput, setResetConfirmInput] = useState<string>('');
   const [resetVotesError, setResetVotesError] = useState<string | null>(null);
 
-  // Fetch voters list from backend
+  // Fetch voters list from backend or Firestore
   const fetchVoters = async () => {
     setLoadingVoters(true);
     try {
       const res = await fetch(`/api/admin/voters?adminEmail=${encodeURIComponent(adminEmail)}&adminPin=${encodeURIComponent(adminPin)}`);
-      const data = await res.json();
-      if (data.success && data.voters) {
-        setVotersList(data.voters);
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success && data.voters) {
+          setVotersList(data.voters);
+          setLoadingVoters(false);
+          return;
+        }
       }
     } catch {
-      console.warn('Failed to load voters list for audit.');
-    } finally {
-      setLoadingVoters(false);
+      // Backend endpoint unavailable (e.g., hosted on Vercel)
     }
+
+    // Fallback: Fetch from Firestore directly
+    try {
+      const fsData = await loadElectionDataFromFirestore();
+      if (fsData && Array.isArray(fsData.voters)) {
+        setVotersList(fsData.voters);
+        setLoadingVoters(false);
+        return;
+      }
+    } catch (fsErr) {
+      console.warn('Failed to load voters list from Firestore:', fsErr);
+    }
+
+    // Check localStorage fallback for active session voter
+    try {
+      const savedVoterRaw = localStorage.getItem('cpe_voter');
+      if (savedVoterRaw) {
+        const savedVoter = JSON.parse(savedVoterRaw);
+        setVotersList([savedVoter]);
+      }
+    } catch {
+      // ignore
+    }
+
+    setLoadingVoters(false);
   };
 
   useEffect(() => {
@@ -74,6 +102,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setError(null);
     setSuccessMsg(null);
 
+    const reasonToUse = customReason || invalidationReason;
+
     try {
       const res = await fetch('/api/admin/voter/invalidate', {
         method: 'POST',
@@ -83,26 +113,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           adminPin,
           voterId: targetVoter.id,
           invalidate,
-          reason: customReason || invalidationReason,
+          reason: reasonToUse,
         }),
       });
 
-      const data = await res.json();
-      if (data.success) {
-        setSuccessMsg(data.message);
-        if (data.voters) setVotersList(data.voters);
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(data.message);
+          if (data.voters) setVotersList(data.voters);
+          onRefreshData();
+          setInvalidatingVoter(null);
+          setInvalidationReason('');
+          setTimeout(() => setSuccessMsg(null), 4000);
+          setIsSubmittingAction(false);
+          return;
+        }
+      }
+    } catch {
+      // API call failed or on Vercel
+    }
+
+    // Fallback direct Firestore update
+    try {
+      const updatedVoters = await updateVoterInvalidationInFirestore([targetVoter.id], invalidate, reasonToUse);
+      if (updatedVoters) {
+        setVotersList(updatedVoters);
+        setSuccessMsg(`Voter ${invalidate ? 'invalidated' : 'restored'} successfully.`);
         onRefreshData();
         setInvalidatingVoter(null);
         setInvalidationReason('');
         setTimeout(() => setSuccessMsg(null), 4000);
-      } else {
-        setError(data.message || 'Failed to update voter status.');
+        setIsSubmittingAction(false);
+        return;
       }
     } catch {
-      setError('Connection error while updating voter status.');
-    } finally {
-      setIsSubmittingAction(false);
+      setError('Failed to update voter status in database.');
     }
+
+    setIsSubmittingAction(false);
   };
 
   // Bulk Voter Invalidate / Restore Handler
@@ -111,6 +161,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setIsSubmittingAction(true);
     setError(null);
     setSuccessMsg(null);
+
+    const reasonToUse = customReason || 'Bulk Commission Audit Action for suspicious activity';
 
     try {
       const res = await fetch('/api/admin/voter/bulk-invalidate', {
@@ -121,25 +173,44 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           adminPin,
           voterIds: selectedVoterIds,
           invalidate,
-          reason: customReason || 'Bulk Commission Audit Action for suspicious activity',
+          reason: reasonToUse,
         }),
       });
 
-      const data = await res.json();
-      if (data.success) {
-        setSuccessMsg(data.message);
-        if (data.voters) setVotersList(data.voters);
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(data.message);
+          if (data.voters) setVotersList(data.voters);
+          setSelectedVoterIds([]);
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 4000);
+          setIsSubmittingAction(false);
+          return;
+        }
+      }
+    } catch {
+      // API call failed or on Vercel
+    }
+
+    // Fallback direct Firestore update for bulk action
+    try {
+      const updatedVoters = await updateVoterInvalidationInFirestore(selectedVoterIds, invalidate, reasonToUse);
+      if (updatedVoters) {
+        setVotersList(updatedVoters);
+        setSuccessMsg(`Bulk voter ${invalidate ? 'invalidation' : 'restoration'} applied.`);
         setSelectedVoterIds([]);
         onRefreshData();
         setTimeout(() => setSuccessMsg(null), 4000);
-      } else {
-        setError(data.message || 'Failed to carry out bulk voter update.');
+        setIsSubmittingAction(false);
+        return;
       }
     } catch {
-      setError('Connection error executing bulk voter update.');
-    } finally {
-      setIsSubmittingAction(false);
+      setError('Failed to execute bulk voter update.');
     }
+
+    setIsSubmittingAction(false);
   };
 
   const handleGoogleAdminLogin = async () => {
