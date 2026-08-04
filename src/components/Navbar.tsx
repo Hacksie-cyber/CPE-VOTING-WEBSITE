@@ -70,14 +70,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Audit Receipt</span>
             </button>
 
-            <button
-              onClick={() => onOpenTermsPrivacy?.('terms')}
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all"
-            >
-              <FileText className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Terms & Privacy</span>
-            </button>
-
             {isAdmin && (
               <>
                 <button

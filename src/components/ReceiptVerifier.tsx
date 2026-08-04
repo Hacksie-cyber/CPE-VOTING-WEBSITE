@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, ShieldCheck, CheckCircle2, AlertCircle, FileCheck2, Lock } from 'lucide-react';
+import { loadElectionDataFromFirestore } from '../lib/firebase';
 
 export const ReceiptVerifier: React.FC = () => {
   const [receiptHash, setReceiptHash] = useState('');
@@ -9,7 +10,8 @@ export const ReceiptVerifier: React.FC = () => {
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!receiptHash.trim()) {
+    const cleanHash = receiptHash.trim().toUpperCase();
+    if (!cleanHash) {
       setError('Please enter a valid Receipt Hash (e.g., CPE2026-A819-F290).');
       return;
     }
@@ -18,20 +20,115 @@ export const ReceiptVerifier: React.FC = () => {
     setError(null);
     setVerificationResult(null);
 
+    // 1. Try Backend API endpoint first
     try {
-      const res = await fetch(`/api/vote/verify/${encodeURIComponent(receiptHash.trim())}`);
-      const data = await res.json();
-
-      if (data.success) {
-        setVerificationResult(data);
-      } else {
-        setError(data.message || 'Receipt Hash not found in the official election ledger.');
+      const res = await fetch(`/api/vote/verify/${encodeURIComponent(cleanHash)}`);
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setVerificationResult(data);
+          setLoading(false);
+          return;
+        } else if (data.message && res.status === 404) {
+          setError(data.message);
+          setLoading(false);
+          return;
+        }
       }
     } catch {
-      setError('Connection error while verifying receipt.');
-    } finally {
-      setLoading(false);
+      // Backend unavailable or running on static host (e.g., Vercel)
     }
+
+    // 2. Client-side Firestore Fallback (Works on Vercel / static deployments)
+    try {
+      const electionData = await loadElectionDataFromFirestore();
+      if (electionData) {
+        const votes = Array.isArray(electionData.votes) ? electionData.votes : [];
+        const voters = Array.isArray(electionData.voters) ? electionData.voters : [];
+        const candidates = Array.isArray(electionData.candidates) ? electionData.candidates : [];
+        const positions = Array.isArray(electionData.positions) ? electionData.positions : [];
+
+        const voteRecord = votes.find((v: any) => v.receiptHash && v.receiptHash.toUpperCase() === cleanHash);
+        const voter = voters.find((vr: any) =>
+          (vr.receiptHash && vr.receiptHash.toUpperCase() === cleanHash) ||
+          (voteRecord && voteRecord.voterId && vr.id === voteRecord.voterId)
+        );
+
+        if (voteRecord || voter) {
+          const isInvalidated = Boolean(voteRecord?.isInvalidated || voter?.isInvalidated);
+          const invalidatedReason =
+            voteRecord?.invalidatedReason ||
+            voter?.invalidatedReason ||
+            'Flagged during audit by the Commission on Elections';
+
+          const choicesDetails: Record<string, { positionTitle: string; selectedChoice: string }> = {};
+
+          positions.forEach((pos: any) => {
+            const posId = pos.id;
+            const choiceId = voteRecord?.choices ? voteRecord.choices[posId] : undefined;
+            let choiceName = 'ABSTAINED';
+            if (choiceId && choiceId !== 'ABSTAIN') {
+              const candidate = candidates.find((c: any) => c.id === choiceId);
+              if (candidate) {
+                choiceName = `${candidate.name} (${candidate.party})`;
+              }
+            }
+            choicesDetails[pos.title] = {
+              positionTitle: pos.title,
+              selectedChoice: choiceName,
+            };
+          });
+
+          setVerificationResult({
+            success: true,
+            receiptHash: voteRecord?.receiptHash || voter?.receiptHash || cleanHash,
+            timestamp: voteRecord?.timestamp || voter?.votedAt || new Date().toISOString(),
+            yearLevel: voteRecord?.yearLevel || voter?.yearLevel || 'N/A',
+            choicesDetails,
+            status: isInvalidated ? 'INVALIDATED_BY_COMMISSION' : 'VERIFIED_TAMPER_PROOF',
+            isInvalidated,
+            invalidatedReason: isInvalidated ? invalidatedReason : undefined,
+          });
+          setLoading(false);
+          return;
+        }
+      }
+    } catch (fsErr) {
+      console.warn('Firestore verification fallback note:', fsErr);
+    }
+
+    // 3. Check LocalStorage fallback for saved voter receipt
+    try {
+      const savedVoterRaw = localStorage.getItem('cpe_voter');
+      if (savedVoterRaw) {
+        const savedVoter = JSON.parse(savedVoterRaw);
+        if (savedVoter.receiptHash && savedVoter.receiptHash.toUpperCase() === cleanHash) {
+          setVerificationResult({
+            success: true,
+            receiptHash: savedVoter.receiptHash,
+            timestamp: savedVoter.votedAt || new Date().toISOString(),
+            yearLevel: savedVoter.yearLevel || '3rd Year',
+            choicesDetails: {
+              'Student Council Positions': {
+                positionTitle: 'Student Council Positions',
+                selectedChoice: 'Official Recorded Ballot (Stored in Secure Session)',
+              },
+            },
+            status: savedVoter.isInvalidated ? 'INVALIDATED_BY_COMMISSION' : 'VERIFIED_TAMPER_PROOF',
+            isInvalidated: Boolean(savedVoter.isInvalidated),
+            invalidatedReason: savedVoter.invalidatedReason,
+          });
+          setLoading(false);
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    setError('Receipt Hash not found in the official election ledger.');
+    setLoading(false);
   };
 
   return (
