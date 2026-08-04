@@ -1,13 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="16" fill="#0b1329"/>
-  <rect x="2" y="2" width="60" height="60" rx="14" stroke="#06b6d4" stroke-width="2" stroke-opacity="0.5"/>
-  <!-- Circuit & Shield Theme -->
-  <path d="M32 11L15 19.5V32C15 43.2 22.3 53 32 56.5C41.7 53 49 43.2 49 32V19.5L32 11Z" fill="#1e293b" stroke="#38bdf8" stroke-width="2.5" stroke-linejoin="round"/>
-  <!-- Glowing Checkmark -->
-  <path d="M23 32.5L29 38.5L41 24.5" stroke="#22d3ee" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Circuit Dots -->
-  <circle cx="32" cy="11" r="2.5" fill="#22d3ee"/>
-  <circle cx="15" cy="19.5" r="2" fill="#38bdf8"/>
-  <circle cx="49" cy="19.5" r="2" fill="#38bdf8"/>
-  <circle cx="32" cy="56.5" r="2" fill="#06b6d4"/>
+  <defs>
+    <linearGradient id="glow-border" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00d2ff"/>
+      <stop offset="45%" stop-color="#0055ff"/>
+      <stop offset="100%" stop-color="#7000ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark Squircle Canvas -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#030712" stroke="url(#glow-border)" stroke-width="3.5"/>
+
+  <!-- Microchip CPU Pins -->
+  <!-- Top Pins -->
+  <path d="M24 16v5 M32 16v5 M40 16v5" stroke="#00e5ff" stroke-width="3" stroke-linecap="round"/>
+  <!-- Bottom Pins -->
+  <path d="M24 43v5 M32 43v5 M40 43v5" stroke="#00e5ff" stroke-width="3" stroke-linecap="round"/>
+  <!-- Left Pins -->
+  <path d="M16 24h5 M16 32h5 M16 40h5" stroke="#00e5ff" stroke-width="3" stroke-linecap="round"/>
+  <!-- Right Pins -->
+  <path d="M43 24h5 M43 32h5 M43 40h5" stroke="#00e5ff" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Outer Chip Outline -->
+  <rect x="21" y="21" width="22" height="22" rx="3" stroke="#00e5ff" stroke-width="3.5" fill="none"/>
+
+  <!-- Inner Chip Core -->
+  <rect x="28" y="28" width="8" height="8" rx="1.5" stroke="#00e5ff" stroke-width="3" fill="none"/>
 </svg>
