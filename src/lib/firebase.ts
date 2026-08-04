@@ -133,22 +133,32 @@ export const updateVoterInvalidationInFirestore = async (
 
       const updatedVoters = currentVoters.map((v: any) => {
         if (voterIds.includes(v.id)) {
-          return {
+          const newV = {
             ...v,
             isInvalidated: invalidate,
-            invalidatedReason: invalidate ? reason || 'Flagged by Commission Audit' : undefined,
           };
+          if (invalidate) {
+            newV.invalidatedReason = reason || 'Flagged by Commission Audit';
+          } else {
+            delete newV.invalidatedReason;
+          }
+          return newV;
         }
         return v;
       });
 
       const updatedVotes = currentVotes.map((v: any) => {
         if (voterIds.includes(v.voterId)) {
-          return {
+          const newV = {
             ...v,
             isInvalidated: invalidate,
-            invalidatedReason: invalidate ? reason || 'Flagged by Commission Audit' : undefined,
           };
+          if (invalidate) {
+            newV.invalidatedReason = reason || 'Flagged by Commission Audit';
+          } else {
+            delete newV.invalidatedReason;
+          }
+          return newV;
         }
         return v;
       });
@@ -175,14 +185,18 @@ export const resetVotesInFirestore = async () => {
       const data = snap.data();
       const currentVoters = Array.isArray(data.voters) ? [...data.voters] : [];
 
-      const resetVoters = currentVoters.map((v: any) => ({
-        ...v,
-        hasVoted: false,
-        votedAt: undefined,
-        receiptHash: undefined,
-        isInvalidated: false,
-        invalidatedReason: undefined,
-      }));
+      const resetVoters = currentVoters.map((v: any) => {
+        const newV = {
+          ...v,
+          hasVoted: false,
+          isInvalidated: false,
+        };
+        delete newV.votedAt;
+        delete newV.receiptHash;
+        delete newV.invalidatedReason;
+        delete newV.invalidatedAt;
+        return newV;
+      });
 
       await setDoc(docRef, {
         ...data,
@@ -190,6 +204,13 @@ export const resetVotesInFirestore = async () => {
         voters: resetVoters,
         updatedAt: new Date().toISOString(),
       });
+      return true;
+    } else {
+      await setDoc(docRef, {
+        votes: [],
+        voters: [],
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
       return true;
     }
   } catch (err) {
