@@ -289,6 +289,32 @@ export const updateSettingsInFirestore = async (newSettings: any) => {
   return false;
 };
 
+export const deleteVoterInFirestore = async (voterId: string) => {
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const currentVoters = Array.isArray(data.voters) ? data.voters : [];
+      const currentVotes = Array.isArray(data.votes) ? data.votes : [];
+
+      const updatedVoters = currentVoters.filter((v: any) => v.id !== voterId);
+      const updatedVotes = currentVotes.filter((v: any) => v.voterId !== voterId);
+
+      await setDoc(docRef, {
+        ...data,
+        voters: updatedVoters,
+        votes: updatedVotes,
+        updatedAt: new Date().toISOString(),
+      });
+      return updatedVoters;
+    }
+  } catch (err) {
+    console.warn('Firestore voter delete error:', err);
+  }
+  return null;
+};
+
 export { signOut };
 export default app;
 

@@ -1056,6 +1056,58 @@ async function startServer() {
     });
   });
 
+  // Admin Delete Voter Account (Account Duplication Cleanup)
+  app.post('/api/admin/voter/delete', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+
+    await loadStateFromFirestore();
+    const { voterId } = req.body;
+
+    if (!voterId) {
+      return res.status(400).json({ success: false, message: 'voterId is required.' });
+    }
+
+    const cleanId = voterId.toString().trim().toUpperCase();
+    const targetVoter = voters.find(
+      (v) => (v.id && v.id.toUpperCase() === cleanId) || (v.email && v.email.toUpperCase() === cleanId)
+    );
+
+    if (!targetVoter) {
+      return res.status(404).json({ success: false, message: 'Voter record not found.' });
+    }
+
+    const targetId = targetVoter.id;
+    const targetEmail = targetVoter.email;
+    const targetReceipt = targetVoter.receiptHash;
+
+    // Filter out voter
+    voters = voters.filter(
+      (v) =>
+        v.id.toUpperCase() !== targetId.toUpperCase() &&
+        (!targetEmail || !v.email || v.email.toLowerCase() !== targetEmail.toLowerCase())
+    );
+
+    // Filter out associated votes
+    votes = votes.filter(
+      (v) =>
+        v.voterId !== targetId &&
+        (!targetReceipt || v.receiptHash !== targetReceipt)
+    );
+
+    await saveStateToFirestore();
+
+    const { positionResults, turnoutStats } = calculateResults();
+    const actualVoters = voters.filter(isActualAccount);
+
+    res.json({
+      success: true,
+      message: `Voter account "${targetVoter.name}" deleted successfully.`,
+      voters: actualVoters,
+      turnoutStats,
+      positionResults,
+    });
+  });
+
 
   // Gemini AI Candidate Comparison Assistant
   app.post('/api/ai/compare-candidates', async (req, res) => {

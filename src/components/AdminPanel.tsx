@@ -10,6 +10,7 @@ import {
   saveCandidateInFirestore,
   deleteCandidateInFirestore,
   updateSettingsInFirestore,
+  deleteVoterInFirestore,
 } from '../lib/firebase';
 import {
   INITIAL_POSITIONS,
@@ -166,6 +167,60 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       }
     } catch {
       setError('Failed to update voter status in database.');
+    }
+
+    setIsSubmittingAction(false);
+  };
+
+  // Delete Single Voter Handler (Account Duplication Cleanup)
+  const handleDeleteVoter = async (targetVoter: Voter) => {
+    if (!window.confirm(`Are you sure you want to delete voter account "${targetVoter.name}" (${targetVoter.email})? This action cannot be undone.`)) {
+      return;
+    }
+    setIsSubmittingAction(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const res = await fetch('/api/admin/voter/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminEmail,
+          adminPin,
+          voterId: targetVoter.id,
+        }),
+      });
+
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(`Voter account "${targetVoter.name}" deleted.`);
+          if (data.voters) setVotersList(data.voters);
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 4000);
+          setIsSubmittingAction(false);
+          return;
+        }
+      }
+    } catch {
+      // Backend API call failed or on Vercel static host
+    }
+
+    // Fallback direct Firestore deletion
+    try {
+      const updatedVoters = await deleteVoterInFirestore(targetVoter.id);
+      if (updatedVoters) {
+        setVotersList(updatedVoters);
+        setSuccessMsg(`Student voter account "${targetVoter.name}" permanently deleted.`);
+        onRefreshData();
+        setTimeout(() => setSuccessMsg(null), 4000);
+        setIsSubmittingAction(false);
+        return;
+      }
+    } catch {
+      setError('Failed to delete voter account from database.');
     }
 
     setIsSubmittingAction(false);
@@ -1335,28 +1390,39 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               )}
                             </td>
                             <td className="py-3.5 px-4 text-right">
-                              {voter.isInvalidated ? (
+                              <div className="flex items-center justify-end space-x-2">
+                                {voter.isInvalidated ? (
+                                  <button
+                                    onClick={() => handleToggleVoterInvalidation(voter, false)}
+                                    disabled={isSubmittingAction}
+                                    className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all inline-flex items-center space-x-1"
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span>Restore Vote</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setInvalidatingVoter(voter);
+                                      setInvalidationReason('Suspicious account activity / unverified credentials');
+                                    }}
+                                    disabled={isSubmittingAction}
+                                    className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-bold transition-all inline-flex items-center space-x-1"
+                                  >
+                                    <Ban className="w-3.5 h-3.5 text-rose-400" />
+                                    <span>Invalidate</span>
+                                  </button>
+                                )}
                                 <button
-                                  onClick={() => handleToggleVoterInvalidation(voter, false)}
+                                  onClick={() => handleDeleteVoter(voter)}
                                   disabled={isSubmittingAction}
-                                  className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all inline-flex items-center space-x-1"
+                                  className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 border border-slate-700 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 text-xs font-bold transition-all inline-flex items-center space-x-1"
+                                  title="Delete Account (Duplicate Account Cleanup)"
                                 >
-                                  <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
-                                  <span>Restore Vote</span>
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span className="hidden xl:inline text-[11px]">Delete</span>
                                 </button>
-                              ) : (
-                                <button
-                                  onClick={() => {
-                                    setInvalidatingVoter(voter);
-                                    setInvalidationReason('Suspicious account activity / unverified credentials');
-                                  }}
-                                  disabled={isSubmittingAction}
-                                  className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-bold transition-all inline-flex items-center space-x-1"
-                                >
-                                  <Ban className="w-3.5 h-3.5 text-rose-400" />
-                                  <span>Invalidate</span>
-                                </button>
-                              )}
+                              </div>
                             </td>
                           </tr>
                         );
