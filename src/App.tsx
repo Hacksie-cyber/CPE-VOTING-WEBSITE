@@ -98,24 +98,39 @@ export default function App() {
         if (Array.isArray(data.candidates)) setCandidates(data.candidates);
         if (data.settings) setSettings(data.settings);
 
-        if (Array.isArray(data.voters) && voter) {
-          const normName = voter.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
-          const match = data.voters.find(
-            (v: Voter) =>
-              v.id.toUpperCase() === voter.id.toUpperCase() ||
-              (v.email && voter.email && v.email.toLowerCase() === voter.email.toLowerCase()) ||
-              (normName.length > 2 && v.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ') === normName)
-          );
-          if (match && match.hasVoted && !voter.hasVoted) {
-            const updated: Voter = {
-              ...voter,
-              hasVoted: true,
-              votedAt: match.votedAt || voter.votedAt,
-              receiptHash: match.receiptHash || voter.receiptHash,
-            };
-            setVoter(updated);
-            localStorage.setItem('cpe_voter', JSON.stringify(updated));
-          }
+        if (Array.isArray(data.voters)) {
+          setVoter((prevVoter) => {
+            if (!prevVoter) return prevVoter;
+            const normName = prevVoter.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+            const match = data.voters.find(
+              (v: Voter) =>
+                v.id.toUpperCase() === prevVoter.id.toUpperCase() ||
+                (v.email && prevVoter.email && v.email.toLowerCase() === prevVoter.email.toLowerCase()) ||
+                (normName.length > 2 && v.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ') === normName)
+            );
+            if (match) {
+              const hasVoted = Boolean(match.hasVoted);
+              const isInvalidated = Boolean(match.isInvalidated);
+              if (
+                prevVoter.hasVoted !== hasVoted ||
+                prevVoter.receiptHash !== match.receiptHash ||
+                prevVoter.isInvalidated !== isInvalidated
+              ) {
+                const updated: Voter = {
+                  ...prevVoter,
+                  hasVoted,
+                  votedAt: match.votedAt,
+                  receiptHash: match.receiptHash,
+                  isInvalidated,
+                  invalidatedReason: match.invalidatedReason,
+                  invalidatedAt: match.invalidatedAt,
+                };
+                localStorage.setItem('cpe_voter', JSON.stringify(updated));
+                return updated;
+              }
+            }
+            return prevVoter;
+          });
         }
       }
     });

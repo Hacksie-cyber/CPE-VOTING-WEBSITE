@@ -425,8 +425,8 @@ async function startServer() {
     // Find if an account already exists by email, student ID, OR matching normalized full name
     let voter = voters.find(
       (v) =>
-        v.email.toLowerCase() === cleanEmail ||
-        v.id.toUpperCase() === cleanStudentId ||
+        (v.email && v.email.toLowerCase() === cleanEmail) ||
+        (v.id && v.id.toUpperCase() === cleanStudentId) ||
         (normName.length > 2 && normalizeName(v.name) === normName)
     );
 
@@ -510,7 +510,7 @@ async function startServer() {
     // Find account by email OR by normalized full name
     let voter = voters.find(
       (v) =>
-        v.email.toLowerCase() === cleanEmail ||
+        (v.email && v.email.toLowerCase() === cleanEmail) ||
         (normName.length > 2 && normalizeName(v.name) === normName)
     );
 
@@ -888,11 +888,11 @@ async function startServer() {
     // Reset voter voting status
     voters.forEach((v) => {
       v.hasVoted = false;
-      v.receiptHash = undefined;
-      v.votedAt = undefined;
+      delete v.receiptHash;
+      delete v.votedAt;
       v.isInvalidated = false;
-      v.invalidatedReason = undefined;
-      v.invalidatedAt = undefined;
+      delete v.invalidatedReason;
+      delete v.invalidatedAt;
     });
 
     await saveStateToFirestore();
@@ -938,7 +938,7 @@ async function startServer() {
 
     const cleanId = voterId.toString().trim();
     const targetVoter = voters.find(
-      (v) => v.id.toUpperCase() === cleanId.toUpperCase() || v.email.toLowerCase() === cleanId.toLowerCase() || (v.receiptHash && v.receiptHash.toUpperCase() === cleanId.toUpperCase())
+      (v) => (v.id && v.id.toUpperCase() === cleanId.toUpperCase()) || (v.email && v.email.toLowerCase() === cleanId.toLowerCase()) || (v.receiptHash && v.receiptHash.toUpperCase() === cleanId.toUpperCase())
     );
 
     if (!targetVoter) {
@@ -1012,7 +1012,7 @@ async function startServer() {
     voterIds.forEach((idStr) => {
       const cleanId = idStr.toString().trim().toUpperCase();
       const target = voters.find(
-        (v) => v.id.toUpperCase() === cleanId || v.email.toUpperCase() === cleanId || (v.receiptHash && v.receiptHash.toUpperCase() === cleanId)
+        (v) => (v.id && v.id.toUpperCase() === cleanId) || (v.email && v.email.toUpperCase() === cleanId) || (v.receiptHash && v.receiptHash.toUpperCase() === cleanId)
       );
 
       if (target) {

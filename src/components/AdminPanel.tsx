@@ -40,6 +40,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [selectedVoterIds, setSelectedVoterIds] = useState<string[]>([]);
   const [isSubmittingAction, setIsSubmittingAction] = useState<boolean>(false);
 
+  // Reset Votes Modal State
+  const [showResetVotesModal, setShowResetVotesModal] = useState<boolean>(false);
+  const [resetConfirmInput, setResetConfirmInput] = useState<string>('');
+  const [resetVotesError, setResetVotesError] = useState<string | null>(null);
+
   // Fetch voters list from backend
   const fetchVoters = async () => {
     setLoadingVoters(true);
@@ -414,6 +419,43 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
+  const handleResetVotes = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (resetConfirmInput.trim() !== 'confirm') {
+      setResetVotesError('Please type "confirm" to confirm resetting all votes.');
+      return;
+    }
+    setIsSubmittingAction(true);
+    setResetVotesError(null);
+
+    try {
+      const res = await fetch('/api/admin/reset-votes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminEmail,
+          adminPin,
+          password: resetConfirmInput.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMsg('All election votes have been reset to zero. Candidate profiles and positions remain untouched.');
+        setShowResetVotesModal(false);
+        setResetConfirmInput('');
+        onRefreshData();
+        fetchVoters();
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        setResetVotesError(data.message || 'Failed to reset votes.');
+      }
+    } catch {
+      setResetVotesError('Connection error while resetting votes.');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="max-w-md mx-auto my-12 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-slate-100">
@@ -643,11 +685,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </button>
 
                 <button
-                  onClick={handleResetDemo}
-                  className="w-full bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 font-bold p-3 rounded-xl text-xs flex items-center justify-center space-x-2 transition-colors"
+                  onClick={() => {
+                    setResetConfirmInput('');
+                    setResetVotesError(null);
+                    setShowResetVotesModal(true);
+                  }}
+                  className="w-full bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 font-bold p-3 rounded-xl text-xs flex items-center justify-center space-x-2 transition-colors shadow-sm hover:shadow-rose-950/50"
                 >
-                  <RefreshCw className="w-4 h-4" />
-                  <span>Reset Election Data to Sample State</span>
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Reset All Votes (Keep Candidates)</span>
+                </button>
+
+                <button
+                  onClick={handleResetDemo}
+                  className="w-full bg-slate-800/60 border border-slate-700/50 text-slate-400 hover:bg-slate-800 hover:text-slate-300 font-medium p-2.5 rounded-xl text-xs flex items-center justify-center space-x-2 transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Full Reset to Sample Data</span>
                 </button>
               </div>
             </div>
@@ -1430,6 +1484,90 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold"
                 >
                   Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Votes Confirmation Modal */}
+      {showResetVotesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-rose-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-100">
+            <button
+              onClick={() => {
+                setShowResetVotesModal(false);
+                setResetConfirmInput('');
+                setResetVotesError(null);
+              }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 text-sm font-bold"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-100">Reset All Election Votes</h3>
+                <p className="text-xs text-rose-400 font-semibold">Danger Zone • Permanent Action</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed mb-4">
+              This action will permanently delete all recorded votes and set all voter statuses back to zero. <strong className="text-white">Candidates and positions will NOT be deleted.</strong>
+            </p>
+
+            {resetVotesError && (
+              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{resetVotesError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleResetVotes} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  To confirm vote reset, please type <span className="font-mono text-rose-400 font-bold bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-800">confirm</span> below:
+                </label>
+                <input
+                  type="text"
+                  value={resetConfirmInput}
+                  onChange={(e) => {
+                    setResetConfirmInput(e.target.value);
+                    if (resetVotesError) setResetVotesError(null);
+                  }}
+                  placeholder="type confirm"
+                  autoFocus
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 text-xs font-mono focus:outline-none focus:border-rose-500"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowResetVotesModal(false);
+                    setResetConfirmInput('');
+                    setResetVotesError(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetConfirmInput.trim() !== 'confirm' || isSubmittingAction}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 transition-all ${
+                    resetConfirmInput.trim() === 'confirm' && !isSubmittingAction
+                      ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-900/40 cursor-pointer'
+                      : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
+                  }`}
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>{isSubmittingAction ? 'Resetting Votes...' : 'Confirm Reset Votes'}</span>
                 </button>
               </div>
             </form>
