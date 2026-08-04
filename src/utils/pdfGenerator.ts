@@ -92,10 +92,9 @@ export const generateElectionPDF = (
     doc.setTextColor(...darkGray);
 
     doc.text('CANDIDATE NAME', margin + 4, y + 4);
-    doc.text('PARTY / ALLIANCE', margin + 70, y + 4);
-    doc.text('VOTES', margin + 120, y + 4);
-    doc.text('PERCENTAGE', margin + 145, y + 4);
-    doc.text('STATUS', margin + 168, y + 4);
+    doc.text('PARTY / ALLIANCE', margin + 75, y + 4);
+    doc.text('VOTES', margin + 135, y + 4);
+    doc.text('STATUS', margin + 160, y + 4);
 
     y += 6;
   };
@@ -126,11 +125,11 @@ export const generateElectionPDF = (
   doc.text(`Total Registered Voters: ${totalReg}`, margin + 65, y + 13);
   doc.text(`Turnout Percentage: ${pct}%`, margin + 125, y + 13);
 
-  // Year level breakdown
+  // Year level voted count
   if (turnoutStats?.byYearLevel) {
-    const yrStr = turnoutStats.byYearLevel.map(yl => `${yl.yearLevel}: ${yl.voted}/${yl.registered} (${yl.percentage}%)`).join('   |   ');
+    const yrStr = turnoutStats.byYearLevel.map(yl => `${yl.yearLevel}: ${yl.voted}`).join('   |   ');
     doc.setFontSize(8);
-    doc.text(`Year Level Breakdown:   ${yrStr}`, margin + 5, y + 20);
+    doc.text(`Voted per Year Level:   ${yrStr}`, margin + 5, y + 20);
   }
 
   y += 33;
@@ -164,10 +163,9 @@ export const generateElectionPDF = (
     drawTableHeader(pr.position.title, pr.position.category, pr.totalVotesCast, index);
 
     const colCandidate = margin + 4;
-    const colParty = margin + 70;
-    const colVotes = margin + 120;
-    const colPct = margin + 145;
-    const colStatus = margin + 168;
+    const colParty = margin + 75;
+    const colVotes = margin + 135;
+    const colStatus = margin + 160;
 
     // If no candidates registered for position
     if (pr.candidates.length === 0) {
@@ -179,7 +177,6 @@ export const generateElectionPDF = (
       doc.text('No registered candidates for this position', colCandidate, y + 4.8);
       doc.text('-', colParty, y + 4.8);
       doc.text('0', colVotes, y + 4.8);
-      doc.text('0%', colPct, y + 4.8);
       doc.text('-', colStatus + 5, y + 4.8);
       y += rowHeight;
     } else {
@@ -209,10 +206,6 @@ export const generateElectionPDF = (
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(...primaryColor);
         doc.text(cand.votes.toString(), colVotes, y + 4.8);
-
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(71, 85, 105);
-        doc.text(`${cand.percentage}%`, colPct, y + 4.8);
 
         if (cand.isLeading && cand.votes > 0) {
           doc.setFillColor(220, 252, 231); // Soft Green
@@ -248,9 +241,6 @@ export const generateElectionPDF = (
       doc.text('Abstain Ballots', colCandidate, y + 4.8);
       doc.text('Neutral / Non-vote', colParty, y + 4.8);
       doc.text(pr.abstainCount.toString(), colVotes, y + 4.8);
-
-      const abstainPct = parseFloat(((pr.abstainCount / (pr.totalVotesCast || 1)) * 100).toFixed(1));
-      doc.text(`${abstainPct}%`, colPct, y + 4.8);
       doc.text('-', colStatus + 5, y + 4.8);
 
       y += rowHeight;
