@@ -348,7 +348,7 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
                         src={cand.avatarUrl}
                         alt={cand.name}
                         referrerPolicy="no-referrer"
-                        className="w-44 h-52 sm:w-48 sm:h-56 rounded-2xl object-cover ring-4 ring-slate-800/90 border-2 border-slate-700 shadow-2xl group-hover:ring-cyan-500/50"
+                        className="w-32 h-36 sm:w-36 sm:h-44 rounded-2xl object-cover ring-4 ring-slate-800/90 border-2 border-slate-700 shadow-2xl group-hover:ring-cyan-500/50"
                       />
                     </div>
                     {cand.nickname && (

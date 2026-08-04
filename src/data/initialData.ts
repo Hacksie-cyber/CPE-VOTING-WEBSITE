@@ -50,13 +50,6 @@ export const INITIAL_POSITIONS: Position[] = [
     category: 'Department Ambassadors',
     order: 7,
   },
-  {
-    id: 'escort',
-    title: 'Escort',
-    description: 'Department Ambassador & Escort. Represents the Computer Engineering Department alongside the Muse in university pageants, sports meets, and official events.',
-    category: 'Department Ambassadors',
-    order: 8,
-  },
 ];
 
 export const INITIAL_CANDIDATES: Candidate[] = [
@@ -260,45 +253,6 @@ export const INITIAL_CANDIDATES: Candidate[] = [
     manifesto: 'Proudly representing the beauty, intellect, and leadership of Computer Engineering students.',
     bio: '3rd Year CPE student and cultural ambassador.',
     achievements: ['College Pageant Ambassador', 'Student Council Volunteer']
-  },
-
-  // Escort Candidates
-  {
-    id: 'cand_escort_1',
-    positionId: 'escort',
-    name: 'Christian Vance',
-    nickname: 'Ian',
-    party: 'Progressive CPE Alliance',
-    yearLevel: '3rd Year',
-    gender: 'Male',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80',
-    platformHeading: 'Representing CPE Department Pride, Sportsmanship, and Goodwill',
-    platformPoints: [
-      'Partner with Muse in university pageant & departmental outreach events.',
-      'Organize sports & e-sports tournaments for CPE students.',
-      'Promote active lifestyle and student camaraderie.'
-    ],
-    manifesto: 'Serving as the official Escort to bring honor, sportsmanship, and pride to the Computer Engineering department.',
-    bio: '3rd Year CPE student, athlete and student council ambassador.',
-    achievements: ['Department Sports Captain 2025', 'PUP Mascot & Goodwill Team Member']
-  },
-  {
-    id: 'cand_escort_2',
-    positionId: 'escort',
-    name: 'Kevin Ocampo',
-    nickname: 'Kev',
-    party: 'Tech Innovation Coalition',
-    yearLevel: '2nd Year',
-    gender: 'Male',
-    avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&auto=format&fit=crop&q=80',
-    platformHeading: 'Fostering Department Spirit & Campus Unity',
-    platformPoints: [
-      'Promote inclusive participation in university cultural & athletic activities.',
-      'Co-organize department sports meets and team building activities.'
-    ],
-    manifesto: 'Bringing enthusiasm, teamwork, and strong representation to the CPE student body.',
-    bio: '2nd Year CPE student active in campus athletics and community service.',
-    achievements: ['CPE Basketball Team Captain', 'Varsity Athlete']
   }
 ];
 
@@ -333,8 +287,7 @@ export const INITIAL_VOTES: VoteRecord[] = [
       treas: 'cand_treas_1',
       auditor: 'cand_auditor_1',
       pio: 'cand_pio_1',
-      muse: 'cand_muse_1',
-      escort: 'cand_escort_1'
+      muse: 'cand_muse_1'
     }
   },
   {
@@ -350,8 +303,7 @@ export const INITIAL_VOTES: VoteRecord[] = [
       treas: 'cand_treas_1',
       auditor: 'cand_auditor_1',
       pio: 'cand_pio_1',
-      muse: 'cand_muse_1',
-      escort: 'cand_escort_2'
+      muse: 'cand_muse_1'
     }
   },
   {
@@ -367,8 +319,7 @@ export const INITIAL_VOTES: VoteRecord[] = [
       treas: 'cand_treas_1',
       auditor: 'cand_auditor_1',
       pio: 'cand_pio_1',
-      muse: 'cand_muse_1',
-      escort: 'cand_escort_1'
+      muse: 'cand_muse_1'
     }
   },
   {
@@ -384,8 +335,7 @@ export const INITIAL_VOTES: VoteRecord[] = [
       treas: 'cand_treas_1',
       auditor: 'cand_auditor_1',
       pio: 'cand_pio_1',
-      muse: 'cand_muse_1',
-      escort: 'cand_escort_1'
+      muse: 'cand_muse_1'
     }
   }
 ];
