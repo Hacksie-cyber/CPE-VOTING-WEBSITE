@@ -283,80 +283,105 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                           <div
                             key={cand.id}
                             onClick={() => handleCandidateClick(activePosition.id, cand)}
-                            className={`relative rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between group ${
+                            className={`relative rounded-2xl overflow-hidden border transition-all cursor-pointer flex flex-col justify-between group ${
                               isSelected
-                                ? 'bg-slate-950 border-cyan-500 ring-2 ring-cyan-500/30 shadow-xl shadow-cyan-500/10'
+                                ? 'bg-slate-950 border-cyan-400 ring-2 ring-cyan-500/40 shadow-2xl shadow-cyan-500/15'
                                 : isUnavailable
                                 ? 'bg-slate-950/40 border-amber-500/30 opacity-60 hover:opacity-85'
-                                : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-950/90'
+                                : 'bg-slate-900/90 border-slate-800 hover:border-cyan-500/50 hover:bg-slate-900 shadow-xl'
                             }`}
                           >
-                            <div>
-                              {/* Top Radio / Unavailable Indicator */}
-                              <div className="flex items-start justify-end mb-3">
+                            {/* Profile Card Header Banner */}
+                            <div className="h-20 w-full bg-gradient-to-r from-cyan-950/60 via-slate-800 to-blue-950/60 border-b border-slate-800/80 relative">
+                              {/* Selection Indicator */}
+                              <div className="absolute top-3 right-3 z-10">
                                 {isUnavailable ? (
-                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center space-x-1">
-                                    <AlertCircle className="w-3 h-3" />
+                                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 backdrop-blur-md flex items-center space-x-1 shadow-md">
+                                    <AlertCircle className="w-3 h-3 text-amber-400" />
                                     <span>Selected for {otherPosition.title}</span>
                                   </span>
                                 ) : (
                                   <div
-                                    className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shadow-md ${
                                       isSelected
-                                        ? 'border-cyan-400 bg-cyan-500 text-slate-950'
-                                        : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
+                                        ? 'border-cyan-300 bg-cyan-400 text-slate-950 shadow-cyan-500/50 scale-110'
+                                        : 'border-slate-600 bg-slate-950/80 group-hover:border-cyan-400'
                                     }`}
                                   >
-                                    {isSelected && <CheckCircle2 className="w-4 h-4 text-slate-950" />}
+                                    {isSelected && <CheckCircle2 className="w-4 h-4 text-slate-950 stroke-[3]" />}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Profile Card Body */}
+                            <div className="px-5 pb-5 pt-0 relative flex-1 flex flex-col justify-between -mt-10">
+                              <div>
+                                {/* Emphasized Profile Picture */}
+                                <div className="flex flex-col items-center text-center">
+                                  <div className="relative group-hover:scale-105 transition-transform duration-300">
+                                    <img
+                                      src={cand.avatarUrl}
+                                      alt={cand.name}
+                                      referrerPolicy="no-referrer"
+                                      className={`w-24 h-24 rounded-2xl object-cover ring-4 shadow-2xl flex-shrink-0 transition-all ${
+                                        isSelected
+                                          ? 'ring-cyan-400 border-2 border-slate-950 shadow-cyan-500/30'
+                                          : 'ring-slate-900 border-2 border-slate-700/80 group-hover:ring-cyan-500/40'
+                                      }`}
+                                    />
+                                    {isSelected && (
+                                      <span className="absolute -bottom-1 -right-1 bg-cyan-400 text-slate-950 p-1 rounded-full shadow-lg border-2 border-slate-950">
+                                        <CheckCircle2 className="w-4 h-4 text-slate-950" />
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Candidate Name & Info */}
+                                  <h4 className="font-extrabold text-slate-100 text-base sm:text-lg mt-3 group-hover:text-cyan-400 transition-colors tracking-tight">
+                                    {cand.name}
+                                  </h4>
+                                  {cand.nickname && (
+                                    <span className="inline-block px-2.5 py-0.5 text-xs font-semibold text-cyan-300 bg-cyan-950/70 border border-cyan-500/30 rounded-full mt-1">
+                                      &quot;{cand.nickname}&quot;
+                                    </span>
+                                  )}
+                                  <p className="text-xs text-slate-400 font-medium mt-1">
+                                    {cand.yearLevel} • Computer Engineering
+                                  </p>
+                                </div>
+
+                                {/* Platform Heading */}
+                                <div className="mt-4 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 text-left">
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center space-x-1">
+                                    <Sparkles className="w-3 h-3 text-cyan-400" />
+                                    <span>Core Advocacy</span>
+                                  </p>
+                                  <p className="text-xs font-semibold text-slate-200 line-clamp-2 leading-relaxed">
+                                    {cand.platformHeading}
+                                  </p>
+                                </div>
+
+                                {isUnavailable && (
+                                  <div className="mt-3 bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg text-[11px] text-amber-300 font-medium text-center">
+                                    Unavailable: Selected for {otherPosition.title}
                                   </div>
                                 )}
                               </div>
 
-                              {/* Candidate Avatar & Name */}
-                              <div className="flex items-center space-x-3 mb-3">
-                                <img
-                                  src={cand.avatarUrl}
-                                  alt={cand.name}
-                                  referrerPolicy="no-referrer"
-                                  className="w-14 h-14 rounded-xl object-cover border border-slate-700 shadow-md flex-shrink-0"
-                                />
-                                <div>
-                                  <h4 className="font-bold text-slate-100 text-sm group-hover:text-cyan-400 transition-colors">
-                                    {cand.name}
-                                  </h4>
-                                  {cand.nickname && (
-                                    <p className="text-xs text-cyan-400/90 font-medium">&quot;{cand.nickname}&quot;</p>
-                                  )}
-                                  <p className="text-xs text-slate-400">{cand.yearLevel} Computer Engineering</p>
-                                </div>
-                              </div>
-
-                              {/* Platform Heading */}
-                              <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800/80 mb-3">
-                                <p className="text-xs font-semibold text-slate-200 line-clamp-2">
-                                  🚀 {cand.platformHeading}
-                                </p>
-                              </div>
-
-                              {isUnavailable && (
-                                <div className="bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg text-[11px] text-amber-300 font-medium mb-2">
-                                  Unavailable: Selected for {otherPosition.title}
-                                </div>
-                              )}
+                              {/* Modal Trigger */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCandidateModal(cand);
+                                }}
+                                className="mt-4 w-full flex items-center justify-center space-x-1.5 py-2 text-xs font-semibold text-slate-300 hover:text-cyan-400 bg-slate-950/60 hover:bg-slate-950 rounded-xl transition-all border border-slate-800 hover:border-slate-700"
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>View Profile & Bio</span>
+                              </button>
                             </div>
-
-                            {/* Modal Trigger */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedCandidateModal(cand);
-                              }}
-                              className="mt-2 w-full flex items-center justify-center space-x-1.5 py-1.5 text-xs font-medium text-slate-400 hover:text-cyan-400 hover:bg-slate-900 rounded-lg transition-colors border border-transparent hover:border-slate-800"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                              <span>View Full Advocacy & Bio</span>
-                            </button>
                           </div>
                         );
                       })
@@ -512,80 +537,105 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                             <div
                               key={cand.id}
                               onClick={() => handleCandidateClick(pos.id, cand)}
-                              className={`relative rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between group ${
+                              className={`relative rounded-2xl overflow-hidden border transition-all cursor-pointer flex flex-col justify-between group ${
                                 isSelected
-                                  ? 'bg-slate-950 border-cyan-500 ring-2 ring-cyan-500/30 shadow-xl shadow-cyan-500/10'
+                                  ? 'bg-slate-950 border-cyan-400 ring-2 ring-cyan-500/40 shadow-2xl shadow-cyan-500/15'
                                   : isUnavailable
                                   ? 'bg-slate-950/40 border-amber-500/30 opacity-60 hover:opacity-85'
-                                  : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700 hover:bg-slate-950/90'
+                                  : 'bg-slate-900/90 border-slate-800 hover:border-cyan-500/50 hover:bg-slate-900 shadow-xl'
                               }`}
                             >
-                              <div>
-                                {/* Top Radio / Unavailable Indicator */}
-                                <div className="flex items-start justify-end mb-3">
+                              {/* Profile Card Header Banner */}
+                              <div className="h-20 w-full bg-gradient-to-r from-cyan-950/60 via-slate-800 to-blue-950/60 border-b border-slate-800/80 relative">
+                                {/* Selection Indicator */}
+                                <div className="absolute top-3 right-3 z-10">
                                   {isUnavailable ? (
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center space-x-1">
-                                      <AlertCircle className="w-3 h-3" />
+                                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 backdrop-blur-md flex items-center space-x-1 shadow-md">
+                                      <AlertCircle className="w-3 h-3 text-amber-400" />
                                       <span>Selected for {otherPosition.title}</span>
                                     </span>
                                   ) : (
                                     <div
-                                      className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shadow-md ${
                                         isSelected
-                                          ? 'border-cyan-400 bg-cyan-500 text-slate-950'
-                                          : 'border-slate-700 bg-slate-900 group-hover:border-slate-500'
+                                          ? 'border-cyan-300 bg-cyan-400 text-slate-950 shadow-cyan-500/50 scale-110'
+                                          : 'border-slate-600 bg-slate-950/80 group-hover:border-cyan-400'
                                       }`}
                                     >
-                                      {isSelected && <CheckCircle2 className="w-4 h-4 text-slate-950" />}
+                                      {isSelected && <CheckCircle2 className="w-4 h-4 text-slate-950 stroke-[3]" />}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Profile Card Body */}
+                              <div className="px-5 pb-5 pt-0 relative flex-1 flex flex-col justify-between -mt-10">
+                                <div>
+                                  {/* Emphasized Profile Picture */}
+                                  <div className="flex flex-col items-center text-center">
+                                    <div className="relative group-hover:scale-105 transition-transform duration-300">
+                                      <img
+                                        src={cand.avatarUrl}
+                                        alt={cand.name}
+                                        referrerPolicy="no-referrer"
+                                        className={`w-24 h-24 rounded-2xl object-cover ring-4 shadow-2xl flex-shrink-0 transition-all ${
+                                          isSelected
+                                            ? 'ring-cyan-400 border-2 border-slate-950 shadow-cyan-500/30'
+                                            : 'ring-slate-900 border-2 border-slate-700/80 group-hover:ring-cyan-500/40'
+                                        }`}
+                                      />
+                                      {isSelected && (
+                                        <span className="absolute -bottom-1 -right-1 bg-cyan-400 text-slate-950 p-1 rounded-full shadow-lg border-2 border-slate-950">
+                                          <CheckCircle2 className="w-4 h-4 text-slate-950" />
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Candidate Name & Info */}
+                                    <h4 className="font-extrabold text-slate-100 text-base sm:text-lg mt-3 group-hover:text-cyan-400 transition-colors tracking-tight">
+                                      {cand.name}
+                                    </h4>
+                                    {cand.nickname && (
+                                      <span className="inline-block px-2.5 py-0.5 text-xs font-semibold text-cyan-300 bg-cyan-950/70 border border-cyan-500/30 rounded-full mt-1">
+                                        &quot;{cand.nickname}&quot;
+                                      </span>
+                                    )}
+                                    <p className="text-xs text-slate-400 font-medium mt-1">
+                                      {cand.yearLevel} • Computer Engineering
+                                    </p>
+                                  </div>
+
+                                  {/* Platform Heading */}
+                                  <div className="mt-4 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 text-left">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 flex items-center space-x-1">
+                                      <Sparkles className="w-3 h-3 text-cyan-400" />
+                                      <span>Core Advocacy</span>
+                                    </p>
+                                    <p className="text-xs font-semibold text-slate-200 line-clamp-2 leading-relaxed">
+                                      {cand.platformHeading}
+                                    </p>
+                                  </div>
+
+                                  {isUnavailable && (
+                                    <div className="mt-3 bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg text-[11px] text-amber-300 font-medium text-center">
+                                      Unavailable: Selected for {otherPosition.title}
                                     </div>
                                   )}
                                 </div>
 
-                                {/* Candidate Avatar & Name */}
-                                <div className="flex items-center space-x-3 mb-3">
-                                  <img
-                                    src={cand.avatarUrl}
-                                    alt={cand.name}
-                                    referrerPolicy="no-referrer"
-                                    className="w-14 h-14 rounded-xl object-cover border border-slate-700 shadow-md flex-shrink-0"
-                                  />
-                                  <div>
-                                    <h4 className="font-bold text-slate-100 text-sm group-hover:text-cyan-400 transition-colors">
-                                      {cand.name}
-                                    </h4>
-                                    {cand.nickname && (
-                                      <p className="text-xs text-cyan-400/90 font-medium">&quot;{cand.nickname}&quot;</p>
-                                    )}
-                                    <p className="text-xs text-slate-400">{cand.yearLevel} Computer Engineering</p>
-                                  </div>
-                                </div>
-
-                                {/* Platform Heading */}
-                                <div className="bg-slate-900/80 p-3 rounded-lg border border-slate-800/80 mb-3">
-                                  <p className="text-xs font-semibold text-slate-200 line-clamp-2">
-                                    🚀 {cand.platformHeading}
-                                  </p>
-                                </div>
-
-                                {isUnavailable && (
-                                  <div className="bg-amber-500/10 border border-amber-500/20 p-2 rounded-lg text-[11px] text-amber-300 font-medium mb-2">
-                                    Unavailable: Selected for {otherPosition.title}
-                                  </div>
-                                )}
+                                {/* Modal Trigger */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedCandidateModal(cand);
+                                  }}
+                                  className="mt-4 w-full flex items-center justify-center space-x-1.5 py-2 text-xs font-semibold text-slate-300 hover:text-cyan-400 bg-slate-950/60 hover:bg-slate-950 rounded-xl transition-all border border-slate-800 hover:border-slate-700"
+                                >
+                                  <FileText className="w-3.5 h-3.5" />
+                                  <span>View Profile & Bio</span>
+                                </button>
                               </div>
-
-                              {/* Modal Trigger */}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedCandidateModal(cand);
-                                }}
-                                className="mt-2 w-full flex items-center justify-center space-x-1.5 py-1.5 text-xs font-medium text-slate-400 hover:text-cyan-400 hover:bg-slate-900 rounded-lg transition-colors border border-transparent hover:border-slate-800"
-                              >
-                                <FileText className="w-3.5 h-3.5" />
-                                <span>View Full Advocacy & Bio</span>
-                              </button>
                             </div>
                           );
                         })
