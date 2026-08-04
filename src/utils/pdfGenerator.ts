@@ -119,11 +119,9 @@ export const generateElectionPDF = (
 
   const totalVoted = turnoutStats?.totalVoted || 0;
   const totalReg = turnoutStats?.totalRegistered || 0;
-  const pct = turnoutStats?.turnoutPercentage || 0;
 
-  doc.text(`Total Ballots Cast: ${totalVoted}`, margin + 5, y + 13);
-  doc.text(`Total Registered Voters: ${totalReg}`, margin + 65, y + 13);
-  doc.text(`Turnout Percentage: ${pct}%`, margin + 125, y + 13);
+  doc.text(`Total Actual Voters: ${totalVoted}`, margin + 5, y + 13);
+  doc.text(`Total Registered Voters: ${totalReg}`, margin + 90, y + 13);
 
   // Year level voted count
   if (turnoutStats?.byYearLevel) {
