@@ -83,18 +83,31 @@ async function loadStateFromFirestore() {
           if (!posIds.has(ip.id)) positions.push(ip);
         });
       }
-      if (Array.isArray(data.candidates) && data.candidates.length > 0) {
-        candidates = data.candidates;
-        // Merge any new default candidates if missing
-        const candIds = new Set(candidates.map((c) => c.id));
-        INITIAL_CANDIDATES.forEach((ic) => {
-          if (!candIds.has(ic.id)) candidates.push(ic);
-        });
+      if (Array.isArray(data.candidates)) {
+        // Filter out sample candidate IDs
+        candidates = data.candidates.filter(
+          (c) =>
+            !c.id.startsWith('cand_gov_') &&
+            !c.id.startsWith('cand_vgov_') &&
+            !c.id.startsWith('cand_sec_') &&
+            !c.id.startsWith('cand_treas_') &&
+            !c.id.startsWith('cand_auditor_') &&
+            !c.id.startsWith('cand_pio_') &&
+            !c.id.startsWith('cand_muse_') &&
+            !c.id.startsWith('cand_escort_')
+        );
+      } else {
+        candidates = [];
       }
-      if (Array.isArray(data.voters) && data.voters.length > 0) voters = data.voters.filter(isActualAccount);
-      if (Array.isArray(data.votes) && data.votes.length > 0) votes = data.votes;
+      if (Array.isArray(data.voters)) {
+        voters = data.voters.filter(isActualAccount).filter((v) => !v.id.startsWith('2023-1000') && !v.id.startsWith('2022-10045') && !v.id.startsWith('2024-10112'));
+      }
+      if (Array.isArray(data.votes)) {
+        votes = data.votes.filter((vt) => !vt.id.startsWith('vote-sample-'));
+      }
       if (Array.isArray(data.nominations)) nominations = data.nominations;
       console.log('Firebase Firestore: Loaded election state successfully. Candidate count:', candidates.length);
+      await saveStateToFirestore();
     } else {
       console.log('Firebase Firestore: Initializing new election record for cpe2026');
       await saveStateToFirestore();
