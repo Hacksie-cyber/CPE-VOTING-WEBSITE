@@ -122,9 +122,9 @@ export async function fetchOrCalculateResults(customSettings?: ElectionSettings)
   });
 
   const yearLevels: YearLevel[] = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
-  const totalReg = settings.totalRegisteredVoters || 100;
+  const totalReg = voters.length;
   const byYearLevel = yearLevels.map((yl) => {
-    const registeredForYL = Math.floor(totalReg / 4);
+    const registeredForYL = voters.filter((v) => v.yearLevel === yl).length;
     const votedCountForYL = validVotes.filter((v) => v.yearLevel === yl).length;
     return {
       yearLevel: yl,

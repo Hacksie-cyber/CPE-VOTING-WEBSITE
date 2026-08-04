@@ -201,9 +201,10 @@ function calculateResults(): {
   });
 
   // Calculate Turnout by Year Level
+  const totalRegistered = voters.length;
   const yearLevels: YearLevel[] = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
   const byYearLevel = yearLevels.map((yl) => {
-    const registeredForYL = Math.floor(settings.totalRegisteredVoters / 4);
+    const registeredForYL = voters.filter((v) => v.yearLevel === yl).length;
     const votedCountForYL = validVotes.filter((v) => v.yearLevel === yl).length;
     return {
       yearLevel: yl,
@@ -214,14 +215,14 @@ function calculateResults(): {
   });
 
   const turnoutPercentage =
-    settings.totalRegisteredVoters > 0
-      ? parseFloat(((totalVotesCast / settings.totalRegisteredVoters) * 100).toFixed(1))
+    totalRegistered > 0
+      ? parseFloat(((totalVotesCast / totalRegistered) * 100).toFixed(1))
       : 0;
 
   return {
     positionResults,
     turnoutStats: {
-      totalRegistered: settings.totalRegisteredVoters,
+      totalRegistered,
       totalVoted: totalVotesCast,
       turnoutPercentage,
       byYearLevel,

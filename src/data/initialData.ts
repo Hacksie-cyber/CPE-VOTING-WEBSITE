@@ -263,7 +263,7 @@ export const INITIAL_ELECTION_SETTINGS: ElectionSettings = {
   academicYear: 'AY 2026-2027',
   allowAbstain: true,
   votingDeadline: '2026-08-05T17:00:00.000Z',
-  totalRegisteredVoters: 520,
+  totalRegisteredVoters: 4,
 };
 
 export const SAMPLE_VOTERS: Voter[] = [
