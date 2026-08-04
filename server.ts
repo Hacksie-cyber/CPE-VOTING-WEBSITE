@@ -75,8 +75,22 @@ async function loadStateFromFirestore() {
     if (snap.exists()) {
       const data = snap.data();
       if (data.settings) settings = data.settings;
-      if (Array.isArray(data.candidates) && data.candidates.length > 0) candidates = data.candidates;
-      if (Array.isArray(data.positions) && data.positions.length > 0) positions = data.positions;
+      if (Array.isArray(data.positions) && data.positions.length > 0) {
+        positions = data.positions;
+        // Merge any new default positions like escort if missing
+        const posIds = new Set(positions.map((p) => p.id));
+        INITIAL_POSITIONS.forEach((ip) => {
+          if (!posIds.has(ip.id)) positions.push(ip);
+        });
+      }
+      if (Array.isArray(data.candidates) && data.candidates.length > 0) {
+        candidates = data.candidates;
+        // Merge any new default candidates if missing
+        const candIds = new Set(candidates.map((c) => c.id));
+        INITIAL_CANDIDATES.forEach((ic) => {
+          if (!candIds.has(ic.id)) candidates.push(ic);
+        });
+      }
       if (Array.isArray(data.voters) && data.voters.length > 0) voters = data.voters.filter(isActualAccount);
       if (Array.isArray(data.votes) && data.votes.length > 0) votes = data.votes;
       if (Array.isArray(data.nominations)) nominations = data.nominations;
