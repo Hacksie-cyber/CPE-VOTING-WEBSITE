@@ -772,7 +772,7 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                 src={selectedCandidateModal.avatarUrl}
                 alt={selectedCandidateModal.name}
                 referrerPolicy="no-referrer"
-                className="w-full h-full object-cover object-top"
+                className="w-full h-full object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
 

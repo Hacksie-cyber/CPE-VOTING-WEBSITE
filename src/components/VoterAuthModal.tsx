@@ -52,10 +52,17 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
     userEmail: string,
     providedName?: string,
     providedStudentId?: string,
-    providedYearLevel?: YearLevel
+    providedYearLevel?: YearLevel,
+    isGoogleAuth: boolean = false
   ) => {
     const cleanEmail = userEmail.trim().toLowerCase();
     const isAdmin = cleanEmail === 'bamuyahacksie@gmail.com';
+
+    if (isAdmin && !isGoogleAuth) {
+      setError('Admin access (bamuyahacksie@gmail.com) is restricted to Google Sign-In only. Please click "Sign in with Google Email".');
+      return;
+    }
+
     const cleanName =
       providedName ||
       fullName.trim() ||
@@ -131,7 +138,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
     }
     setError(null);
     if (cleanEmail === 'bamuyahacksie@gmail.com') {
-      performDirectLogin(cleanEmail);
+      setError('Admin account (bamuyahacksie@gmail.com) is restricted. Please sign in using the "Sign in with Google Email" button above.');
       return;
     }
 
@@ -190,7 +197,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
         }
 
         if (cleanEmail === 'bamuyahacksie@gmail.com') {
-          await performDirectLogin(cleanEmail, user.displayName || undefined);
+          await performDirectLogin(cleanEmail, user.displayName || undefined, undefined, undefined, true);
         } else {
           setStep('details');
         }

@@ -445,6 +445,13 @@ async function startServer() {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail === 'bamuyahacksie@gmail.com') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin account (bamuyahacksie@gmail.com) is restricted. Sign in via Google Email only.',
+      });
+    }
+
     const cleanStudentId = studentNumber.trim().toUpperCase();
     const cleanName = name.trim();
     const normName = normalizeName(cleanName);
