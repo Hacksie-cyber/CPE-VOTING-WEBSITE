@@ -39,7 +39,7 @@ try {
 
 // Firebase Database Configuration
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY || firebaseAppletConfig?.apiKey || "AIzaSyAOT_2VW4VYSWjILqaC-4qqCkBmk2xSGJ8",
+  apiKey: process.env.VITE_FIREBASE_API_KEY || firebaseAppletConfig?.apiKey || "",
   authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseAppletConfig?.authDomain || "cpe-voting-website.firebaseapp.com",
   projectId: process.env.VITE_FIREBASE_PROJECT_ID || firebaseAppletConfig?.projectId || "cpe-voting-website",
   storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseAppletConfig?.storageBucket || "cpe-voting-website.firebasestorage.app",
