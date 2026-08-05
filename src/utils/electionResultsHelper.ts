@@ -62,16 +62,38 @@ export async function fetchOrCalculateResults(customSettings?: ElectionSettings)
     console.warn('Firestore load fallback note:', fsErr);
   }
 
-  // Calculate valid votes (exclude invalidated)
-  const validVotes = votes.filter((v) => {
-    if (v.isInvalidated) return false;
-    const voter = voters.find(
-      (vr) => (v.voterId && vr.id === v.voterId) || (v.receiptHash && vr.receiptHash === v.receiptHash)
-    );
-    if (voter && voter.isInvalidated) return false;
+  const isActualAccount = (v: Voter) => {
+    if (!v || !v.name) return false;
+    const nameLower = v.name.toLowerCase();
+    if (nameLower.includes('demo')) return false;
+    if (v.email && v.email.toLowerCase().includes('demo')) return false;
+    const sampleIds = ['2023-10001', '2023-10002', '2022-10045', '2024-10112', '2025-10889', '2023-10555', '2022-10999'];
+    if (sampleIds.includes(v.id)) return false;
     return true;
+  };
+
+  const actualVoters = voters.filter(isActualAccount);
+
+  // Calculate valid votes (exclude invalidated, deduplicated per actual voter)
+  const votesByVoterKey = new Map<string, VoteRecord>();
+  votes.forEach((v) => {
+    if (v.isInvalidated) return;
+    const voter = voters.find(
+      (vr) =>
+        (v.voterId && vr.id.toUpperCase() === v.voterId.toUpperCase()) ||
+        (v.receiptHash && vr.receiptHash === v.receiptHash)
+    );
+    if (voter && isActualAccount(voter) && !voter.isInvalidated) {
+      votesByVoterKey.set(voter.id.toUpperCase(), v);
+    } else if (v.voterId) {
+      const matchActual = actualVoters.find((av) => av.id.toUpperCase() === v.voterId.toUpperCase());
+      if (matchActual && !matchActual.isInvalidated) {
+        votesByVoterKey.set(matchActual.id.toUpperCase(), v);
+      }
+    }
   });
 
+  const validVotes = Array.from(votesByVoterKey.values());
   const totalVotesCast = validVotes.length;
 
   const positionResults: PositionResult[] = positions.map((pos) => {

@@ -103,7 +103,20 @@ async function loadStateFromFirestore() {
         voters = data.voters.filter(isActualAccount).filter((v) => !v.id.startsWith('2023-1000') && !v.id.startsWith('2022-10045') && !v.id.startsWith('2024-10112'));
       }
       if (Array.isArray(data.votes)) {
-        votes = data.votes.filter((vt) => !vt.id.startsWith('vote-sample-'));
+        const rawVotes = data.votes.filter((vt) => !vt.id.startsWith('vote-sample-') && !vt.isInvalidated);
+        const validVoteMap = new Map<string, VoteRecord>();
+        rawVotes.forEach((vt) => {
+          const voter = voters.find((vr) => (vt.voterId && vr.id.toUpperCase() === vt.voterId.toUpperCase()) || (vt.receiptHash && vr.receiptHash === vt.receiptHash));
+          if (voter && isActualAccount(voter) && !voter.isInvalidated) {
+            validVoteMap.set(voter.id.toUpperCase(), vt);
+          } else if (vt.voterId) {
+            const matchActual = voters.find((av) => isActualAccount(av) && av.id.toUpperCase() === vt.voterId.toUpperCase());
+            if (matchActual && !matchActual.isInvalidated) {
+              validVoteMap.set(matchActual.id.toUpperCase(), vt);
+            }
+          }
+        });
+        votes = Array.from(validVoteMap.values());
       }
       if (Array.isArray(data.nominations)) nominations = data.nominations;
       console.log('Firebase Firestore: Loaded election state successfully. Candidate count:', candidates.length);
@@ -172,14 +185,29 @@ function calculateResults(): {
   positionResults: PositionResult[];
   turnoutStats: VoterTurnoutStats;
 } {
-  // Only count valid votes (excluding votes from invalidated voters or invalidated votes)
-  const validVotes = votes.filter((v) => {
-    if (v.isInvalidated) return false;
-    const voter = voters.find((vr) => (v.voterId && vr.id === v.voterId) || (v.receiptHash && vr.receiptHash === v.receiptHash));
-    if (voter && voter.isInvalidated) return false;
-    return true;
+  const actualVoters = voters.filter(isActualAccount);
+  const totalRegistered = actualVoters.length;
+
+  // Deduplicate votes by actual voter ID so each actual voter profile counts at most 1 ballot
+  const votesByVoterKey = new Map<string, VoteRecord>();
+  votes.forEach((v) => {
+    if (v.isInvalidated) return;
+    const voter = voters.find(
+      (vr) =>
+        (v.voterId && vr.id.toUpperCase() === v.voterId.toUpperCase()) ||
+        (v.receiptHash && vr.receiptHash === v.receiptHash)
+    );
+    if (voter && isActualAccount(voter) && !voter.isInvalidated) {
+      votesByVoterKey.set(voter.id.toUpperCase(), v);
+    } else if (v.voterId) {
+      const matchActual = actualVoters.find((av) => av.id.toUpperCase() === v.voterId.toUpperCase());
+      if (matchActual && !matchActual.isInvalidated) {
+        votesByVoterKey.set(matchActual.id.toUpperCase(), v);
+      }
+    }
   });
 
+  const validVotes = Array.from(votesByVoterKey.values());
   const totalVotesCast = validVotes.length;
 
   const positionResults: PositionResult[] = positions.map((pos) => {
@@ -228,10 +256,9 @@ function calculateResults(): {
   });
 
   // Calculate Turnout by Year Level
-  const totalRegistered = voters.length;
   const yearLevels: YearLevel[] = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
   const byYearLevel = yearLevels.map((yl) => {
-    const registeredForYL = voters.filter((v) => v.yearLevel === yl).length;
+    const registeredForYL = actualVoters.filter((v) => v.yearLevel === yl).length;
     const votedCountForYL = validVotes.filter((v) => v.yearLevel === yl).length;
     return {
       yearLevel: yl,
@@ -465,18 +492,26 @@ async function startServer() {
         (normName.length > 2 && normalizeName(v.name) === normName)
     );
 
+    // Check if anyone with the same email OR same normalized full name has already voted under any record
+    const matchingVoted = voters.find(
+      (v) =>
+        v.hasVoted &&
+        ((normName.length > 2 && normalizeName(v.name) === normName) ||
+          (v.email && v.email.toLowerCase() === cleanEmail))
+    );
+
     if (voter) {
-      // Link/update existing record while preserving voting status
+      // Link/update existing record while preserving/updating voting status
       voter.id = cleanStudentId;
       voter.name = cleanName;
       voter.email = cleanEmail;
       voter.yearLevel = cleanYearLevel;
+      if (matchingVoted) {
+        voter.hasVoted = true;
+        voter.receiptHash = matchingVoted.receiptHash;
+        voter.votedAt = matchingVoted.votedAt;
+      }
     } else {
-      // Check if anyone with the same normalized name has already voted under another record
-      const matchingVoted = voters.find(
-        (v) => normName.length > 2 && normalizeName(v.name) === normName && v.hasVoted
-      );
-
       voter = {
         id: cleanStudentId,
         name: cleanName,
@@ -484,6 +519,7 @@ async function startServer() {
         yearLevel: cleanYearLevel,
         hasVoted: !!matchingVoted,
         receiptHash: matchingVoted ? matchingVoted.receiptHash : undefined,
+        votedAt: matchingVoted ? matchingVoted.votedAt : undefined,
       };
       voters.push(voter);
     }
@@ -549,13 +585,17 @@ async function startServer() {
         (normName.length > 2 && normalizeName(v.name) === normName)
     );
 
+    // Check if anyone with the same clean email OR same normalized full name has already voted
+    const matchingVoted = voters.find(
+      (v) =>
+        v.hasVoted &&
+        ((v.email && v.email.toLowerCase() === cleanEmail) ||
+          (normName.length > 2 && normalizeName(v.name) === normName))
+    );
+
     if (!voter) {
       const emailPrefix = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
       const studentId = `2026-${emailPrefix.toUpperCase().slice(0, 8)}`;
-      
-      const matchingVoted = voters.find(
-        (v) => normName.length > 2 && normalizeName(v.name) === normName && v.hasVoted
-      );
 
       voter = {
         id: studentId,
@@ -564,6 +604,7 @@ async function startServer() {
         yearLevel: '3rd Year',
         hasVoted: !!matchingVoted,
         receiptHash: matchingVoted ? matchingVoted.receiptHash : undefined,
+        votedAt: matchingVoted ? matchingVoted.votedAt : undefined,
       };
       voters.push(voter);
       await saveStateToFirestore();
@@ -572,6 +613,11 @@ async function startServer() {
         voter.name = cleanName;
       }
       if (!voter.email) voter.email = cleanEmail;
+      if (matchingVoted) {
+        voter.hasVoted = true;
+        voter.receiptHash = matchingVoted.receiptHash;
+        voter.votedAt = matchingVoted.votedAt;
+      }
     }
 
     res.json({

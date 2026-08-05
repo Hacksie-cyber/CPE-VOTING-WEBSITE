@@ -152,9 +152,15 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.voter) {
-          onLoginSuccess(data.voter);
-          onClose();
-          return;
+          if (data.voter.name && !data.voter.name.startsWith('CPE Student')) {
+            setFullName(data.voter.name);
+          }
+          if (data.voter.id) {
+            setStudentId(data.voter.id);
+          }
+          if (data.voter.yearLevel) {
+            setYearLevel(data.voter.yearLevel);
+          }
         }
       }
     } catch {
@@ -178,6 +184,11 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
           setFullName(user.displayName);
         }
 
+        if (cleanEmail === 'bamuyahacksie@gmail.com') {
+          await performDirectLogin(cleanEmail, user.displayName || undefined, undefined, undefined, true);
+          return;
+        }
+
         try {
           const res = await fetch('/api/voter/google-login', {
             method: 'POST',
@@ -187,20 +198,22 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
           if (res.ok) {
             const data = await res.json();
             if (data.success && data.voter) {
-              onLoginSuccess(data.voter);
-              onClose();
-              return;
+              if (data.voter.name && !data.voter.name.startsWith('CPE Student')) {
+                setFullName(data.voter.name);
+              }
+              if (data.voter.id) {
+                setStudentId(data.voter.id);
+              }
+              if (data.voter.yearLevel) {
+                setYearLevel(data.voter.yearLevel);
+              }
             }
           }
         } catch {
           // ignore network issue
         }
 
-        if (cleanEmail === 'bamuyahacksie@gmail.com') {
-          await performDirectLogin(cleanEmail, user.displayName || undefined, undefined, undefined, true);
-        } else {
-          setStep('details');
-        }
+        setStep('details');
       }
     } catch (err: unknown) {
       const authErr = err as { code?: string; message?: string };

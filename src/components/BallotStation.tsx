@@ -92,6 +92,75 @@ export const BallotStation: React.FC<BallotStationProps> = ({
 
   return (
     <div className="space-y-6 pb-32">
+      {/* Official Vote Receipt Information Banner (Displays when voter has already voted) */}
+      {voter?.hasVoted && (
+        <div className="bg-gradient-to-r from-cyan-950/90 via-slate-900 to-slate-950 border-2 border-cyan-500/50 rounded-2xl p-6 shadow-2xl space-y-4 animate-in fade-in slide-in-from-top-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-cyan-500/30">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400 text-cyan-300 flex items-center justify-center flex-shrink-0">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest flex items-center space-x-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Official Ballot Submitted & Verified</span>
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-100">
+                  Voting Record Receipt Information
+                </h2>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-semibold px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                Single-Vote Policy Enforced
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-slate-950/90 rounded-xl p-4 border border-slate-800 space-y-3">
+            <p className="text-xs text-slate-300 leading-relaxed">
+              <strong>Notice:</strong> Repeated voting using the same Gmail account or name (<span className="text-cyan-300 font-semibold">{voter.name}</span> &bull; <span className="text-cyan-300 font-semibold">{voter.email}</span>) is disabled. Below is your official receipt information for audit purposes.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+              <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+                <span className="text-[11px] text-slate-400 font-medium block mb-1">Voter Account</span>
+                <span className="text-xs font-bold text-slate-100">{voter.name}</span>
+                <span className="text-[11px] text-cyan-400 block truncate">{voter.email}</span>
+              </div>
+
+              <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+                <span className="text-[11px] text-slate-400 font-medium block mb-1">Audit Receipt Hash</span>
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-xs font-mono font-bold text-cyan-400 truncate">
+                    {voter.receiptHash || 'CPE2026-RECORDED'}
+                  </span>
+                  {voter.receiptHash && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(voter.receiptHash || '');
+                        alert('Receipt hash copied to clipboard!');
+                      }}
+                      className="text-[10px] font-bold px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                    >
+                      Copy
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+                <span className="text-[11px] text-slate-400 font-medium block mb-1">Timestamp Recorded</span>
+                <span className="text-xs font-mono text-slate-200">
+                  {voter.votedAt ? new Date(voter.votedAt).toLocaleString() : 'Recorded in Official Audit Ledger'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Rule Notice Banner */}
       {ruleViolationNotice && (
         <div className="sticky top-4 z-40 bg-amber-950/90 border border-amber-500/50 backdrop-blur-md text-amber-200 p-4 rounded-2xl text-xs font-semibold shadow-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">

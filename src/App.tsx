@@ -163,6 +163,11 @@ export default function App() {
       setActiveTab('admin');
     } else {
       setActiveTab('ballot');
+      if (authenticatedVoter.hasVoted && authenticatedVoter.receiptHash) {
+        setLastReceiptHash(authenticatedVoter.receiptHash);
+        setLastReceiptTime(authenticatedVoter.votedAt || new Date().toISOString());
+        setIsReceiptModalOpen(true);
+      }
     }
   };
 

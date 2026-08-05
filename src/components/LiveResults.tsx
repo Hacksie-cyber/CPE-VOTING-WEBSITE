@@ -144,15 +144,14 @@ export const LiveResults: React.FC<LiveResultsProps> = ({ settings }) => {
         {/* Total Votes */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Ballots Cast</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Ballot Count</span>
             <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
               <Vote className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-3xl font-black text-slate-100 font-mono">
-            {turnoutStats?.totalVoted || 0}
+          <div className="text-2xl sm:text-3xl font-black text-cyan-400 font-mono tracking-tight">
+            Total Ballot: {turnoutStats?.totalVoted || 0}
           </div>
-          <p className="text-xs text-slate-400 mt-1">Out of {turnoutStats?.totalRegistered || 0} Registered Voters</p>
         </div>
 
         {/* Voter Turnout % */}
