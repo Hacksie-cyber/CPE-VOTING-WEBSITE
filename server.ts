@@ -37,9 +37,11 @@ try {
   console.warn('Could not read firebase-applet-config.json:', e);
 }
 
+const DEFAULT_FIREBASE_API_KEY = "AIzaSyAOT_2VW4VYSWjILqaC-4qqCkBmk2xSGJ8";
+
 // Firebase Database Configuration
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY || firebaseAppletConfig?.apiKey || "",
+  apiKey: process.env.VITE_FIREBASE_API_KEY || firebaseAppletConfig?.apiKey || DEFAULT_FIREBASE_API_KEY,
   authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseAppletConfig?.authDomain || "cpe-voting-website.firebaseapp.com",
   projectId: process.env.VITE_FIREBASE_PROJECT_ID || firebaseAppletConfig?.projectId || "cpe-voting-website",
   storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseAppletConfig?.storageBucket || "cpe-voting-website.firebasestorage.app",

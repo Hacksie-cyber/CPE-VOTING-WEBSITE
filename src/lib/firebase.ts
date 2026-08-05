@@ -3,8 +3,10 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
+const DEFAULT_FIREBASE_API_KEY = "AIzaSyAOT_2VW4VYSWjILqaC-4qqCkBmk2xSGJ8";
+
 export const firebaseConfig = {
-  apiKey: import.meta.env?.VITE_FIREBASE_API_KEY || "",
+  apiKey: import.meta.env?.VITE_FIREBASE_API_KEY || DEFAULT_FIREBASE_API_KEY,
   authDomain: import.meta.env?.VITE_FIREBASE_AUTH_DOMAIN || "cpe-voting-website.firebaseapp.com",
   projectId: import.meta.env?.VITE_FIREBASE_PROJECT_ID || "cpe-voting-website",
   storageBucket: import.meta.env?.VITE_FIREBASE_STORAGE_BUCKET || "cpe-voting-website.firebasestorage.app",
@@ -13,10 +15,16 @@ export const firebaseConfig = {
   measurementId: import.meta.env?.VITE_FIREBASE_MEASUREMENT_ID || "G-HQJX6DJ6JH"
 };
 
-// Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+// Initialize Firebase safely to prevent app crash if config missing on static hosts
+let app: any = null;
+try {
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+} catch (err) {
+  console.warn("Firebase initializeApp error:", err);
+}
+
+export const auth = app ? getAuth(app) : ({} as any);
+export const db = app ? getFirestore(app) : ({} as any);
 export const googleProvider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async () => {
