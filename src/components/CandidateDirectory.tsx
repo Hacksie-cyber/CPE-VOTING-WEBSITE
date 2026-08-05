@@ -579,61 +579,58 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
       {/* Candidate Profile Modal */}
       {modalCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setModalCandidate(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800"
+              className="absolute top-8 right-8 z-20 text-slate-300 hover:text-white p-2 rounded-full bg-slate-950/70 backdrop-blur-md border border-slate-700/80 hover:bg-slate-800 transition-all shadow-lg"
             >
               ✕
             </button>
 
-            <div className="flex items-center space-x-4 mb-4">
+            {/* Full size candidate photo header */}
+            <div className="relative w-full h-72 sm:h-80 rounded-2xl overflow-hidden mb-5 border border-slate-800 bg-slate-950 shadow-xl">
               <img
                 src={modalCandidate.avatarUrl}
                 alt={modalCandidate.name}
                 referrerPolicy="no-referrer"
-                className="w-16 h-16 rounded-2xl object-cover border border-slate-700"
+                className="w-full h-full object-cover object-top"
               />
-              <div>
-                <h3 className="text-lg font-bold text-slate-100 mt-1">{modalCandidate.name}</h3>
-                <p className="text-xs text-slate-400">{modalCandidate.yearLevel} Computer Engineering</p>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+
+              <div className="absolute bottom-4 left-4 right-4 z-10">
+                <h3 className="text-2xl font-extrabold text-slate-100 tracking-tight drop-shadow-md">
+                  {modalCandidate.name}
+                </h3>
+                <p className="text-xs font-medium text-slate-300 drop-shadow">
+                  {modalCandidate.yearLevel} • Computer Engineering
+                </p>
               </div>
             </div>
 
-            <div className="space-y-4 text-xs text-slate-300">
-              <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-                <h4 className="font-bold text-cyan-400 uppercase text-[11px] tracking-wider mb-1">
-                  Platform Vision
-                </h4>
-                <p className="font-semibold text-slate-200 text-sm">{modalCandidate.platformHeading}</p>
-              </div>
+            <div className="bg-slate-950 p-4.5 rounded-2xl border border-slate-800 space-y-4 text-xs text-slate-300">
+              <h4 className="font-bold text-cyan-400 uppercase text-xs tracking-wider border-b border-slate-800/80 pb-2.5 flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-cyan-400" />
+                <span>Information of Candidates</span>
+              </h4>
 
-              <div>
-                <h4 className="font-bold text-slate-200 text-xs mb-2">Platform Action Items:</h4>
-                <ul className="space-y-1.5">
-                  {modalCandidate.platformPoints.map((pt, i) => (
-                    <li key={i} className="flex items-start space-x-2 bg-slate-950/50 p-2 rounded-lg">
-                      <span className="text-cyan-400 font-bold">•</span>
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-slate-200 text-xs mb-1">Personal Statement & Bio</h4>
-                <p className="bg-slate-950/50 p-3 rounded-xl border border-slate-800/80 leading-relaxed">
-                  {modalCandidate.bio}
-                </p>
-              </div>
-
-              {modalCandidate.achievements && (
+              {(modalCandidate.platformHeading || modalCandidate.bio) && (
                 <div>
-                  <h4 className="font-bold text-slate-200 text-xs mb-1 flex items-center space-x-1">
+                  <span className="font-semibold text-slate-400 text-[11px] block mb-1">Brief Description:</span>
+                  <p className="text-slate-200 text-xs sm:text-sm leading-relaxed bg-slate-900/50 p-3 rounded-xl border border-slate-800/80 font-medium">
+                    {modalCandidate.platformHeading || modalCandidate.bio}
+                  </p>
+                </div>
+              )}
+
+
+
+              {modalCandidate.achievements && modalCandidate.achievements.length > 0 && (
+                <div>
+                  <span className="font-semibold text-slate-400 text-[11px] mb-1 flex items-center space-x-1">
                     <Award className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Key Achievements & Track Record</span>
-                  </h4>
-                  <ul className="list-disc list-inside space-y-1 text-slate-400 pl-1">
+                    <span>Achievements & Leadership:</span>
+                  </span>
+                  <ul className="list-disc list-inside space-y-1 text-slate-300 pl-1">
                     {modalCandidate.achievements.map((ach, i) => (
                       <li key={i}>{ach}</li>
                     ))}
