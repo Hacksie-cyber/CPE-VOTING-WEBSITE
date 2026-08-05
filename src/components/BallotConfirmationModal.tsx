@@ -31,6 +31,11 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
   const handleSubmit = async () => {
     if (!confirmed) return;
 
+    if (voter?.hasVoted) {
+      setError('Voting Rule Violation: A ballot has already been submitted for this account. Double voting is strictly prohibited.');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -66,16 +71,17 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
         }
       } else {
         const text = await res.text();
-        let errMsg = 'Voting Rule Violation: Unable to cast vote.';
         try {
           const data = JSON.parse(text);
-          if (data.message) errMsg = data.message;
+          if (data && data.message) {
+            setError(data.message);
+            setSubmitting(false);
+            return;
+          }
         } catch {
-          // ignore
+          // Response is non-JSON (e.g. 404 HTML on static host like Vercel).
+          // Fall through to direct Firestore save.
         }
-        setError(errMsg);
-        setSubmitting(false);
-        return;
       }
     } catch {
       // API call failed, proceed with client-side Firestore direct save
@@ -91,8 +97,15 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
       castReceiptHash = hash;
     }
 
-    // Always ensure vote data is saved directly to Firestore
-    await saveVoteToFirestoreDirect(voter, choices, castReceiptHash, castTimestamp);
+    if (!apiSuccess) {
+      // Save directly to Firestore and check for duplicate voter
+      const directResult = await saveVoteToFirestoreDirect(voter, choices, castReceiptHash, castTimestamp);
+      if (!directResult.success) {
+        setError(directResult.message || 'Voting Rule Violation: Unable to cast vote due to account status.');
+        setSubmitting(false);
+        return;
+      }
+    }
 
     onCastSuccess(castReceiptHash, castTimestamp, returnedVoter);
     onClose();

@@ -61,7 +61,7 @@ export const saveVoteToFirestoreDirect = async (
   choices: Record<string, string>,
   receiptHash: string,
   timestamp: string
-) => {
+): Promise<{ success: boolean; message?: string; receiptHash?: string }> => {
   try {
     const docRef = doc(db, 'elections', 'cpe2026');
     const snap = await getDoc(docRef);
@@ -69,6 +69,27 @@ export const saveVoteToFirestoreDirect = async (
       const data = snap.data();
       const currentVotes = Array.isArray(data.votes) ? [...data.votes] : [];
       const currentVoters = Array.isArray(data.voters) ? [...data.voters] : [];
+
+      const normName = voter.name ? voter.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ') : '';
+      const cleanEmail = voter.email ? voter.email.toLowerCase().trim() : '';
+      const cleanId = voter.id ? voter.id.toUpperCase().trim() : '';
+
+      // Rule: Check if a ballot has already been submitted under this voter ID, email, or full name
+      const duplicateVoted = currentVoters.find(
+        (v: any) =>
+          v.hasVoted &&
+          ((cleanId && v.id?.toUpperCase() === cleanId) ||
+            (cleanEmail && v.email && v.email.toLowerCase() === cleanEmail) ||
+            (normName.length > 2 && v.name && v.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ') === normName))
+      );
+
+      if (duplicateVoted) {
+        return {
+          success: false,
+          message: `Voting Rule Violation: A ballot has already been cast under the name "${voter.name}" or Gmail (${voter.email || voter.id}). Duplicate voting is strictly prohibited.`,
+          receiptHash: duplicateVoted.receiptHash,
+        };
+      }
 
       const existingVote = currentVotes.find((v: any) => v.receiptHash === receiptHash);
       if (!existingVote) {
@@ -81,13 +102,12 @@ export const saveVoteToFirestoreDirect = async (
         });
       }
 
-      const normName = voter.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
       let found = false;
       const updatedVoters = currentVoters.map((v: any) => {
         const vNorm = v.name ? v.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ') : '';
         if (
-          v.id?.toUpperCase() === voter.id?.toUpperCase() ||
-          (v.email && voter.email && v.email.toLowerCase() === voter.email.toLowerCase()) ||
+          (cleanId && v.id?.toUpperCase() === cleanId) ||
+          (cleanEmail && v.email && v.email.toLowerCase() === cleanEmail) ||
           (normName.length > 2 && vNorm === normName)
         ) {
           found = true;
@@ -120,10 +140,13 @@ export const saveVoteToFirestoreDirect = async (
         updatedAt: new Date().toISOString(),
       });
       console.log('Direct Firestore vote save successful!');
+      return { success: true, receiptHash };
     }
-  } catch (err) {
+  } catch (err: any) {
     console.warn('Direct Firestore vote save note:', err);
+    return { success: false, message: err?.message || 'Firestore direct save error.' };
   }
+  return { success: false, message: 'Election data collection missing in Firestore.' };
 };
 
 export const updateVoterInvalidationInFirestore = async (
