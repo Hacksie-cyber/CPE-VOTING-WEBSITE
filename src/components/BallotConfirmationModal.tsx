@@ -52,8 +52,7 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
         }),
       });
 
-      const contentType = res.headers.get('content-type');
-      if (res.ok && contentType && contentType.includes('application/json')) {
+      if (res.ok) {
         const data = await res.json();
         if (data.success && data.receiptHash) {
           castReceiptHash = data.receiptHash;
@@ -67,16 +66,16 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
         }
       } else {
         const text = await res.text();
+        let errMsg = 'Voting Rule Violation: Unable to cast vote.';
         try {
           const data = JSON.parse(text);
-          if (data.message) {
-            setError(data.message);
-            setSubmitting(false);
-            return;
-          }
+          if (data.message) errMsg = data.message;
         } catch {
-          // fallback to client-side Firestore save if API endpoint fails
+          // ignore
         }
+        setError(errMsg);
+        setSubmitting(false);
+        return;
       }
     } catch {
       // API call failed, proceed with client-side Firestore direct save

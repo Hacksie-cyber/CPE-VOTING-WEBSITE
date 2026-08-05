@@ -465,18 +465,27 @@ async function startServer() {
         (normName.length > 2 && normalizeName(v.name) === normName)
     );
 
+    // Check if anyone with matching email OR matching normalized full name has ALREADY voted
+    const matchingVoted = voters.find(
+      (v) =>
+        v.hasVoted &&
+        ((v.email && cleanEmail && v.email.toLowerCase() === cleanEmail) ||
+          (normName.length > 2 && v.name && normalizeName(v.name) === normName) ||
+          (v.id && cleanStudentId && v.id.toUpperCase() === cleanStudentId))
+    );
+
     if (voter) {
       // Link/update existing record while preserving voting status
       voter.id = cleanStudentId;
       voter.name = cleanName;
       voter.email = cleanEmail;
       voter.yearLevel = cleanYearLevel;
+      if (matchingVoted) {
+        voter.hasVoted = true;
+        voter.receiptHash = voter.receiptHash || matchingVoted.receiptHash;
+        voter.votedAt = voter.votedAt || matchingVoted.votedAt;
+      }
     } else {
-      // Check if anyone with the same normalized name has already voted under another record
-      const matchingVoted = voters.find(
-        (v) => normName.length > 2 && normalizeName(v.name) === normName && v.hasVoted
-      );
-
       voter = {
         id: cleanStudentId,
         name: cleanName,
@@ -484,6 +493,7 @@ async function startServer() {
         yearLevel: cleanYearLevel,
         hasVoted: !!matchingVoted,
         receiptHash: matchingVoted ? matchingVoted.receiptHash : undefined,
+        votedAt: matchingVoted ? matchingVoted.votedAt : undefined,
       };
       voters.push(voter);
     }
@@ -549,13 +559,16 @@ async function startServer() {
         (normName.length > 2 && normalizeName(v.name) === normName)
     );
 
+    const matchingVoted = voters.find(
+      (v) =>
+        v.hasVoted &&
+        ((v.email && cleanEmail && v.email.toLowerCase() === cleanEmail) ||
+          (normName.length > 2 && v.name && normalizeName(v.name) === normName))
+    );
+
     if (!voter) {
       const emailPrefix = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
       const studentId = `2026-${emailPrefix.toUpperCase().slice(0, 8)}`;
-      
-      const matchingVoted = voters.find(
-        (v) => normName.length > 2 && normalizeName(v.name) === normName && v.hasVoted
-      );
 
       voter = {
         id: studentId,
@@ -564,6 +577,7 @@ async function startServer() {
         yearLevel: '3rd Year',
         hasVoted: !!matchingVoted,
         receiptHash: matchingVoted ? matchingVoted.receiptHash : undefined,
+        votedAt: matchingVoted ? matchingVoted.votedAt : undefined,
       };
       voters.push(voter);
       await saveStateToFirestore();
@@ -572,6 +586,11 @@ async function startServer() {
         voter.name = cleanName;
       }
       if (!voter.email) voter.email = cleanEmail;
+      if (matchingVoted) {
+        voter.hasVoted = true;
+        voter.receiptHash = voter.receiptHash || matchingVoted.receiptHash;
+        voter.votedAt = voter.votedAt || matchingVoted.votedAt;
+      }
     }
 
     res.json({

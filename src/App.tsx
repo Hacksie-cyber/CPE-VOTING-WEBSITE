@@ -8,6 +8,7 @@ import { VoterAuthModal } from './components/VoterAuthModal';
 import { BallotConfirmationModal } from './components/BallotConfirmationModal';
 import { VoteReceiptModal } from './components/VoteReceiptModal';
 import { TermsPrivacyModal } from './components/TermsPrivacyModal';
+import { AlreadyVotedModal } from './components/AlreadyVotedModal';
 import { Position, Candidate, Voter, VoteChoices, ElectionSettings } from './types';
 import { INITIAL_ELECTION_SETTINGS, INITIAL_POSITIONS, INITIAL_CANDIDATES } from './data/initialData';
 import { loadElectionDataFromFirestore, subscribeToElectionData } from './lib/firebase';
@@ -49,6 +50,7 @@ export default function App() {
   });
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [isAlreadyVotedModalOpen, setIsAlreadyVotedModalOpen] = useState(false);
   const [lastReceiptHash, setLastReceiptHash] = useState('');
   const [lastReceiptTime, setLastReceiptTime] = useState('');
 
@@ -159,6 +161,11 @@ export default function App() {
     setVoter(authenticatedVoter);
     localStorage.setItem('cpe_voter', JSON.stringify(authenticatedVoter));
     setIsAuthModalOpen(false);
+
+    if (authenticatedVoter.hasVoted) {
+      setIsAlreadyVotedModalOpen(true);
+    }
+
     if (authenticatedVoter.email?.toLowerCase() === 'bamuyahacksie@gmail.com') {
       setActiveTab('admin');
     } else {
@@ -205,6 +212,7 @@ export default function App() {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
         onOpenTermsPrivacy={openTermsPrivacy}
+        onOpenAlreadyVotedModal={() => setIsAlreadyVotedModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -219,6 +227,7 @@ export default function App() {
             onSelectCandidate={handleSelectCandidate}
             onOpenReview={() => setIsReviewModalOpen(true)}
             onOpenAuth={() => setIsAuthModalOpen(true)}
+            onOpenAlreadyVotedModal={() => setIsAlreadyVotedModalOpen(true)}
           />
         )}
 
@@ -284,6 +293,13 @@ export default function App() {
         isOpen={isTermsModalOpen}
         onClose={() => setIsTermsModalOpen(false)}
         defaultTab={termsModalTab}
+      />
+
+      <AlreadyVotedModal
+        isOpen={isAlreadyVotedModalOpen}
+        onClose={() => setIsAlreadyVotedModalOpen(false)}
+        voter={voter}
+        onViewResults={() => setActiveTab('results')}
       />
     </div>
   );

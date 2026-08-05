@@ -27,6 +27,7 @@ interface BallotStationProps {
   onSelectCandidate: (positionId: string, choiceId: string) => void;
   onOpenReview: () => void;
   onOpenAuth: () => void;
+  onOpenAlreadyVotedModal?: () => void;
 }
 
 export const BallotStation: React.FC<BallotStationProps> = ({
@@ -38,6 +39,7 @@ export const BallotStation: React.FC<BallotStationProps> = ({
   onSelectCandidate,
   onOpenReview,
   onOpenAuth,
+  onOpenAlreadyVotedModal,
 }) => {
   const [activePosIndex, setActivePosIndex] = useState(0);
   const [viewMode, setViewMode] = useState<'horizontal' | 'grid'>('horizontal');
@@ -67,7 +69,10 @@ export const BallotStation: React.FC<BallotStationProps> = ({
   };
 
   const handleCandidateClick = (posId: string, cand: Candidate) => {
-    if (voter?.hasVoted) return;
+    if (voter?.hasVoted) {
+      if (onOpenAlreadyVotedModal) onOpenAlreadyVotedModal();
+      return;
+    }
 
     const otherPos = getSelectedOtherPosition(cand, posId);
     if (otherPos) {
@@ -92,6 +97,36 @@ export const BallotStation: React.FC<BallotStationProps> = ({
 
   return (
     <div className="space-y-6 pb-32">
+      {/* Already Voted Notice Banner */}
+      {voter?.hasVoted && (
+        <div className="bg-emerald-950/80 border border-emerald-500/40 p-4 sm:p-5 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-emerald-200 animate-in fade-in duration-300">
+          <div className="flex items-center space-x-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-bold text-emerald-300 text-sm flex items-center space-x-2">
+                <span>Official Ballot Submitted</span>
+                <span className="text-[10px] bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30 uppercase font-extrabold tracking-wider">
+                  Verified
+                </span>
+              </h4>
+              <p className="text-emerald-200/80 mt-0.5">
+                Our records show a ballot has been cast for <strong className="text-white">{voter.name}</strong> ({voter.email || voter.id}). Re-voting or submitting duplicate ballots under the same name/Gmail is strictly prohibited.
+              </p>
+            </div>
+          </div>
+          {onOpenAlreadyVotedModal && (
+            <button
+              onClick={onOpenAlreadyVotedModal}
+              className="w-full sm:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md flex-shrink-0 text-center"
+            >
+              View Receipt & Details
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Rule Notice Banner */}
       {ruleViolationNotice && (
         <div className="sticky top-4 z-40 bg-amber-950/90 border border-amber-500/50 backdrop-blur-md text-amber-200 p-4 rounded-2xl text-xs font-semibold shadow-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
@@ -734,10 +769,13 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                 <span>Login to Cast Ballot</span>
               </button>
             ) : voter.hasVoted ? (
-              <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/30 flex items-center space-x-1.5">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Ballot Submitted</span>
-              </span>
+              <button
+                onClick={onOpenAlreadyVotedModal}
+                className="text-xs font-semibold text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 px-4 py-2 rounded-xl border border-emerald-500/40 flex items-center space-x-1.5 transition-all cursor-pointer shadow-md"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Ballot Submitted (View Policy)</span>
+              </button>
             ) : (
               <button
                 onClick={onOpenReview}
