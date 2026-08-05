@@ -10,7 +10,6 @@ interface NavbarProps {
   onOpenAuth: () => void;
   onLogout: () => void;
   onOpenTermsPrivacy?: (tab?: 'terms' | 'privacy') => void;
-  onOpenAlreadyVotedModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -21,7 +20,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onLogout,
   onOpenTermsPrivacy,
-  onOpenAlreadyVotedModal,
 }) => {
   const isAdmin = voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com';
 
@@ -105,15 +103,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="flex items-center space-x-3">
             {voter ? (
               <div className="flex items-center space-x-3 bg-slate-950/80 px-3.5 py-2 rounded-xl border border-slate-800">
-                <div
-                  onClick={() => {
-                    if (voter.hasVoted && onOpenAlreadyVotedModal) onOpenAlreadyVotedModal();
-                  }}
-                  className={`text-right hidden sm:block ${
-                    voter.hasVoted ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
-                  }`}
-                  title={voter.hasVoted ? 'Click to view Single Ballot Policy & Receipt' : undefined}
-                >
+                <div className="text-right hidden sm:block">
                   <div className="flex items-center justify-end space-x-1.5">
                     <span className="text-sm font-semibold text-slate-200">{voter.name}</span>
                     {isAdmin && (

@@ -31,11 +31,6 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
   const handleSubmit = async () => {
     if (!confirmed) return;
 
-    if (voter?.hasVoted) {
-      setError('Voting Rule Violation: A ballot has already been submitted for this account. Double voting is strictly prohibited.');
-      return;
-    }
-
     setSubmitting(true);
     setError(null);
 
@@ -57,7 +52,8 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
         }),
       });
 
-      if (res.ok) {
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
         const data = await res.json();
         if (data.success && data.receiptHash) {
           castReceiptHash = data.receiptHash;
@@ -73,14 +69,13 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
         const text = await res.text();
         try {
           const data = JSON.parse(text);
-          if (data && data.message) {
+          if (data.message) {
             setError(data.message);
             setSubmitting(false);
             return;
           }
         } catch {
-          // Response is non-JSON (e.g. 404 HTML on static host like Vercel).
-          // Fall through to direct Firestore save.
+          // fallback to client-side Firestore save if API endpoint fails
         }
       }
     } catch {
@@ -97,15 +92,8 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
       castReceiptHash = hash;
     }
 
-    if (!apiSuccess) {
-      // Save directly to Firestore and check for duplicate voter
-      const directResult = await saveVoteToFirestoreDirect(voter, choices, castReceiptHash, castTimestamp);
-      if (!directResult.success) {
-        setError(directResult.message || 'Voting Rule Violation: Unable to cast vote due to account status.');
-        setSubmitting(false);
-        return;
-      }
-    }
+    // Always ensure vote data is saved directly to Firestore
+    await saveVoteToFirestoreDirect(voter, choices, castReceiptHash, castTimestamp);
 
     onCastSuccess(castReceiptHash, castTimestamp, returnedVoter);
     onClose();
