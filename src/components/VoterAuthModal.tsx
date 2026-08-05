@@ -103,11 +103,6 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
             return;
           }
         }
-
-        if (!res.ok) {
-          setError('Unable to proceed. Duplicate account details detected or invalid student profile.');
-          return;
-        }
       } catch {
         // API call failed, proceed with direct Firestore validation
       }
