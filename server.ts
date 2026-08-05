@@ -459,13 +459,73 @@ async function startServer() {
     const normName = normalizeName(cleanName);
     const cleanYearLevel = (yearLevel as YearLevel) || '3rd Year';
 
-    // Find if an account already exists by email, student ID, OR matching normalized full name
-    let voter = voters.find(
-      (v) =>
-        (v.email && v.email.toLowerCase() === cleanEmail) ||
-        (v.id && v.id.toUpperCase() === cleanStudentId) ||
-        (normName.length > 2 && normalizeName(v.name) === normName)
+    // Find accounts by email, normalized full name, and student ID
+    const emailMatch = voters.find(
+      (v) => v.email && v.email.toLowerCase() === cleanEmail
     );
+    const nameMatch = voters.find(
+      (v) => normName.length > 2 && v.name && normalizeName(v.name) === normName
+    );
+    const idMatch = voters.find(
+      (v) => v.id && v.id.toUpperCase() === cleanStudentId
+    );
+
+    let nameConflict = false;
+    let emailConflict = false;
+
+    if (nameMatch) {
+      if (
+        !emailMatch ||
+        emailMatch.id !== nameMatch.id ||
+        (nameMatch.email && nameMatch.email.toLowerCase() !== cleanEmail)
+      ) {
+        nameConflict = true;
+      }
+    }
+
+    if (emailMatch) {
+      if (
+        !nameMatch ||
+        emailMatch.id !== nameMatch.id ||
+        (emailMatch.name &&
+          normalizeName(emailMatch.name) !== normName &&
+          !emailMatch.name.startsWith('CPE Student'))
+      ) {
+        emailConflict = true;
+      }
+    }
+
+    if (nameConflict && emailConflict) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name already exist, Gmail already used.',
+      });
+    }
+
+    if (nameConflict) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name already exist.',
+      });
+    }
+
+    if (emailConflict) {
+      return res.status(400).json({
+        success: false,
+        message: 'Gmail already used.',
+      });
+    }
+
+    if (
+      idMatch &&
+      (!emailMatch || idMatch.id !== emailMatch.id) &&
+      (!nameMatch || idMatch.id !== nameMatch.id)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Student ID number is already registered under another account.',
+      });
+    }
 
     // Check if anyone with matching email OR matching normalized full name has ALREADY voted
     const matchingVoted = voters.find(
@@ -475,6 +535,8 @@ async function startServer() {
           (normName.length > 2 && v.name && normalizeName(v.name) === normName) ||
           (v.id && cleanStudentId && v.id.toUpperCase() === cleanStudentId))
     );
+
+    let voter = emailMatch || nameMatch || idMatch;
 
     if (voter) {
       // Link/update existing record while preserving voting status
