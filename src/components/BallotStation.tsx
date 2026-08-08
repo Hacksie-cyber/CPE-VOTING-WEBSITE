@@ -92,127 +92,56 @@ export const BallotStation: React.FC<BallotStationProps> = ({
 
   return (
     <div className="space-y-6 pb-32">
-      {/* Official Vote Receipt Information Banner (Displays when voter has already voted) */}
-      {voter?.hasVoted && (
-        <div className="bg-gradient-to-r from-cyan-950/90 via-slate-900 to-slate-950 border-2 border-cyan-500/50 rounded-2xl p-6 shadow-2xl space-y-4 animate-in fade-in slide-in-from-top-3">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-cyan-500/30">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400 text-cyan-300 flex items-center justify-center flex-shrink-0">
-                <ShieldCheck className="w-7 h-7" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest flex items-center space-x-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Official Ballot Submitted & Verified</span>
-                </span>
-                <h2 className="text-xl sm:text-2xl font-black text-slate-100">
-                  Voting Record Receipt Information
-                </h2>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs font-semibold px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                Single-Vote Policy Enforced
-              </span>
-            </div>
-          </div>
-
-          <div className="bg-slate-950/90 rounded-xl p-4 border border-slate-800 space-y-3">
-            <p className="text-xs text-slate-300 leading-relaxed">
-              <strong>Notice:</strong> Repeated voting using the same Gmail account or name (<span className="text-cyan-300 font-semibold">{voter.name}</span> &bull; <span className="text-cyan-300 font-semibold">{voter.email}</span>) is disabled. Below is your official receipt information for audit purposes.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-              <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                <span className="text-[11px] text-slate-400 font-medium block mb-1">Voter Account</span>
-                <span className="text-xs font-bold text-slate-100">{voter.name}</span>
-                <span className="text-[11px] text-cyan-400 block truncate">{voter.email}</span>
-              </div>
-
-              <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                <span className="text-[11px] text-slate-400 font-medium block mb-1">Audit Receipt Hash</span>
-                <div className="flex items-center justify-between gap-1">
-                  <span className="text-xs font-mono font-bold text-cyan-400 truncate">
-                    {voter.receiptHash || 'CPE2026-RECORDED'}
-                  </span>
-                  {voter.receiptHash && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(voter.receiptHash || '');
-                        alert('Receipt hash copied to clipboard!');
-                      }}
-                      className="text-[10px] font-bold px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
-                    >
-                      Copy
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                <span className="text-[11px] text-slate-400 font-medium block mb-1">Timestamp Recorded</span>
-                <span className="text-xs font-mono text-slate-200">
-                  {voter.votedAt ? new Date(voter.votedAt).toLocaleString() : 'Recorded in Official Audit Ledger'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Rule Notice Banner */}
       {ruleViolationNotice && (
-        <div className="sticky top-4 z-40 bg-amber-950/90 border border-amber-500/50 backdrop-blur-md text-amber-200 p-4 rounded-2xl text-xs font-semibold shadow-2xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+        <div className="sticky top-4 z-40 bg-rose-900 border-2 border-black text-white p-4 rounded-2xl text-xs font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center space-x-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+            <AlertTriangle className="w-5 h-5 text-amber-300 flex-shrink-0" />
             <span>{ruleViolationNotice}</span>
           </div>
           <button
             onClick={() => setRuleViolationNotice(null)}
-            className="text-amber-400 hover:text-amber-100 p-1 rounded-lg hover:bg-amber-900/50"
+            className="text-white hover:bg-black/30 p-1 rounded-lg border border-white/40"
           >
             ✕
           </button>
         </div>
-      )}
-
-      {/* Banner / Instructions */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-60 h-60 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+      )}      {/* Banner / Instructions */}
+      <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm relative overflow-hidden">
+        <div className="absolute -right-10 -bottom-10 w-60 h-60 bg-rose-700/10 rounded-full blur-3xl pointer-events-none" />
         
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-1">
-              <ShieldCheck className="w-4 h-4" />
+            <div className="flex items-center space-x-2 text-rose-700 dark:text-rose-400 text-xs font-extrabold uppercase tracking-wider mb-1">
+              <ShieldCheck className="w-4 h-4 text-rose-700 dark:text-rose-400" />
               <span>Official CPE Commission on Elections 2026</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-slate-100 tracking-tight">
               Official Department Council Ballot
             </h2>
-            <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-              Select one candidate or choose &quot;Abstain&quot; for each position. Use the horizontal navigation bar below to step through each position.
+            <p className="text-sm text-neutral-600 dark:text-slate-300 font-medium mt-1 max-w-2xl">
+              Select one candidate or choose &quot;Abstain&quot; for each position. Use the navigation bar below to step through each position.
             </p>
           </div>
 
-          <div className="flex items-center space-x-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 flex-shrink-0">
+          <div className="flex items-center space-x-2 bg-neutral-100 dark:bg-slate-800 p-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 flex-shrink-0">
             <button
               onClick={() => setViewMode('horizontal')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all ${
                 viewMode === 'horizontal'
-                  ? 'bg-cyan-500 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-rose-700 text-white shadow-sm'
+                  : 'text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-slate-700'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>Step-by-Step View</span>
+              <span>Step-by-Step</span>
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all ${
                 viewMode === 'grid'
-                  ? 'bg-cyan-500 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-rose-700 text-white shadow-sm'
+                  : 'text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-slate-700'
               }`}
             >
               <Grid className="w-3.5 h-3.5" />
@@ -222,19 +151,19 @@ export const BallotStation: React.FC<BallotStationProps> = ({
         </div>
 
         {/* Multi-Position Voting Rule Alert */}
-        <div className="mt-4 bg-cyan-950/40 border border-cyan-500/30 p-3 rounded-xl flex items-center space-x-2.5 text-xs text-cyan-200">
-          <Info className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+        <div className="mt-4 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/50 p-3 rounded-xl flex items-center space-x-2.5 text-xs text-rose-900 dark:text-rose-200 font-medium">
+          <Info className="w-4 h-4 text-rose-700 dark:text-rose-400 flex-shrink-0" />
           <span>
-            <strong className="text-cyan-300">Single-Position Candidate Rule:</strong> Selecting a candidate for one position (e.g. Governor) automatically makes them unavailable for selection in all other positions.
+            <strong className="text-rose-900 dark:text-rose-100 font-bold">Single-Position Candidate Rule:</strong> Selecting a candidate for one position (e.g. Governor) automatically makes them unavailable for selection in all other positions.
           </span>
         </div>
       </div>
 
       {/* Horizontal Position Navigation Stepper Bar */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-xl">
+      <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3 px-1">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center space-x-2">
-            <Layers className="w-4 h-4 text-cyan-400" />
+          <span className="text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-slate-100 flex items-center space-x-2">
+            <Layers className="w-4 h-4 text-rose-700 dark:text-rose-400" />
             <span>Position Navigation ({activePosIndex + 1} of {totalPositions})</span>
           </span>
 
@@ -243,7 +172,7 @@ export const BallotStation: React.FC<BallotStationProps> = ({
               type="button"
               onClick={() => setActivePosIndex((prev) => Math.max(0, prev - 1))}
               disabled={activePosIndex === 0}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center space-x-1 border border-slate-700 transition-all"
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-neutral-100 dark:bg-slate-800 text-neutral-900 dark:text-slate-100 hover:bg-neutral-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center space-x-1 border border-neutral-200 dark:border-slate-700 transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Prev Position</span>
@@ -252,7 +181,7 @@ export const BallotStation: React.FC<BallotStationProps> = ({
               type="button"
               onClick={() => setActivePosIndex((prev) => Math.min(totalPositions - 1, prev + 1))}
               disabled={activePosIndex === totalPositions - 1}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center space-x-1 border border-slate-700 transition-all"
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-neutral-100 dark:bg-slate-800 text-neutral-900 dark:text-slate-100 hover:bg-neutral-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed flex items-center space-x-1 border border-neutral-200 dark:border-slate-700 transition-all"
             >
               <span>Next Position</span>
               <ChevronRight className="w-4 h-4" />
@@ -270,21 +199,21 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                 key={pos.id}
                 type="button"
                 onClick={() => setActivePosIndex(idx)}
-                className={`flex-shrink-0 flex items-center space-x-2.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border ${
+                className={`flex-shrink-0 flex items-center space-x-2.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${
                   isActive
-                    ? 'bg-cyan-500/15 border-cyan-400 text-cyan-200 ring-2 ring-cyan-500/30 shadow-lg shadow-cyan-500/10'
+                    ? 'bg-rose-700 dark:bg-rose-800 border-rose-700 dark:border-rose-600 text-white shadow-sm'
                     : isSelected
-                    ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/20'
-                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/80 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                    : 'bg-neutral-50 dark:bg-slate-800 border-neutral-200 dark:border-slate-700 text-neutral-700 dark:text-slate-300 hover:bg-neutral-100 dark:hover:bg-slate-700'
                 }`}
               >
                 <span
-                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
                     isActive
-                      ? 'bg-cyan-400 text-slate-950'
+                      ? 'bg-white text-rose-800'
                       : isSelected
-                      ? 'bg-emerald-500 text-slate-950'
-                      : 'bg-slate-800 text-slate-300'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-neutral-200 dark:bg-slate-700 text-neutral-800 dark:text-slate-200'
                   }`}
                 >
                   {isSelected ? '✓' : idx + 1}
@@ -303,28 +232,28 @@ export const BallotStation: React.FC<BallotStationProps> = ({
           {activePosition && (
             <div
               key={activePosition.id}
-              className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl relative transition-all duration-300 animate-in fade-in slide-in-from-right-2"
+              className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm relative transition-all duration-300 animate-in fade-in slide-in-from-right-2"
             >
               {/* Position Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-3 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-neutral-200 dark:border-slate-800 gap-3 mb-6">
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                    <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-800">
                       Position {activePosIndex + 1} of {totalPositions} • {activePosition.category}
                     </span>
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-100">{activePosition.title}</h3>
+                    <h3 className="text-xl sm:text-2xl font-extrabold text-neutral-900 dark:text-slate-100">{activePosition.title}</h3>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">{activePosition.description}</p>
+                  <p className="text-xs text-neutral-600 dark:text-slate-300 font-medium mt-1">{activePosition.description}</p>
                 </div>
 
                 <div className="flex items-center space-x-2">
                   {choices[activePosition.id] ? (
-                    <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                    <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-700 text-white border border-rose-600">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Choice Selected</span>
                     </span>
                   ) : (
-                    <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400">
+                    <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-slate-300 border border-neutral-200 dark:border-slate-700">
                       <span>Pending Selection</span>
                     </span>
                   )}
@@ -337,10 +266,10 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                   (c) => c.positionId === activePosition.id || c.positionId?.toLowerCase() === activePosition.id?.toLowerCase()
                 );
                 return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {activePosCandidates.length === 0 ? (
-                      <div className="md:col-span-2 bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center">
-                        <p className="font-semibold text-slate-300">No candidates nominated for {activePosition.title} yet.</p>
+                      <div className="md:col-span-2 bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-xl p-6 text-center text-xs text-neutral-600 dark:text-slate-300 flex flex-col items-center justify-center">
+                        <p className="font-bold text-neutral-800 dark:text-slate-100">No candidates nominated for {activePosition.title} yet.</p>
                       </div>
                     ) : (
                       activePosCandidates.map((cand) => {
@@ -352,38 +281,49 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                           <div
                             key={cand.id}
                             onClick={() => handleCandidateClick(activePosition.id, cand)}
-                            className={`relative rounded-3xl overflow-hidden border transition-all cursor-pointer flex flex-col justify-between group ${
+                            className={`relative rounded-2xl overflow-hidden border transition-all cursor-pointer flex flex-col justify-between group ${
                               isSelected
-                                ? 'bg-slate-900 border-cyan-400 ring-2 ring-cyan-500/50 shadow-2xl shadow-cyan-500/20'
+                                ? 'bg-rose-50/90 dark:bg-rose-950/80 border-rose-600 dark:border-rose-500 ring-2 ring-rose-500/50 shadow-md'
                                 : isUnavailable
-                                ? 'bg-slate-950/50 border-amber-500/30 opacity-60 hover:opacity-85'
-                                : 'bg-slate-900/90 border-slate-800 hover:border-slate-700 hover:bg-slate-900/95 shadow-xl'
+                                ? 'bg-neutral-100/70 dark:bg-slate-800/50 border-neutral-200 dark:border-slate-800 opacity-60'
+                                : 'bg-white dark:bg-slate-900 hover:bg-rose-50/40 dark:hover:bg-slate-800/80 border-neutral-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-800 shadow-sm hover:shadow-md'
                             }`}
                           >
+                            {/* Red Top Accent Banner */}
+                            <div className="bg-rose-700 dark:bg-rose-900 text-white px-3 py-1 text-[11px] font-black border-b border-rose-800/30 dark:border-slate-800 flex justify-between items-center">
+                              <span className="uppercase tracking-wider flex items-center space-x-1">
+                                <Award className="w-3 h-3 text-amber-300" />
+                                <span>Candidate</span>
+                              </span>
+                              <span className="bg-rose-900 dark:bg-rose-950 px-2 py-0.5 rounded text-[10px] font-extrabold border border-rose-400/40">
+                                {cand.yearLevel}
+                              </span>
+                            </div>
+
                             {/* Top Full-Width Profile Picture */}
-                            <div className="relative w-full h-56 sm:h-64 bg-slate-950 overflow-hidden">
+                            <div className="relative w-full h-56 sm:h-64 bg-neutral-900 border-b border-neutral-200 dark:border-slate-800 overflow-hidden">
                               <img
                                 src={cand.avatarUrl}
                                 alt={cand.name}
                                 referrerPolicy="no-referrer"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               />
-                              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
                               {/* Selection Status Badge (Top Right) */}
                               <div className="absolute top-3 right-3 z-10">
                                 {isUnavailable ? (
-                                  <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-amber-950/80 text-amber-300 border border-amber-500/40 backdrop-blur-md shadow-lg flex items-center space-x-1">
-                                    <AlertCircle className="w-3 h-3 text-amber-400" />
+                                  <span className="text-[10px] font-extrabold px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-950 dark:text-amber-200 border border-amber-300 shadow-sm flex items-center space-x-1">
+                                    <AlertCircle className="w-3 h-3 text-amber-800 dark:text-amber-400" />
                                     <span>Selected for {otherPosition.title}</span>
                                   </span>
                                 ) : isSelected ? (
-                                  <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-cyan-400 text-slate-950 border border-cyan-300 backdrop-blur-md shadow-lg flex items-center space-x-1">
+                                  <span className="text-xs font-black px-3.5 py-1 rounded-full bg-rose-700 dark:bg-rose-800 text-white border border-rose-500 shadow-md flex items-center space-x-1">
                                     <CheckCircle2 className="w-3.5 h-3.5 stroke-[3]" />
                                     <span>Voted</span>
                                   </span>
                                 ) : (
-                                  <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-slate-950/80 text-slate-300 border border-slate-700/80 backdrop-blur-md group-hover:border-cyan-500/50">
+                                  <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-rose-700 dark:bg-rose-800 text-white border border-rose-600/50 shadow-sm">
                                     Tap to Vote
                                   </span>
                                 )}
@@ -391,11 +331,8 @@ export const BallotStation: React.FC<BallotStationProps> = ({
 
                               {/* Badges (Top Left) */}
                               <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1.5">
-                                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-950/80 text-cyan-300 border border-slate-700/80 backdrop-blur-md">
-                                  {cand.yearLevel}
-                                </span>
                                 {cand.nickname && (
-                                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 backdrop-blur-md">
+                                  <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-rose-800/90 dark:bg-rose-900 text-white border border-rose-600/40 shadow-sm">
                                     &quot;{cand.nickname}&quot;
                                   </span>
                                 )}
@@ -403,46 +340,48 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                             </div>
 
                             {/* Card Body */}
-                            <div className="p-5 flex-1 flex flex-col justify-between -mt-3 relative z-10">
+                            <div className="p-5 flex-1 flex flex-col justify-between relative z-10 bg-white dark:bg-slate-900">
                               <div>
-                                <h4 className="font-extrabold text-slate-100 text-lg sm:text-xl tracking-tight group-hover:text-cyan-400 transition-colors">
+                                <h4 className="font-extrabold text-rose-950 dark:text-rose-100 text-lg sm:text-xl tracking-tight group-hover:text-rose-700 dark:group-hover:text-rose-400 transition-colors">
                                   {cand.name}
                                 </h4>
 
-                                <p className="text-xs sm:text-sm text-slate-400 font-normal mt-1.5 line-clamp-2 leading-relaxed">
-                                  {cand.platformHeading || 'Dedicated Computer Engineering Student Leader'}
-                                </p>
+                                <div className="mt-2 bg-rose-50/80 dark:bg-rose-950/60 p-2.5 rounded-xl border border-rose-200/80 dark:border-rose-900/50">
+                                  <p className="text-xs text-rose-950 dark:text-rose-100 font-bold leading-relaxed line-clamp-2">
+                                    {cand.platformHeading || 'Dedicated Computer Engineering Student Leader'}
+                                  </p>
+                                </div>
 
                                 {isUnavailable && (
-                                  <div className="mt-3 bg-amber-500/10 border border-amber-500/20 p-2 rounded-xl text-[11px] text-amber-300 font-medium text-center">
+                                  <div className="mt-3 bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 p-2 rounded-xl text-[11px] text-amber-900 dark:text-amber-200 font-bold text-center">
                                     Unavailable: Selected for {otherPosition.title}
                                   </div>
                                 )}
                               </div>
 
                               {/* Bottom Footer Action Bar */}
-                              <div className="mt-5 pt-3.5 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                              <div className="mt-5 pt-3.5 border-t border-neutral-100 dark:border-slate-800 flex items-center justify-between gap-2">
                                 <button
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedCandidateModal(cand);
                                   }}
-                                  className="flex items-center space-x-1 text-xs text-slate-400 hover:text-cyan-400 transition-colors font-medium px-2 py-1 rounded-lg hover:bg-slate-800/50"
+                                  className="flex items-center space-x-1 text-xs text-rose-900 dark:text-rose-200 hover:text-rose-700 font-extrabold px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-slate-700 border border-rose-200/60 dark:border-slate-700 transition-colors"
                                 >
-                                  <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                                  <FileText className="w-3.5 h-3.5 text-rose-700 dark:text-rose-400" />
                                   <span>View Bio</span>
                                 </button>
 
                                 <button
                                   type="button"
                                   disabled={isUnavailable}
-                                  className={`px-5 py-2 rounded-full text-xs font-bold transition-all shadow-md flex items-center space-x-1.5 ${
+                                  className={`px-5 py-2 rounded-full text-xs font-black transition-all border shadow-sm flex items-center space-x-1.5 ${
                                     isSelected
-                                      ? 'bg-cyan-400 text-slate-950 hover:bg-cyan-300 shadow-cyan-500/30 scale-105'
+                                      ? 'bg-rose-800 text-white border-rose-700 scale-105'
                                       : isUnavailable
-                                      ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                                      : 'bg-emerald-900/80 text-emerald-200 border border-emerald-500/40 hover:bg-cyan-400 hover:text-slate-950 hover:border-cyan-300'
+                                      ? 'bg-neutral-200 dark:bg-slate-800 text-neutral-400 dark:text-slate-500 cursor-not-allowed border-neutral-300 dark:border-slate-700'
+                                      : 'bg-rose-700 text-white hover:bg-rose-800 border-rose-700'
                                   }`}
                                 >
                                   {isSelected ? (
@@ -472,39 +411,39 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                             }
                           }
                         }}
-                        className={`rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
+                        className={`rounded-2xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
                           choices[activePosition.id] === 'ABSTAIN'
-                            ? 'bg-slate-950 border-amber-500 ring-2 ring-amber-500/20 shadow-lg'
-                            : 'bg-slate-950/40 border-slate-800/80 hover:border-slate-700'
+                            ? 'bg-amber-100/90 dark:bg-amber-950/80 border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/50 shadow-md'
+                            : 'bg-neutral-50 dark:bg-slate-800/80 hover:bg-neutral-100 dark:hover:bg-slate-800 border-neutral-200 dark:border-slate-800 shadow-sm'
                         }`}
                       >
                         <div>
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-200 dark:bg-amber-900 text-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
                               Neutral Option
                             </span>
                             <div
                               className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
                                 choices[activePosition.id] === 'ABSTAIN'
-                                  ? 'border-amber-400 bg-amber-500 text-slate-950'
-                                  : 'border-slate-700 bg-slate-900'
+                                  ? 'bg-amber-500 border-amber-600 text-black'
+                                  : 'bg-neutral-200 dark:bg-slate-700 border-neutral-300 dark:border-slate-600'
                               }`}
                             >
-                              {choices[activePosition.id] === 'ABSTAIN' && <Ban className="w-3.5 h-3.5 text-slate-950" />}
+                              {choices[activePosition.id] === 'ABSTAIN' && <Ban className="w-3.5 h-3.5 text-black" />}
                             </div>
                           </div>
 
                           <div className="flex items-center space-x-3 my-2">
-                            <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                            <div className="w-12 h-12 rounded-xl bg-amber-200 dark:bg-amber-900/60 border border-amber-300 dark:border-amber-700 flex items-center justify-center text-amber-950 dark:text-amber-200">
                               <Ban className="w-6 h-6" />
                             </div>
                             <div>
-                              <h4 className="font-bold text-slate-200 text-sm">Abstain for {activePosition.title}</h4>
-                              <p className="text-xs text-slate-400">Choose not to vote for any candidate</p>
+                              <h4 className="font-extrabold text-neutral-900 dark:text-slate-100 text-sm">Abstain for {activePosition.title}</h4>
+                              <p className="text-xs text-neutral-600 dark:text-slate-300 font-medium">Choose not to vote for any candidate</p>
                             </div>
                           </div>
                         </div>
-                        <p className="text-[11px] text-slate-500 mt-4 italic">
+                        <p className="text-[11px] text-neutral-600 dark:text-slate-400 mt-4 italic font-medium">
                           Your vote will count towards overall turnout without endorsing a candidate.
                         </p>
                       </div>
@@ -514,18 +453,18 @@ export const BallotStation: React.FC<BallotStationProps> = ({
               })()}
 
               {/* Horizontal Position In-Card Footer Controls */}
-              <div className="mt-8 pt-4 border-t border-slate-800 flex items-center justify-between">
+              <div className="mt-8 pt-4 border-t border-neutral-200 dark:border-slate-800 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setActivePosIndex((prev) => Math.max(0, prev - 1))}
                   disabled={activePosIndex === 0}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold bg-neutral-100 dark:bg-slate-800 hover:bg-neutral-200 dark:hover:bg-slate-700 text-neutral-900 dark:text-slate-100 border border-neutral-200 dark:border-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   <span>Previous Position</span>
                 </button>
 
-                <div className="text-xs font-mono text-slate-400">
+                <div className="text-xs font-mono font-bold text-neutral-800 dark:text-slate-200">
                   {activePosIndex + 1} / {totalPositions}
                 </div>
 
@@ -533,7 +472,7 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                   <button
                     type="button"
                     onClick={() => setActivePosIndex((prev) => Math.min(totalPositions - 1, prev + 1))}
-                    className="flex items-center space-x-2 px-5 py-2 rounded-xl text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-md transition-all"
+                    className="flex items-center space-x-2 px-5 py-2 rounded-xl text-xs font-bold bg-rose-700 hover:bg-rose-800 text-white border border-rose-700 shadow-sm transition-all"
                   >
                     <span>Next Position</span>
                     <ArrowRight className="w-4 h-4" />
@@ -542,7 +481,7 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                   <button
                     type="button"
                     onClick={onOpenReview}
-                    className="flex items-center space-x-2 px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-md transition-all"
+                    className="flex items-center space-x-2 px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-600 shadow-sm transition-all"
                   >
                     <span>Review & Cast Ballot</span>
                     <ShieldCheck className="w-4 h-4" />
@@ -562,28 +501,28 @@ export const BallotStation: React.FC<BallotStationProps> = ({
               <div
                 key={pos.id}
                 id={`pos-${pos.id}`}
-                className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg relative"
+                className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm relative"
               >
                 {/* Position Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-2 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-neutral-200 dark:border-slate-800 gap-2 mb-6">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
+                      <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-800">
                         {pIdx + 1}. {pos.category}
                       </span>
-                      <h3 className="text-xl font-bold text-slate-100">{pos.title}</h3>
+                      <h3 className="text-xl font-extrabold text-neutral-900 dark:text-slate-100">{pos.title}</h3>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">{pos.description}</p>
+                    <p className="text-xs text-neutral-600 dark:text-slate-300 font-medium mt-1">{pos.description}</p>
                   </div>
 
                   <div className="flex items-center space-x-2">
                     {currentChoice ? (
-                      <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                      <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-700 text-white border border-rose-600">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         <span>Selected</span>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400">
+                      <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-slate-300 border border-neutral-200 dark:border-slate-700">
                         <span>Pending Selection</span>
                       </span>
                     )}
@@ -596,10 +535,10 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                     (c) => c.positionId === pos.id || c.positionId?.toLowerCase() === pos.id?.toLowerCase()
                   );
                   return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                       {posCandidates.length === 0 ? (
-                        <div className="md:col-span-2 bg-slate-950/60 border border-slate-800/80 rounded-xl p-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center">
-                          <p className="font-semibold text-slate-300">No candidates nominated for {pos.title} yet.</p>
+                        <div className="md:col-span-2 bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-xl p-6 text-center text-xs text-neutral-600 dark:text-slate-300 flex flex-col items-center justify-center">
+                          <p className="font-bold text-neutral-800 dark:text-slate-100">No candidates nominated for {pos.title} yet.</p>
                         </div>
                       ) : (
                         posCandidates.map((cand) => {
@@ -611,38 +550,49 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                             <div
                               key={cand.id}
                               onClick={() => handleCandidateClick(pos.id, cand)}
-                              className={`relative rounded-3xl overflow-hidden border transition-all cursor-pointer flex flex-col justify-between group ${
-                                isSelected
-                                  ? 'bg-slate-900 border-cyan-400 ring-2 ring-cyan-500/50 shadow-2xl shadow-cyan-500/20'
-                                  : isUnavailable
-                                  ? 'bg-slate-950/50 border-amber-500/30 opacity-60 hover:opacity-85'
-                                  : 'bg-slate-900/90 border-slate-800 hover:border-slate-700 hover:bg-slate-900/95 shadow-xl'
+                              className={`relative rounded-2xl overflow-hidden border transition-all cursor-pointer flex flex-col justify-between group ${
+                               isSelected
+                                 ? 'bg-rose-50/90 dark:bg-rose-950/80 border-rose-600 dark:border-rose-500 ring-2 ring-rose-500/50 shadow-md'
+                                 : isUnavailable
+                                 ? 'bg-neutral-100/70 dark:bg-slate-800/50 border-neutral-200 dark:border-slate-800 opacity-60'
+                                 : 'bg-white dark:bg-slate-900 hover:bg-rose-50/40 dark:hover:bg-slate-800/80 border-neutral-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-800 shadow-sm hover:shadow-md'
                               }`}
                             >
+                              {/* Red Top Accent Banner */}
+                              <div className="bg-rose-700 dark:bg-rose-900 text-white px-3 py-1 text-[11px] font-black border-b border-rose-800/30 dark:border-slate-800 flex justify-between items-center">
+                                <span className="uppercase tracking-wider flex items-center space-x-1">
+                                  <Award className="w-3 h-3 text-amber-300" />
+                                  <span>Candidate</span>
+                                </span>
+                                <span className="bg-rose-900 dark:bg-rose-950 px-2 py-0.5 rounded text-[10px] font-extrabold border border-rose-400/40">
+                                  {cand.yearLevel}
+                                </span>
+                              </div>
+
                               {/* Top Full-Width Profile Picture */}
-                              <div className="relative w-full h-56 sm:h-64 bg-slate-950 overflow-hidden">
+                              <div className="relative w-full h-56 sm:h-64 bg-neutral-900 border-b border-neutral-200 dark:border-slate-800 overflow-hidden">
                                 <img
                                   src={cand.avatarUrl}
                                   alt={cand.name}
                                   referrerPolicy="no-referrer"
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
                                 {/* Selection Status Badge (Top Right) */}
                                 <div className="absolute top-3 right-3 z-10">
                                   {isUnavailable ? (
-                                    <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-amber-950/80 text-amber-300 border border-amber-500/40 backdrop-blur-md shadow-lg flex items-center space-x-1">
-                                      <AlertCircle className="w-3 h-3 text-amber-400" />
+                                    <span className="text-[10px] font-extrabold px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-950 dark:text-amber-200 border border-amber-300 shadow-sm flex items-center space-x-1">
+                                      <AlertCircle className="w-3 h-3 text-amber-800 dark:text-amber-400" />
                                       <span>Selected for {otherPosition.title}</span>
                                     </span>
                                   ) : isSelected ? (
-                                    <span className="text-xs font-bold px-3.5 py-1 rounded-full bg-cyan-400 text-slate-950 border border-cyan-300 backdrop-blur-md shadow-lg flex items-center space-x-1">
+                                    <span className="text-xs font-black px-3.5 py-1 rounded-full bg-rose-700 dark:bg-rose-800 text-white border border-rose-500 shadow-md flex items-center space-x-1">
                                       <CheckCircle2 className="w-3.5 h-3.5 stroke-[3]" />
                                       <span>Voted</span>
                                     </span>
                                   ) : (
-                                    <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-slate-950/80 text-slate-300 border border-slate-700/80 backdrop-blur-md group-hover:border-cyan-500/50">
+                                    <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-rose-700 dark:bg-rose-800 text-white border border-rose-600/50 shadow-sm">
                                       Tap to Vote
                                     </span>
                                   )}
@@ -650,11 +600,8 @@ export const BallotStation: React.FC<BallotStationProps> = ({
 
                                 {/* Badges (Top Left) */}
                                 <div className="absolute top-3 left-3 z-10 flex flex-wrap gap-1.5">
-                                  <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-950/80 text-cyan-300 border border-slate-700/80 backdrop-blur-md">
-                                    {cand.yearLevel}
-                                  </span>
                                   {cand.nickname && (
-                                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 backdrop-blur-md">
+                                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-rose-800/90 dark:bg-rose-900 text-white border border-rose-600/40 shadow-sm">
                                       &quot;{cand.nickname}&quot;
                                     </span>
                                   )}
@@ -662,46 +609,48 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                               </div>
 
                               {/* Card Body */}
-                              <div className="p-5 flex-1 flex flex-col justify-between -mt-3 relative z-10">
+                              <div className="p-5 flex-1 flex flex-col justify-between relative z-10 bg-white dark:bg-slate-900">
                                 <div>
-                                  <h4 className="font-extrabold text-slate-100 text-lg sm:text-xl tracking-tight group-hover:text-cyan-400 transition-colors">
+                                  <h4 className="font-extrabold text-rose-950 dark:text-rose-100 text-lg sm:text-xl tracking-tight group-hover:text-rose-700 dark:group-hover:text-rose-400 transition-colors">
                                     {cand.name}
                                   </h4>
 
-                                  <p className="text-xs sm:text-sm text-slate-400 font-normal mt-1.5 line-clamp-2 leading-relaxed">
-                                    {cand.platformHeading || 'Dedicated Computer Engineering Student Leader'}
-                                  </p>
+                                  <div className="mt-2 bg-rose-50/80 dark:bg-rose-950/60 p-2.5 rounded-xl border border-rose-200/80 dark:border-rose-900/50">
+                                    <p className="text-xs text-rose-950 dark:text-rose-100 font-bold leading-relaxed line-clamp-2">
+                                      {cand.platformHeading || 'Dedicated Computer Engineering Student Leader'}
+                                    </p>
+                                  </div>
 
                                   {isUnavailable && (
-                                    <div className="mt-3 bg-amber-500/10 border border-amber-500/20 p-2 rounded-xl text-[11px] text-amber-300 font-medium text-center">
+                                    <div className="mt-3 bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-800 p-2 rounded-xl text-[11px] text-amber-900 dark:text-amber-200 font-bold text-center">
                                       Unavailable: Selected for {otherPosition.title}
                                     </div>
                                   )}
                                 </div>
 
                                 {/* Bottom Footer Action Bar */}
-                                <div className="mt-5 pt-3.5 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                                <div className="mt-5 pt-3.5 border-t border-neutral-100 dark:border-slate-800 flex items-center justify-between gap-2">
                                   <button
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setSelectedCandidateModal(cand);
                                     }}
-                                    className="flex items-center space-x-1 text-xs text-slate-400 hover:text-cyan-400 transition-colors font-medium px-2 py-1 rounded-lg hover:bg-slate-800/50"
+                                    className="flex items-center space-x-1 text-xs text-rose-900 dark:text-rose-200 hover:text-rose-700 font-extrabold px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-slate-800 hover:bg-rose-100 dark:hover:bg-slate-700 border border-rose-200/60 dark:border-slate-700 transition-colors"
                                   >
-                                    <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                                    <FileText className="w-3.5 h-3.5 text-rose-700 dark:text-rose-400" />
                                     <span>View Bio</span>
                                   </button>
 
                                   <button
                                     type="button"
                                     disabled={isUnavailable}
-                                    className={`px-5 py-2 rounded-full text-xs font-bold transition-all shadow-md flex items-center space-x-1.5 ${
+                                    className={`px-5 py-2 rounded-full text-xs font-black transition-all border shadow-sm flex items-center space-x-1.5 ${
                                       isSelected
-                                        ? 'bg-cyan-400 text-slate-950 hover:bg-cyan-300 shadow-cyan-500/30 scale-105'
+                                        ? 'bg-rose-800 text-white border-rose-700 scale-105'
                                         : isUnavailable
-                                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                                        : 'bg-emerald-900/80 text-emerald-200 border border-emerald-500/40 hover:bg-cyan-400 hover:text-slate-950 hover:border-cyan-300'
+                                        ? 'bg-neutral-200 dark:bg-slate-800 text-neutral-400 dark:text-slate-500 cursor-not-allowed border-neutral-300 dark:border-slate-700'
+                                        : 'bg-rose-700 text-white hover:bg-rose-800 border-rose-700'
                                     }`}
                                   >
                                     {isSelected ? (
@@ -728,39 +677,39 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                               onSelectCandidate(pos.id, 'ABSTAIN');
                             }
                           }}
-                          className={`rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
+                          className={`rounded-2xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
                             currentChoice === 'ABSTAIN'
-                              ? 'bg-slate-950 border-amber-500 ring-2 ring-amber-500/20 shadow-lg'
-                              : 'bg-slate-950/40 border-slate-800/80 hover:border-slate-700'
+                              ? 'bg-amber-100/90 dark:bg-amber-950/80 border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/50 shadow-md'
+                              : 'bg-neutral-50 dark:bg-slate-800/80 hover:bg-neutral-100 dark:hover:bg-slate-800 border-neutral-200 dark:border-slate-800 shadow-sm'
                           }`}
                         >
                           <div>
                             <div className="flex items-center justify-between mb-3">
-                              <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                              <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-200 dark:bg-amber-900 text-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
                                 Neutral Option
                               </span>
                               <div
                                 className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
                                   currentChoice === 'ABSTAIN'
-                                    ? 'border-amber-400 bg-amber-500 text-slate-950'
-                                    : 'border-slate-700 bg-slate-900'
+                                    ? 'bg-amber-500 border-amber-600 text-black'
+                                    : 'bg-neutral-200 dark:bg-slate-700 border-neutral-300 dark:border-slate-600'
                                 }`}
                               >
-                                {currentChoice === 'ABSTAIN' && <Ban className="w-3.5 h-3.5 text-slate-950" />}
+                                {currentChoice === 'ABSTAIN' && <Ban className="w-3.5 h-3.5 text-black" />}
                               </div>
                             </div>
 
                             <div className="flex items-center space-x-3 my-2">
-                              <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                              <div className="w-12 h-12 rounded-xl bg-amber-200 dark:bg-amber-900/60 border border-amber-300 dark:border-amber-700 flex items-center justify-center text-amber-950 dark:text-amber-200">
                                 <Ban className="w-6 h-6" />
                               </div>
                               <div>
-                                <h4 className="font-bold text-slate-200 text-sm">Abstain for {pos.title}</h4>
-                                <p className="text-xs text-slate-400">Choose not to vote for any candidate</p>
+                                <h4 className="font-extrabold text-neutral-900 dark:text-slate-100 text-sm">Abstain for {pos.title}</h4>
+                                <p className="text-xs text-neutral-600 dark:text-slate-400 font-medium">Choose not to vote for any candidate</p>
                               </div>
                             </div>
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-4 italic">
+                          <p className="text-[11px] text-neutral-600 dark:text-slate-400 mt-4 italic font-medium">
                             Your vote will count towards overall turnout without endorsing a candidate.
                           </p>
                         </div>
@@ -775,19 +724,19 @@ export const BallotStation: React.FC<BallotStationProps> = ({
       )}
 
       {/* Sticky Bottom Progress & Review Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 py-3.5 px-4 shadow-2xl">
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-slate-900 border-t border-neutral-200 dark:border-slate-800 py-3.5 px-4 shadow-[0px_-4px_16px_rgba(0,0,0,0.06)]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center space-x-4 w-full sm:w-auto">
             <div className="flex-1 sm:flex-none">
-              <div className="flex justify-between text-xs font-semibold text-slate-300 mb-1">
+              <div className="flex justify-between text-xs font-bold text-neutral-900 dark:text-slate-100 mb-1">
                 <span>Ballot Progress</span>
-                <span className="text-cyan-400 font-mono">
+                <span className="text-rose-700 dark:text-rose-400 font-mono">
                   {selectedCount} of {totalPositions} Positions
                 </span>
               </div>
-              <div className="w-full sm:w-64 bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+              <div className="w-full sm:w-64 bg-neutral-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden border border-neutral-200 dark:border-slate-700">
                 <div
-                  className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full transition-all duration-300"
+                  className="bg-rose-700 dark:bg-rose-600 h-full transition-all duration-300"
                   style={{ width: `${(selectedCount / totalPositions) * 100}%` }}
                 />
               </div>
@@ -798,22 +747,22 @@ export const BallotStation: React.FC<BallotStationProps> = ({
             {!voter ? (
               <button
                 onClick={onOpenAuth}
-                className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-cyan-500/25 flex items-center justify-center space-x-2"
+                className="w-full sm:w-auto bg-rose-700 hover:bg-rose-800 text-white font-extrabold px-6 py-2.5 rounded-xl text-sm transition-all border border-rose-700 shadow-sm flex items-center justify-center space-x-2"
               >
                 <span>Login to Cast Ballot</span>
               </button>
             ) : voter.hasVoted ? (
-              <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/30 flex items-center space-x-1.5">
-                <CheckCircle2 className="w-4 h-4" />
+              <span className="text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950/80 px-4 py-2 rounded-xl border border-emerald-300 dark:border-emerald-800 flex items-center space-x-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                 <span>Ballot Submitted</span>
               </span>
             ) : (
               <button
                 onClick={onOpenReview}
-                className={`w-full sm:w-auto font-bold px-6 py-2.5 rounded-xl text-sm transition-all shadow-lg flex items-center justify-center space-x-2 ${
+                className={`w-full sm:w-auto font-black px-6 py-2.5 rounded-xl text-sm transition-all border flex items-center justify-center space-x-2 ${
                   isComplete
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-cyan-500/25 animate-pulse'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    ? 'bg-rose-700 hover:bg-rose-800 text-white border-rose-700 shadow-md animate-pulse'
+                    : 'bg-neutral-100 dark:bg-slate-800 text-neutral-800 dark:text-slate-100 hover:bg-neutral-200 dark:hover:bg-slate-700 border-neutral-200 dark:border-slate-700 shadow-sm'
                 }`}
               >
                 <span>{isComplete ? 'Review & Lock Ballot' : 'Review Ballot Choices'}</span>
@@ -826,59 +775,57 @@ export const BallotStation: React.FC<BallotStationProps> = ({
 
       {/* Candidate Manifesto Modal */}
       {selectedCandidateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative text-neutral-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setSelectedCandidateModal(null)}
-              className="absolute top-8 right-8 z-20 text-slate-300 hover:text-white p-2 rounded-full bg-slate-950/70 backdrop-blur-md border border-slate-700/80 hover:bg-slate-800 transition-all shadow-lg"
+              className="absolute top-8 right-8 z-20 text-neutral-700 dark:text-slate-200 hover:text-black dark:hover:text-white p-2 rounded-full bg-white dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 transition-all shadow-sm"
             >
               ✕
             </button>
 
             {/* Full size candidate photo header */}
-            <div className="relative w-full h-72 sm:h-80 rounded-2xl overflow-hidden mb-5 border border-slate-800 bg-slate-950 shadow-xl">
+            <div className="relative w-full h-72 sm:h-80 rounded-2xl overflow-hidden mb-5 border border-neutral-200 dark:border-slate-800 bg-neutral-900 shadow-sm">
               <img
                 src={selectedCandidateModal.avatarUrl}
                 alt={selectedCandidateModal.name}
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
               <div className="absolute bottom-4 left-4 right-4 z-10">
-                <h3 className="text-2xl font-extrabold text-slate-100 tracking-tight drop-shadow-md">
+                <h3 className="text-2xl font-extrabold text-white tracking-tight drop-shadow">
                   {selectedCandidateModal.name}
                 </h3>
-                <p className="text-xs font-medium text-slate-300 drop-shadow">
+                <p className="text-xs font-bold text-neutral-200 drop-shadow">
                   {selectedCandidateModal.yearLevel} • Computer Engineering
                 </p>
               </div>
             </div>
 
-            <div className="bg-slate-950 p-4.5 rounded-2xl border border-slate-800 space-y-4 text-xs text-slate-300">
-              <h4 className="font-bold text-cyan-400 uppercase text-xs tracking-wider border-b border-slate-800/80 pb-2.5 flex items-center space-x-2">
-                <Sparkles className="w-4 h-4 text-cyan-400" />
+            <div className="bg-neutral-50 dark:bg-slate-800 p-4.5 rounded-2xl border border-neutral-200 dark:border-slate-700 space-y-4 text-xs text-neutral-800 dark:text-slate-200">
+              <h4 className="font-extrabold text-rose-700 dark:text-rose-400 uppercase text-xs tracking-wider border-b border-neutral-200 dark:border-slate-700 pb-2.5 flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-rose-700 dark:text-rose-400" />
                 <span>Information of Candidates</span>
               </h4>
 
               {(selectedCandidateModal.platformHeading || selectedCandidateModal.bio) && (
                 <div>
-                  <span className="font-semibold text-slate-400 text-[11px] block mb-1">Brief Description:</span>
-                  <p className="text-slate-200 text-xs sm:text-sm leading-relaxed bg-slate-900/50 p-3 rounded-xl border border-slate-800/80 font-medium">
+                  <span className="font-bold text-neutral-700 dark:text-slate-300 text-[11px] block mb-1">Brief Description:</span>
+                  <p className="text-neutral-900 dark:text-slate-100 text-xs sm:text-sm leading-relaxed bg-white dark:bg-slate-900 p-3 rounded-xl border border-neutral-200 dark:border-slate-700 font-medium">
                     {selectedCandidateModal.platformHeading || selectedCandidateModal.bio}
                   </p>
                 </div>
               )}
 
-
-
               {selectedCandidateModal.achievements && selectedCandidateModal.achievements.length > 0 && (
                 <div>
-                  <span className="font-semibold text-slate-400 text-[11px] mb-1 flex items-center space-x-1">
-                    <Award className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="font-bold text-neutral-700 dark:text-slate-300 text-[11px] mb-1 flex items-center space-x-1">
+                    <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                     <span>Achievements & Leadership:</span>
                   </span>
-                  <ul className="list-disc list-inside space-y-1 text-slate-300 pl-1">
+                  <ul className="list-disc list-inside space-y-1 text-neutral-800 dark:text-slate-200 pl-1 font-medium">
                     {selectedCandidateModal.achievements.map((ach, i) => (
                       <li key={i}>{ach}</li>
                     ))}
@@ -887,7 +834,7 @@ export const BallotStation: React.FC<BallotStationProps> = ({
               )}
             </div>
 
-            <div className="mt-6 pt-4 border-t border-slate-800 flex justify-end">
+            <div className="mt-6 pt-4 border-t border-neutral-200 dark:border-slate-800 flex justify-end">
               {(() => {
                 const otherPos = getSelectedOtherPosition(
                   selectedCandidateModal,
@@ -899,12 +846,12 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                 if (otherPos && !isSelectedInThisPos) {
                   return (
                     <div className="flex flex-col items-end space-y-1">
-                      <span className="text-[11px] text-amber-400 font-semibold">
+                      <span className="text-[11px] text-amber-800 dark:text-amber-300 font-bold">
                         Selected for {otherPos.title}
                       </span>
                       <button
                         disabled
-                        className="bg-slate-800 text-slate-500 font-bold px-4 py-2 rounded-xl text-xs cursor-not-allowed flex items-center space-x-1"
+                        className="bg-neutral-200 dark:bg-slate-800 text-neutral-500 dark:text-slate-400 font-bold px-4 py-2 rounded-xl text-xs border border-neutral-300 dark:border-slate-700 cursor-not-allowed flex items-center space-x-1"
                       >
                         <AlertCircle className="w-4 h-4" />
                         <span>Unavailable for this Position</span>
@@ -919,7 +866,7 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                       handleCandidateClick(selectedCandidateModal.positionId, selectedCandidateModal);
                       setSelectedCandidateModal(null);
                     }}
-                    className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center space-x-1.5"
+                    className="bg-rose-700 hover:bg-rose-800 text-white font-extrabold px-4 py-2 rounded-xl text-xs border border-rose-700 shadow-sm flex items-center space-x-1.5"
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Select This Candidate</span>

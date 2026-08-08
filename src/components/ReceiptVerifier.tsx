@@ -134,26 +134,26 @@ export const ReceiptVerifier: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       {/* Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden text-neutral-900 dark:text-slate-100">
         <div className="flex items-center space-x-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 flex items-center justify-center">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-100">Cryptographic Vote Audit Portal</h2>
-            <p className="text-xs text-slate-400">Independent Receipt Verification & Tamper Check</p>
+            <h2 className="text-2xl font-extrabold text-neutral-900 dark:text-slate-100">Cryptographic Vote Audit Portal</h2>
+            <p className="text-xs text-rose-800 dark:text-rose-300 font-bold">Independent Receipt Verification & Tamper Check</p>
           </div>
         </div>
-        <p className="text-xs text-slate-400 max-w-xl">
+        <p className="text-xs text-neutral-700 dark:text-slate-300 font-medium max-w-xl">
           Enter your unique Digital Ballot Receipt Hash to verify that your secret vote was accurately committed to the immutable election tally ledger.
         </p>
       </div>
 
       {/* Verification Search Form */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg">
+      <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl text-neutral-900 dark:text-slate-100">
         <form onSubmit={handleVerify} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-extrabold text-neutral-800 dark:text-slate-200 mb-1.5 uppercase tracking-wider">
               Enter Receipt Hash / Receipt ID
             </label>
             <div className="relative">
@@ -162,24 +162,24 @@ export const ReceiptVerifier: React.FC = () => {
                 value={receiptHash}
                 onChange={(e) => setReceiptHash(e.target.value)}
                 placeholder="e.g. CPE2026-A819-F290"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm font-mono text-cyan-400 placeholder-slate-600 focus:outline-none focus:border-cyan-500 uppercase tracking-widest"
+                className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-4 py-3 text-sm font-mono text-rose-800 dark:text-rose-300 font-extrabold placeholder-neutral-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-rose-700 uppercase tracking-widest"
               />
-              <Search className="w-4 h-4 text-slate-500 absolute right-4 top-3.5" />
+              <Search className="w-4 h-4 text-neutral-500 dark:text-slate-400 absolute right-4 top-3.5" />
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[11px] text-slate-500 italic">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <span className="text-[11px] text-neutral-600 dark:text-slate-400 font-bold italic">
               Example sample hashes to test: CPE2026-A819-F290, CPE2026-9B01-44E2
             </span>
 
             <button
               type="submit"
               disabled={loading}
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold px-6 py-2.5 rounded-xl text-xs shadow-lg shadow-cyan-500/20 flex items-center space-x-2 disabled:opacity-50"
+              className="bg-rose-700 hover:bg-rose-800 text-white font-extrabold px-6 py-2.5 rounded-2xl text-xs border border-rose-700 shadow-md flex items-center space-x-2 disabled:opacity-50 transition-all active:scale-95"
             >
               {loading ? (
-                <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent" />
+                <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
               ) : (
                 <>
                   <FileCheck2 className="w-4 h-4" />
@@ -191,49 +191,49 @@ export const ReceiptVerifier: React.FC = () => {
         </form>
 
         {error && (
-          <div className="mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <div className="mt-4 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs font-bold flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-700 dark:text-rose-400" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Verification Result Card */}
         {verificationResult && (
-          <div className={`mt-6 bg-slate-950 p-6 rounded-2xl border ${verificationResult.isInvalidated ? 'border-rose-500/50' : 'border-emerald-500/40'} space-y-4 animate-in fade-in duration-200`}>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div className={`mt-6 bg-neutral-50 dark:bg-slate-800 p-6 rounded-2xl border border-neutral-200 dark:border-slate-700 shadow-md space-y-4 animate-in fade-in duration-200`}>
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-200 dark:border-slate-700">
               <div className="flex items-center space-x-2">
                 {verificationResult.isInvalidated ? (
                   <>
-                    <AlertCircle className="w-5 h-5 text-rose-400" />
-                    <span className="font-bold text-rose-400 text-sm uppercase tracking-wider">
+                    <AlertCircle className="w-5 h-5 text-rose-700 dark:text-rose-400" />
+                    <span className="font-extrabold text-rose-800 dark:text-rose-300 text-sm uppercase tracking-wider">
                       Ballot Invalidated by Commission
                     </span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                    <span className="font-bold text-emerald-400 text-sm uppercase tracking-wider">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
+                    <span className="font-extrabold text-emerald-800 dark:text-emerald-300 text-sm uppercase tracking-wider">
                       Verified Audit Record Found
                     </span>
                   </>
                 )}
               </div>
-              <span className={`text-xs font-mono px-2.5 py-0.5 rounded border ${
+              <span className={`text-xs font-black px-2.5 py-1 rounded-xl border ${
                 verificationResult.isInvalidated
-                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  ? 'bg-rose-100 dark:bg-rose-950 text-rose-900 dark:text-rose-200 border-rose-200 dark:border-rose-800'
+                  : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800'
               }`}>
                 {verificationResult.status}
               </span>
             </div>
 
             {verificationResult.isInvalidated && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs space-y-1">
-                <div className="font-bold flex items-center space-x-1 text-rose-400">
+              <div className="p-3.5 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-950 dark:text-rose-100 text-xs space-y-1 font-medium">
+                <div className="font-extrabold flex items-center space-x-1 text-rose-900 dark:text-rose-200">
                   <span>🚫 Account / Vote Invalidated</span>
                 </div>
                 <p><strong>Reason:</strong> {verificationResult.invalidatedReason || 'Suspicious activity or unverified credentials.'}</p>
-                <p className="text-[11px] text-rose-300/80">
+                <p className="text-[11px] text-rose-800 dark:text-rose-300 font-bold">
                   Note: The choices below have been excluded from the final election tally and turnout calculation.
                 </p>
               </div>
@@ -241,36 +241,36 @@ export const ReceiptVerifier: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <span className="text-slate-500 block">Receipt Hash</span>
-                <span className="font-mono font-bold text-cyan-400">{verificationResult.receiptHash}</span>
+                <span className="text-neutral-600 dark:text-slate-400 block font-bold">Receipt Hash</span>
+                <span className="font-mono font-black text-rose-800 dark:text-rose-300">{verificationResult.receiptHash}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Timestamp Recorded</span>
-                <span className="font-mono text-slate-300">
+                <span className="text-neutral-600 dark:text-slate-400 block font-bold">Timestamp Recorded</span>
+                <span className="font-mono font-bold text-neutral-800 dark:text-slate-200">
                   {new Date(verificationResult.timestamp).toLocaleString()}
                 </span>
               </div>
             </div>
 
             <div>
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">
+              <span className="text-xs font-black text-neutral-800 dark:text-slate-200 uppercase tracking-wider block mb-2">
                 Encrypted Choices Breakdown
               </span>
               <div className="space-y-1.5">
                 {Object.entries(verificationResult.choicesDetails).map(([posTitle, detail]: [string, any]) => (
                   <div
                     key={posTitle}
-                    className="flex items-center justify-between p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs"
+                    className="flex items-center justify-between p-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 text-xs font-medium"
                   >
-                    <span className="text-slate-400 font-medium">{posTitle}</span>
-                    <span className="font-bold text-slate-100">{detail.selectedChoice}</span>
+                    <span className="text-neutral-700 dark:text-slate-300 font-bold">{posTitle}</span>
+                    <span className="font-black text-neutral-900 dark:text-slate-100">{detail.selectedChoice}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-500 pt-2 border-t border-slate-800 flex items-center space-x-1">
-              <Lock className="w-3.5 h-3.5 text-slate-500" />
+            <p className="text-[11px] text-neutral-600 dark:text-slate-400 pt-2 border-t border-neutral-200 dark:border-slate-700 flex items-center space-x-1 font-bold">
+              <Lock className="w-3.5 h-3.5 text-neutral-600 dark:text-slate-400" />
               <span>Anonymity Protection Active: No student personal identity is linked to this vote record.</span>
             </p>
           </div>

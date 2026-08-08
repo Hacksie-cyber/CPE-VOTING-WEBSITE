@@ -13,6 +13,26 @@ import { INITIAL_ELECTION_SETTINGS, INITIAL_POSITIONS, INITIAL_CANDIDATES } from
 import { loadElectionDataFromFirestore, subscribeToElectionData } from './lib/firebase';
 
 export default function App() {
+  // Theme State (Light vs Dark)
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('cpe_theme');
+    if (saved === 'dark' || saved === 'light') return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('cpe_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
+
   const [activeTab, setActiveTab] = useState<'ballot' | 'results' | 'verify' | 'admin'>(() => {
     const saved = localStorage.getItem('cpe_voter');
     if (saved) {
@@ -163,11 +183,6 @@ export default function App() {
       setActiveTab('admin');
     } else {
       setActiveTab('ballot');
-      if (authenticatedVoter.hasVoted && authenticatedVoter.receiptHash) {
-        setLastReceiptHash(authenticatedVoter.receiptHash);
-        setLastReceiptTime(authenticatedVoter.votedAt || new Date().toISOString());
-        setIsReceiptModalOpen(true);
-      }
     }
   };
 
@@ -200,7 +215,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
+    <div className="min-h-screen bg-neutral-100 dark:bg-slate-950 text-neutral-900 dark:text-slate-100 flex flex-col font-sans selection:bg-rose-700 selection:text-white transition-colors">
       {/* Navigation Header */}
       <Navbar
         activeTab={activeTab}
@@ -210,6 +225,8 @@ export default function App() {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
         onOpenTermsPrivacy={openTermsPrivacy}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Main Content Area */}
@@ -242,13 +259,13 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-6 text-xs text-center">
+      <footer className="bg-neutral-900 border-t-2 border-black text-neutral-200 py-6 text-xs text-center">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-center text-center">
           <div>
-            <p className="font-semibold text-slate-300">
+            <p className="font-bold text-white tracking-wide">
               Computer Engineering Department Commission on Elections &copy; 2026
             </p>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-[11px] text-neutral-400 mt-0.5">
               Official Institutional Voting System • Cryptographic Ledger Verification
             </p>
           </div>

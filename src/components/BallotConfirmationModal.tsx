@@ -101,32 +101,32 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative text-slate-100 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+      <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl relative text-neutral-900 dark:text-slate-100 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-4 border-b border-neutral-200 dark:border-slate-800">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-800 dark:text-rose-300">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-100">Review Official CPE Ballot</h3>
-              <p className="text-xs text-slate-400">
-                Voter: <span className="font-semibold text-slate-200">{voter.name}</span> ({voter.id})
+              <h3 className="text-lg font-extrabold text-neutral-900 dark:text-slate-100">Review Official CPE Ballot</h3>
+              <p className="text-xs text-neutral-600 dark:text-slate-300 font-bold">
+                Voter: <span className="font-extrabold text-neutral-900 dark:text-slate-100">{voter.name}</span> ({voter.id})
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800"
+            className="text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white p-1.5 rounded-xl border border-neutral-200 dark:border-slate-700 hover:bg-neutral-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {error && (
-          <div className="my-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center space-x-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <div className="my-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs font-bold flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-700 dark:text-rose-400" />
             <span>{error}</span>
           </div>
         )}
@@ -141,34 +141,34 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
             return (
               <div
                 key={pos.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800/80 text-xs"
+                className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-xs shadow-sm"
               >
                 <div>
-                  <span className="text-[11px] text-slate-400 font-medium block">{pos.title}</span>
+                  <span className="text-[11px] text-neutral-600 dark:text-slate-300 font-bold block">{pos.title}</span>
                   {candidate ? (
-                    <span className="font-bold text-slate-100 text-sm">{candidate.name}</span>
+                    <span className="font-extrabold text-neutral-900 dark:text-slate-100 text-sm">{candidate.name}</span>
                   ) : isAbstain ? (
-                    <span className="font-bold text-amber-400 italic">ABSTAINED</span>
+                    <span className="font-extrabold text-amber-700 dark:text-amber-400 italic">ABSTAINED</span>
                   ) : (
-                    <span className="font-semibold text-rose-400 italic">No Selection Made</span>
+                    <span className="font-extrabold text-rose-700 dark:text-rose-400 italic">No Selection Made</span>
                   )}
                 </div>
 
                 <div>
                   {candidate ? (
                     <span
-                      className={`px-2.5 py-1 rounded-lg font-medium text-[11px] ${
+                      className={`px-2.5 py-1 rounded-lg font-black text-[11px] border ${
                         candidate.party === 'ByteCraft Alliance'
-                          ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30'
+                          ? 'bg-rose-100 dark:bg-rose-950 text-rose-900 dark:text-rose-200 border-rose-200 dark:border-rose-800'
                           : candidate.party === 'Synapse Union'
-                          ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
-                          : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                          ? 'bg-neutral-200 dark:bg-slate-700 text-neutral-900 dark:text-slate-200 border-neutral-300 dark:border-slate-600'
+                          : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800'
                       }`}
                     >
                       {candidate.party}
                     </span>
                   ) : isAbstain ? (
-                    <span className="px-2.5 py-1 rounded-lg font-medium text-[11px] bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <span className="px-2.5 py-1 rounded-lg font-black text-[11px] bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-800">
                       Abstain
                     </span>
                   ) : null}
@@ -179,15 +179,15 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
         </div>
 
         {/* Legal Affirmation Checkbox */}
-        <div className="pt-4 border-t border-slate-800 space-y-4">
-          <label className="flex items-start space-x-3 cursor-pointer group bg-slate-950 p-3 rounded-xl border border-slate-800">
+        <div className="pt-4 border-t border-neutral-200 dark:border-slate-800 space-y-4">
+          <label className="flex items-start space-x-3 cursor-pointer group bg-neutral-50 dark:bg-slate-800 p-3 rounded-xl border border-neutral-200 dark:border-slate-700">
             <input
               type="checkbox"
               checked={confirmed}
               onChange={(e) => setConfirmed(e.target.checked)}
-              className="mt-0.5 rounded border-slate-700 bg-slate-900 text-cyan-500 focus:ring-cyan-500 w-4 h-4"
+              className="mt-0.5 rounded border-neutral-300 dark:border-slate-600 text-rose-700 focus:ring-rose-700 w-4 h-4"
             />
-            <span className="text-xs text-slate-300 leading-snug">
+            <span className="text-xs text-neutral-800 dark:text-slate-200 font-bold leading-snug">
               I certify that I am a registered student of the Computer Engineering Department, and that this secret ballot represents my official choices. I understand that my vote cannot be modified once locked.
             </span>
           </label>
@@ -197,7 +197,7 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
             <button
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-semibold"
+              className="px-4 py-2.5 rounded-xl border border-neutral-200 dark:border-slate-700 text-neutral-800 dark:text-slate-200 hover:bg-neutral-100 dark:hover:bg-slate-800 text-xs font-extrabold transition-colors"
             >
               Modify Selections
             </button>
@@ -205,10 +205,10 @@ export const BallotConfirmationModal: React.FC<BallotConfirmationModalProps> = (
             <button
               onClick={handleSubmit}
               disabled={!confirmed || submitting}
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold px-6 py-2.5 rounded-xl text-xs transition-all shadow-lg shadow-cyan-500/25 flex items-center space-x-2 disabled:opacity-40"
+              className="bg-rose-700 hover:bg-rose-800 text-white font-extrabold px-6 py-2.5 rounded-xl text-xs transition-all border border-rose-700 shadow-sm flex items-center space-x-2 disabled:opacity-40"
             >
               {submitting ? (
-                <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent" />
+                <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
               ) : (
                 <>
                   <Lock className="w-4 h-4" />

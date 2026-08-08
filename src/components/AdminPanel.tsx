@@ -777,19 +777,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   if (!isAuthenticated) {
     return (
-      <div className="max-w-md mx-auto my-12 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-slate-100">
+      <div className="max-w-md mx-auto my-12 bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl text-neutral-900 dark:text-slate-100">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 flex items-center justify-center font-bold">
             <ShieldAlert className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">Commission Admin Access</h2>
-            <p className="text-xs text-slate-400">Authorized Personnel Only</p>
+            <h2 className="text-xl font-black text-neutral-900 dark:text-slate-100">Commission Admin Access</h2>
+            <p className="text-xs text-neutral-700 dark:text-slate-300 font-bold">Authorized Personnel Only</p>
           </div>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+          <div className="mb-4 p-3 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 font-bold text-xs">
             {error}
           </div>
         )}
@@ -799,7 +799,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <button
             type="button"
             onClick={handleGoogleAdminLogin}
-            className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center space-x-3 text-sm"
+            className="w-full bg-white dark:bg-slate-800 hover:bg-neutral-100 dark:hover:bg-slate-700 text-neutral-900 dark:text-slate-100 font-extrabold py-3 px-4 rounded-2xl border border-neutral-200 dark:border-slate-700 transition-all shadow-sm flex items-center justify-center space-x-3 text-sm"
           >
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
               <path
@@ -821,15 +821,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </svg>
             <span>Sign in with Google Account</span>
           </button>
-          <p className="text-[11px] text-center text-slate-500 mt-2">Sign in using <span className="font-mono text-cyan-400">bamuyahacksie@gmail.com</span></p>
+          <p className="text-[11px] text-center text-neutral-600 dark:text-slate-400 font-bold mt-2">Sign in using <span className="font-mono text-rose-800 dark:text-rose-400">bamuyahacksie@gmail.com</span></p>
         </div>
 
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-800" />
+            <div className="w-full border-t border-neutral-200 dark:border-slate-800" />
           </div>
           <div className="relative flex justify-center text-[10px] uppercase">
-            <span className="bg-slate-900 px-3 text-slate-500 font-semibold tracking-wider">
+            <span className="bg-white dark:bg-slate-900 px-3 text-neutral-700 dark:text-slate-400 font-black tracking-wider border-x border-neutral-200 dark:border-slate-800">
               Or Manual Authorization Code
             </span>
           </div>
@@ -837,7 +837,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
+            <label className="block text-xs font-black text-neutral-900 dark:text-slate-200 mb-1 uppercase tracking-wider">
               Authorized Admin Email
             </label>
             <input
@@ -845,13 +845,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               value={adminEmail}
               onChange={(e) => setAdminEmail(e.target.value)}
               placeholder="bamuyahacksie@gmail.com"
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-cyan-400 placeholder-slate-600 focus:outline-none focus:border-amber-500"
+              className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-4 py-2.5 text-sm text-neutral-900 dark:text-slate-100 font-bold placeholder-neutral-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-700"
             />
-            <p className="text-[11px] text-slate-500 mt-1">Only <span className="font-mono text-cyan-400">bamuyahacksie@gmail.com</span> is granted admin rights.</p>
+            <p className="text-[11px] text-neutral-600 dark:text-slate-400 font-bold mt-1">Only <span className="font-mono text-rose-800 dark:text-rose-400">bamuyahacksie@gmail.com</span> is granted admin rights.</p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1 uppercase tracking-wider">
+            <label className="block text-xs font-black text-neutral-900 dark:text-slate-200 mb-1 uppercase tracking-wider">
               Commission Authorization PIN
             </label>
             <div className="relative">
@@ -860,16 +860,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 value={adminPin}
                 onChange={(e) => setAdminPin(e.target.value)}
                 placeholder="PIN: 2026CPE"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-mono text-amber-400 placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-4 py-2.5 text-sm font-mono font-bold text-rose-800 dark:text-rose-400 placeholder-neutral-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-700"
               />
-              <Key className="w-4 h-4 text-slate-500 absolute right-3.5 top-3" />
+              <Key className="w-4 h-4 text-neutral-600 dark:text-slate-400 absolute right-3.5 top-3.5" />
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Default Admin PIN: <span className="font-mono text-amber-400">2026CPE</span></p>
+            <p className="text-[11px] text-neutral-600 dark:text-slate-400 font-bold mt-1">Default Admin PIN: <span className="font-mono text-rose-800 dark:text-rose-400">2026CPE</span></p>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl text-xs transition-all shadow-lg shadow-amber-500/20"
+            className="w-full bg-rose-700 hover:bg-rose-800 text-white font-extrabold py-3 rounded-2xl text-xs transition-all border border-rose-700 shadow-sm"
           >
             Authorize Admin Controls
           </button>
@@ -881,19 +881,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   return (
     <div className="space-y-8">
       {/* Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-6 shadow-xl flex items-center justify-between">
+      <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl flex items-center justify-between">
         <div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 uppercase tracking-wider">
+          <span className="text-xs font-black px-2.5 py-1 rounded-xl bg-rose-100 dark:bg-rose-950 text-rose-900 dark:text-rose-200 border border-rose-200 dark:border-rose-800 uppercase tracking-wider">
             Commission on Elections Panel
           </span>
-          <h2 className="text-2xl font-bold text-slate-100 mt-2">Department Election Control Console</h2>
-          <p className="text-xs text-slate-400">Manage poll states, register candidates, and oversee audit ledgers.</p>
+          <h2 className="text-2xl font-black text-neutral-900 dark:text-slate-100 mt-2">Department Election Control Console</h2>
+          <p className="text-xs text-neutral-700 dark:text-slate-300 font-bold">Manage poll states, register candidates, and oversee audit ledgers.</p>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
             onClick={handleDownloadPDF}
-            className="text-xs font-bold px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center space-x-1.5 shadow-md shadow-cyan-500/20 transition-all"
+            className="text-xs font-extrabold px-3.5 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white flex items-center space-x-1.5 border border-rose-700 shadow-sm active:scale-95 transition-all"
             title="Download Official Election Results PDF Report"
           >
             <Download className="w-3.5 h-3.5" />
@@ -901,7 +901,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </button>
           <button
             onClick={() => setIsAuthenticated(false)}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
+            className="text-xs font-extrabold px-3 py-2 rounded-xl bg-neutral-100 dark:bg-slate-800 hover:bg-neutral-200 dark:hover:bg-slate-700 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 transition-colors"
           >
             Lock Console
           </button>
@@ -909,20 +909,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       </div>
 
       {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center space-x-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="p-4 rounded-2xl bg-emerald-100 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs font-black flex items-center space-x-2 shadow-sm">
+          <CheckCircle2 className="w-5 h-5 text-emerald-800 dark:text-emerald-300 flex-shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {/* Admin Navigation Tab Bar */}
-      <div className="flex items-center space-x-3 border-b border-slate-800/80 pb-3">
+      <div className="flex items-center space-x-3 border-b border-neutral-200 dark:border-slate-800 pb-3">
         <button
           onClick={() => setActiveAdminTab('OVERVIEW')}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+          className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all border ${
             activeAdminTab === 'OVERVIEW'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-md ring-1 ring-amber-500/30'
-              : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+              ? 'bg-rose-700 text-white border-rose-700 shadow-sm'
+              : 'bg-white dark:bg-slate-800 text-neutral-900 dark:text-slate-100 border-neutral-200 dark:border-slate-700 hover:bg-neutral-100 dark:hover:bg-slate-700'
           }`}
         >
           <Settings className="w-4 h-4" />
@@ -931,16 +931,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
         <button
           onClick={() => setActiveAdminTab('VOTERS')}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
+          className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all border relative ${
             activeAdminTab === 'VOTERS'
-              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-md ring-1 ring-amber-500/30'
-              : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
+              ? 'bg-rose-700 text-white border-rose-700 shadow-sm'
+              : 'bg-white dark:bg-slate-800 text-neutral-900 dark:text-slate-100 border-neutral-200 dark:border-slate-700 hover:bg-neutral-100 dark:hover:bg-slate-700'
           }`}
         >
           <Users className="w-4 h-4" />
           <span>Voter Audit & Account Invalidation</span>
           {votersList.filter((v) => v.isInvalidated).length > 0 && (
-            <span className="ml-1.5 px-2 py-0.5 text-[10px] rounded-full bg-rose-500/90 text-white font-extrabold animate-pulse">
+            <span className="ml-1.5 px-2 py-0.5 text-[10px] rounded-full bg-black text-white font-black animate-pulse border border-white">
               {votersList.filter((v) => v.isInvalidated).length} Invalidated
             </span>
           )}
@@ -953,9 +953,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           {/* Control Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Voting Status Toggle */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
-              <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
-                <Settings className="w-4 h-4 text-cyan-400" />
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4 text-neutral-900 dark:text-slate-100">
+              <h3 className="text-sm font-black text-neutral-900 dark:text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+                <Settings className="w-4 h-4 text-rose-700 dark:text-rose-400" />
                 <span>Poll Operational Status</span>
               </h3>
 
@@ -965,14 +965,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <button
                       key={st}
                       onClick={() => handleUpdateStatus(st)}
-                      className={`p-3 rounded-xl border text-left font-bold transition-all ${
+                      className={`p-3 rounded-2xl border text-left font-extrabold transition-all ${
                         selectedStatus === st
-                          ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300 ring-2 ring-cyan-500/30'
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                          ? 'bg-rose-100 dark:bg-rose-950 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800 shadow-sm'
+                          : 'bg-neutral-50 dark:bg-slate-800 text-neutral-900 dark:text-slate-100 border-neutral-200 dark:border-slate-700 hover:bg-neutral-100 dark:hover:bg-slate-700'
                       }`}
                     >
                       <span className="block">{st}</span>
-                      <span className="text-[10px] font-normal text-slate-500">
+                      <span className="text-[10px] font-bold text-neutral-600 dark:text-slate-400">
                         {st === 'VOTING_OPEN'
                           ? 'Accepting live student ballots'
                           : st === 'PAUSED'
@@ -988,16 +988,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
-              <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
-                <ShieldAlert className="w-4 h-4 text-amber-400" />
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4 text-neutral-900 dark:text-slate-100">
+              <h3 className="text-sm font-black text-neutral-900 dark:text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+                <ShieldAlert className="w-4 h-4 text-rose-700 dark:text-rose-400" />
                 <span>Commission Maintenance</span>
               </h3>
 
               <div className="space-y-2.5">
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="w-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 font-bold p-3 rounded-xl text-xs flex items-center justify-center space-x-2 transition-colors"
+                  className="w-full bg-rose-700 border border-rose-700 text-white hover:bg-rose-800 font-extrabold p-3 rounded-2xl text-xs flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-95"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Register New Candidate</span>
@@ -1009,15 +1009,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     setResetVotesError(null);
                     setShowResetVotesModal(true);
                   }}
-                  className="w-full bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 font-bold p-3 rounded-xl text-xs flex items-center justify-center space-x-2 transition-colors shadow-sm hover:shadow-rose-950/50"
+                  className="w-full bg-rose-100 dark:bg-rose-950 border border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 hover:bg-rose-200 dark:hover:bg-rose-900 font-extrabold p-3 rounded-2xl text-xs flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-95"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <RotateCcw className="w-4 h-4 text-rose-900 dark:text-rose-200" />
                   <span>Reset All Votes (Keep Candidates)</span>
                 </button>
 
                 <button
                   onClick={handleResetDemo}
-                  className="w-full bg-slate-800/60 border border-slate-700/50 text-slate-400 hover:bg-slate-800 hover:text-slate-300 font-medium p-2.5 rounded-xl text-xs flex items-center justify-center space-x-2 transition-colors"
+                  className="w-full bg-neutral-100 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 hover:bg-neutral-200 dark:hover:bg-slate-700 font-bold p-2.5 rounded-2xl text-xs flex items-center justify-center space-x-2 transition-colors"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>Full Reset to Sample Data</span>
@@ -1027,20 +1027,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
 
           {/* Candidate Profile Photo & Registry Manager */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4 text-neutral-900 dark:text-slate-100">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
-                  <Camera className="w-4 h-4 text-cyan-400" />
+                <h3 className="text-sm font-black text-neutral-900 dark:text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+                  <Camera className="w-4 h-4 text-rose-700 dark:text-rose-400" />
                   <span>Candidate Profile Photo & Link Manager</span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-neutral-700 dark:text-slate-300 font-bold mt-1">
                   Add or edit profile photos for candidates using external image URL links.
                 </p>
               </div>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 text-xs font-bold flex items-center space-x-1.5"
+                className="px-3 py-1.5 rounded-xl bg-rose-100 dark:bg-rose-950 border border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 hover:bg-rose-200 dark:hover:bg-rose-900 text-xs font-black flex items-center space-x-1.5 shadow-sm"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Candidate</span>
@@ -1048,7 +1048,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
 
             {candidates.length === 0 ? (
-              <div className="text-center py-8 text-xs text-slate-500 bg-slate-950/50 rounded-xl border border-slate-800/80">
+              <div className="text-center py-8 text-xs text-neutral-600 dark:text-slate-400 font-bold bg-neutral-50 dark:bg-slate-800 rounded-2xl border border-neutral-200 dark:border-slate-700">
                 No candidates registered yet. Click "Register New Candidate" to add candidates with photo links.
               </div>
             ) : (
@@ -1058,42 +1058,42 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   const isSaving = savingPhotoId === cand.id;
 
                   return (
-                    <div key={cand.id} className="bg-slate-950 border border-slate-800/90 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                    <div key={cand.id} className="bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-sm">
                       <div className="flex items-start space-x-3">
                         <div className="relative flex-shrink-0">
                           <img
                             src={currentUrlInput || cand.avatarUrl}
                             alt={cand.name}
                             referrerPolicy="no-referrer"
-                            className="w-14 h-14 rounded-full object-cover border-2 border-slate-700 bg-slate-900 shadow-md"
+                            className="w-14 h-14 rounded-2xl object-cover border border-neutral-300 dark:border-slate-600 bg-white dark:bg-slate-900 shadow-sm"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
                             }}
                           />
-                          <div className="absolute -bottom-1 -right-1 bg-slate-900 border border-slate-700 rounded-full p-1">
-                            <Image className="w-3 h-3 text-cyan-400" />
+                          <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-900 border border-neutral-300 dark:border-slate-700 rounded-full p-1 shadow-sm">
+                            <Image className="w-3 h-3 text-rose-700 dark:text-rose-400" />
                           </div>
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-bold text-slate-100 truncate">{cand.name}</h4>
-                          <p className="text-[11px] text-cyan-400 font-medium">
+                          <h4 className="text-sm font-black text-neutral-900 dark:text-slate-100 truncate">{cand.name}</h4>
+                          <p className="text-[11px] text-rose-800 dark:text-rose-400 font-extrabold">
                             {cand.yearLevel} CPE Candidate
                           </p>
-                          <p className="text-[10px] text-slate-400 truncate mt-0.5">{cand.manifesto || cand.platformHeading}</p>
+                          <p className="text-[10px] text-neutral-700 dark:text-slate-300 font-bold truncate mt-0.5">{cand.manifesto || cand.platformHeading}</p>
                         </div>
 
                         <div className="flex items-center space-x-1">
                           <button
                             onClick={() => setEditingCandidate(cand)}
-                            className="text-slate-500 hover:text-cyan-400 p-1.5 rounded-lg transition-colors"
+                            className="text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white p-1.5 rounded-lg transition-colors border border-transparent hover:border-neutral-300 dark:hover:border-slate-600"
                             title="Edit Candidate Info"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteCandidate(cand.id, cand.name)}
-                            className="text-slate-500 hover:text-rose-400 p-1.5 rounded-lg transition-colors"
+                            className="text-neutral-700 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-400 p-1.5 rounded-lg transition-colors border border-transparent hover:border-neutral-300 dark:hover:border-slate-600"
                             title="Remove Candidate"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1101,9 +1101,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </div>
                       </div>
 
-                      <div className="space-y-1.5 pt-2 border-t border-slate-800/80">
-                        <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1">
-                          <Link className="w-3 h-3 text-amber-400" />
+                      <div className="space-y-1.5 pt-2 border-t border-neutral-200 dark:border-slate-700">
+                        <label className="block text-[10px] font-black text-neutral-800 dark:text-slate-200 uppercase tracking-wider flex items-center space-x-1">
+                          <Link className="w-3 h-3 text-rose-700 dark:text-rose-400" />
                           <span>Profile Photo URL Link</span>
                         </label>
                         <div className="flex space-x-2">
@@ -1112,12 +1112,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             value={currentUrlInput}
                             onChange={(e) => setPhotoUrls({ ...photoUrls, [cand.id]: e.target.value })}
                             placeholder="https://images.unsplash.com/..."
-                            className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+                            className="flex-1 bg-white dark:bg-slate-900 border border-neutral-300 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                           />
                           <button
                             onClick={() => handleUpdatePhoto(cand)}
                             disabled={isSaving}
-                            className="px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30 text-xs font-bold transition-all disabled:opacity-50"
+                            className="px-3 py-1.5 rounded-xl bg-rose-700 border border-rose-700 text-white hover:bg-rose-800 text-xs font-black transition-all disabled:opacity-50 active:scale-95"
                           >
                             {isSaving ? 'Saving...' : 'Save'}
                           </button>
@@ -1137,55 +1137,55 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <div className="space-y-6">
           {/* Summary Stats Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-md">
-              <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">Total Registered</span>
-              <span className="text-2xl font-black text-slate-100 mt-1 block">{votersList.length}</span>
-              <span className="text-[10px] text-slate-500">Student accounts</span>
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-4 shadow-lg text-neutral-900 dark:text-slate-100">
+              <span className="text-[11px] font-black text-neutral-700 dark:text-slate-300 block uppercase tracking-wider">Total Registered</span>
+              <span className="text-2xl font-black text-neutral-900 dark:text-slate-100 mt-1 block">{votersList.length}</span>
+              <span className="text-[10px] text-neutral-600 dark:text-slate-400 font-bold">Student accounts</span>
             </div>
 
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-md">
-              <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">Votes Cast</span>
-              <span className="text-2xl font-black text-cyan-400 mt-1 block">
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-4 shadow-lg text-neutral-900 dark:text-slate-100">
+              <span className="text-[11px] font-black text-neutral-700 dark:text-slate-300 block uppercase tracking-wider">Votes Cast</span>
+              <span className="text-2xl font-black text-rose-800 dark:text-rose-400 mt-1 block">
                 {votersList.filter((v) => v.hasVoted).length}
               </span>
-              <span className="text-[10px] text-slate-500">Submitted ballots</span>
+              <span className="text-[10px] text-neutral-600 dark:text-slate-400 font-bold">Submitted ballots</span>
             </div>
 
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-md">
-              <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">Valid Counted</span>
-              <span className="text-2xl font-black text-emerald-400 mt-1 block">
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-4 shadow-lg text-neutral-900 dark:text-slate-100">
+              <span className="text-[11px] font-black text-neutral-700 dark:text-slate-300 block uppercase tracking-wider">Valid Counted</span>
+              <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1 block">
                 {votersList.filter((v) => v.hasVoted && !v.isInvalidated).length}
               </span>
-              <span className="text-[10px] text-emerald-500/80">In official tally</span>
+              <span className="text-[10px] text-emerald-800 dark:text-emerald-400 font-bold">In official tally</span>
             </div>
 
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 shadow-md">
-              <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">Flagged / Invalid</span>
-              <span className="text-2xl font-black text-rose-400 mt-1 block">
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-4 shadow-lg text-neutral-900 dark:text-slate-100">
+              <span className="text-[11px] font-black text-neutral-700 dark:text-slate-300 block uppercase tracking-wider">Flagged / Invalid</span>
+              <span className="text-2xl font-black text-rose-700 dark:text-rose-400 mt-1 block">
                 {votersList.filter((v) => v.isInvalidated).length}
               </span>
-              <span className="text-[10px] text-rose-400/80">Excluded from tally</span>
+              <span className="text-[10px] text-rose-800 dark:text-rose-400 font-bold">Excluded from tally</span>
             </div>
           </div>
 
           {/* Search, Filter & Bulk Actions Header */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-5 shadow-xl space-y-4 text-neutral-900 dark:text-slate-100">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Search className="w-4 h-4 text-neutral-600 dark:text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   type="text"
                   value={voterSearch}
                   onChange={(e) => setVoterSearch(e.target.value)}
                   placeholder="Search student by name, ID (e.g. 2026-004), email, or receipt hash..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-neutral-900 dark:text-slate-100 font-bold placeholder-neutral-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-700"
                 />
               </div>
 
               <div className="flex items-center space-x-2">
                 <button
                   onClick={fetchVoters}
-                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center space-x-1.5 transition-colors"
+                  className="px-3.5 py-2 rounded-2xl bg-neutral-100 dark:bg-slate-800 hover:bg-neutral-200 dark:hover:bg-slate-700 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 text-xs font-black flex items-center space-x-1.5 transition-colors"
                   title="Reload Voters List"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${loadingVoters ? 'animate-spin' : ''}`} />
@@ -1195,7 +1195,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
 
             {/* Filter Pills */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-neutral-200 dark:border-slate-800">
               <div className="flex items-center space-x-2 overflow-x-auto py-1">
                 {(
                   [
@@ -1208,14 +1208,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <button
                     key={tab.id}
                     onClick={() => setVoterFilter(tab.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black border transition-all flex items-center space-x-1.5 ${
                       voterFilter === tab.id
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                        : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
+                        ? 'bg-rose-700 text-white border-rose-700 shadow-sm'
+                        : 'bg-neutral-50 dark:bg-slate-800 text-neutral-900 dark:text-slate-100 border-neutral-200 dark:border-slate-700 hover:bg-neutral-100 dark:hover:bg-slate-700'
                     }`}
                   >
                     <span>{tab.label}</span>
-                    <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-800 text-slate-300">
+                    <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-black text-white font-black">
                       {tab.count}
                     </span>
                   </button>
@@ -1224,29 +1224,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
               {/* Bulk Selection Actions */}
               {selectedVoterIds.length > 0 && (
-                <div className="flex items-center space-x-2 bg-slate-950 p-1.5 px-3 rounded-xl border border-amber-500/30">
-                  <span className="text-[11px] font-bold text-amber-400">
+                <div className="flex items-center space-x-2 bg-rose-50 dark:bg-rose-950 p-1.5 px-3 rounded-2xl border border-rose-200 dark:border-rose-800">
+                  <span className="text-[11px] font-black text-rose-900 dark:text-rose-200">
                     {selectedVoterIds.length} Selected
                   </span>
                   <button
                     onClick={() => handleBulkToggleInvalidation(true)}
                     disabled={isSubmittingAction}
-                    className="px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 text-xs font-bold flex items-center space-x-1 transition-all"
+                    className="px-2.5 py-1 rounded-xl bg-rose-700 border border-rose-700 text-white hover:bg-rose-800 text-xs font-black flex items-center space-x-1 transition-all"
                   >
-                    <Ban className="w-3 h-3 text-rose-400" />
+                    <Ban className="w-3 h-3 text-white" />
                     <span>Invalidate</span>
                   </button>
                   <button
                     onClick={() => handleBulkToggleInvalidation(false)}
                     disabled={isSubmittingAction}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold flex items-center space-x-1 transition-all"
+                    className="px-2.5 py-1 rounded-xl bg-emerald-600 border border-emerald-600 text-white hover:bg-emerald-700 text-xs font-black flex items-center space-x-1 transition-all"
                   >
-                    <RotateCcw className="w-3 h-3 text-emerald-400" />
+                    <RotateCcw className="w-3 h-3 text-white" />
                     <span>Restore</span>
                   </button>
                   <button
                     onClick={() => setSelectedVoterIds([])}
-                    className="text-[10px] text-slate-500 hover:text-slate-300 underline pl-1"
+                    className="text-[10px] text-neutral-800 dark:text-slate-200 hover:text-black dark:hover:text-white font-extrabold underline pl-1"
                   >
                     Clear
                   </button>
@@ -1256,27 +1256,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
 
           {/* Voter List Table Card */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-lg overflow-hidden">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
-                <ShieldAlert className="w-4 h-4 text-amber-400" />
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden text-neutral-900 dark:text-slate-100">
+            <div className="p-4 border-b border-neutral-200 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-xs font-black text-neutral-900 dark:text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+                <ShieldAlert className="w-4 h-4 text-rose-700 dark:text-rose-400" />
                 <span>Student Voter Ledger & Integrity Audit</span>
               </h3>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-neutral-700 dark:text-slate-300 font-bold">
                 Audit Table
               </span>
             </div>
 
             {loadingVoters ? (
-              <div className="p-12 text-center text-xs text-slate-500 flex items-center justify-center space-x-2">
-                <RefreshCw className="w-4 h-4 animate-spin text-amber-400" />
+              <div className="p-12 text-center text-xs text-neutral-700 dark:text-slate-300 font-bold flex items-center justify-center space-x-2">
+                <RefreshCw className="w-4 h-4 animate-spin text-rose-700 dark:text-rose-400" />
                 <span>Fetching registered voter records...</span>
               </div>
             ) : votersList.length === 0 ? (
-              <div className="p-12 text-center text-xs text-slate-500 space-y-2">
-                <Users className="w-8 h-8 text-slate-600 mx-auto opacity-50" />
-                <p className="font-semibold text-slate-300">No actual student accounts registered yet.</p>
-                <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+              <div className="p-12 text-center text-xs text-neutral-600 dark:text-slate-400 space-y-2">
+                <Users className="w-8 h-8 text-neutral-400 dark:text-slate-500 mx-auto" />
+                <p className="font-extrabold text-neutral-900 dark:text-slate-100">No actual student accounts registered yet.</p>
+                <p className="text-[11px] text-neutral-700 dark:text-slate-300 font-bold max-w-sm mx-auto">
                   Student voter accounts will automatically appear here once students authenticate via Google or cast their official ballots.
                 </p>
               </div>
@@ -1284,7 +1284,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-950/70 border-b border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <tr className="bg-neutral-100 dark:bg-slate-800 border-b border-neutral-200 dark:border-slate-700 text-[11px] font-black text-neutral-900 dark:text-slate-100 uppercase tracking-wider">
                       <th className="py-3 px-4 w-10 text-center">
                         <input
                           type="checkbox"
@@ -1296,7 +1296,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                               setSelectedVoterIds([]);
                             }
                           }}
-                          className="rounded border-slate-700 text-amber-500 focus:ring-0 bg-slate-900"
+                          className="rounded border border-neutral-300 dark:border-slate-600 text-rose-700 focus:ring-0 bg-white dark:bg-slate-900"
                         />
                       </th>
                       <th className="py-3 px-4">Student Identity</th>
@@ -1306,7 +1306,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-neutral-200 dark:divide-slate-800">
                     {votersList
                       .filter((voter) => {
                         const searchLower = voterSearch.toLowerCase().trim();
@@ -1330,9 +1330,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         return (
                           <tr
                             key={voter.id}
-                            className={`hover:bg-slate-800/40 transition-colors ${
-                              voter.isInvalidated ? 'bg-rose-950/20' : ''
-                            } ${isSelected ? 'bg-amber-500/5' : ''}`}
+                            className={`hover:bg-neutral-50 dark:hover:bg-slate-800/60 transition-colors ${
+                              voter.isInvalidated ? 'bg-rose-50/70 dark:bg-rose-950/40' : ''
+                            } ${isSelected ? 'bg-neutral-100 dark:bg-slate-800' : ''}`}
                           >
                             <td className="py-3.5 px-4 text-center">
                               <input
@@ -1345,39 +1345,39 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                     setSelectedVoterIds(selectedVoterIds.filter((id) => id !== voter.id));
                                   }
                                 }}
-                                className="rounded border-slate-700 text-amber-500 focus:ring-0 bg-slate-900"
+                                className="rounded border border-neutral-300 dark:border-slate-600 text-rose-700 focus:ring-0 bg-white dark:bg-slate-900"
                               />
                             </td>
                             <td className="py-3.5 px-4">
-                              <div className="font-bold text-slate-100 flex items-center space-x-1.5">
+                              <div className="font-extrabold text-neutral-900 dark:text-slate-100 flex items-center space-x-1.5">
                                 <span>{voter.name}</span>
                                 {voter.isInvalidated && (
-                                  <span className="text-[10px] text-rose-400 font-extrabold px-1.5 py-0.2 rounded bg-rose-500/20 border border-rose-500/30">
+                                  <span className="text-[10px] text-white font-black px-1.5 py-0.2 rounded bg-black">
                                     SUSPICIOUS
                                   </span>
                                 )}
                               </div>
-                              <div className="text-[10px] font-mono text-cyan-400">{voter.id}</div>
+                              <div className="text-[10px] font-mono font-bold text-rose-800 dark:text-rose-400">{voter.id}</div>
                             </td>
                             <td className="py-3.5 px-4">
-                              <div className="text-slate-300 font-mono text-[11px]">{voter.email}</div>
-                              <div className="text-[10px] text-slate-500">{voter.yearLevel} CPE</div>
+                              <div className="text-neutral-900 dark:text-slate-100 font-mono font-bold text-[11px]">{voter.email}</div>
+                              <div className="text-[10px] text-neutral-700 dark:text-slate-300 font-bold">{voter.yearLevel} CPE</div>
                             </td>
                             <td className="py-3.5 px-4">
                               {voter.hasVoted ? (
                                 <div className="space-y-0.5">
-                                  <span className="inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-                                    <CheckCircle2 className="w-3 h-3 text-cyan-400" />
+                                  <span className="inline-flex items-center space-x-1 text-[10px] font-black px-2 py-0.5 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-900 dark:text-rose-200 border border-rose-200 dark:border-rose-800">
+                                    <CheckCircle2 className="w-3 h-3 text-rose-800 dark:text-rose-300" />
                                     <span>Ballot Submitted</span>
                                   </span>
                                   {voter.receiptHash && (
-                                    <div className="text-[10px] font-mono text-slate-400 truncate max-w-[140px]" title={voter.receiptHash}>
+                                    <div className="text-[10px] font-mono text-neutral-700 dark:text-slate-300 font-bold truncate max-w-[140px]" title={voter.receiptHash}>
                                       Hash: {voter.receiptHash.slice(0, 10)}...
                                     </div>
                                   )}
                                 </div>
                               ) : (
-                                <span className="inline-flex items-center space-x-1 text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                                <span className="inline-flex items-center space-x-1 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-neutral-100 dark:bg-slate-800 text-neutral-700 dark:text-slate-300 border border-neutral-200 dark:border-slate-700">
                                   <span>Not Voted Yet</span>
                                 </span>
                               )}
@@ -1385,19 +1385,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             <td className="py-3.5 px-4">
                               {voter.isInvalidated ? (
                                 <div className="space-y-1">
-                                  <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-[10px]">
-                                    <Ban className="w-3 h-3 text-rose-400" />
+                                  <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-xl bg-rose-700 border border-rose-700 text-white font-black text-[10px]">
+                                    <Ban className="w-3 h-3 text-white" />
                                     <span>INVALIDATED</span>
                                   </span>
                                   {voter.invalidatedReason && (
-                                    <p className="text-[10px] text-rose-400/90 italic max-w-xs truncate" title={voter.invalidatedReason}>
+                                    <p className="text-[10px] text-rose-900 dark:text-rose-200 font-bold italic max-w-xs truncate" title={voter.invalidatedReason}>
                                       Reason: {voter.invalidatedReason}
                                     </p>
                                   )}
                                 </div>
                               ) : (
-                                <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold text-[10px]">
-                                  <UserCheck className="w-3 h-3 text-emerald-400" />
+                                <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-xl bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-black text-[10px]">
+                                  <UserCheck className="w-3 h-3 text-emerald-800 dark:text-emerald-300" />
                                   <span>VALID ACCOUNT</span>
                                 </span>
                               )}
@@ -1408,9 +1408,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                   <button
                                     onClick={() => handleToggleVoterInvalidation(voter, false)}
                                     disabled={isSubmittingAction}
-                                    className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all inline-flex items-center space-x-1"
+                                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 border border-emerald-600 text-white text-xs font-black transition-all inline-flex items-center space-x-1 active:scale-95 shadow-sm"
                                   >
-                                    <RotateCcw className="w-3.5 h-3.5 text-emerald-400" />
+                                    <RotateCcw className="w-3.5 h-3.5 text-white" />
                                     <span>Restore Vote</span>
                                   </button>
                                 ) : (
@@ -1420,16 +1420,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                       setInvalidationReason('Suspicious account activity / unverified credentials');
                                     }}
                                     disabled={isSubmittingAction}
-                                    className="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-bold transition-all inline-flex items-center space-x-1"
+                                    className="px-3 py-1.5 rounded-xl bg-rose-700 hover:bg-rose-800 border border-rose-700 text-white text-xs font-black transition-all inline-flex items-center space-x-1 active:scale-95 shadow-sm"
                                   >
-                                    <Ban className="w-3.5 h-3.5 text-rose-400" />
+                                    <Ban className="w-3.5 h-3.5 text-white" />
                                     <span>Invalidate</span>
                                   </button>
                                 )}
                                 <button
                                   onClick={() => setVoterToDelete(voter)}
                                   disabled={isSubmittingAction}
-                                  className="p-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 border border-slate-700 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 text-xs font-bold transition-all inline-flex items-center space-x-1"
+                                  className="p-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-neutral-100 dark:hover:bg-slate-700 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 text-xs font-black transition-all inline-flex items-center space-x-1 shadow-sm"
                                   title="Delete Account (Duplicate Account Cleanup)"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1450,33 +1450,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {/* Voter Invalidation Reason Modal */}
       {invalidatingVoter && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-100 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-neutral-900 dark:text-slate-100 space-y-4">
             <button
               onClick={() => setInvalidatingVoter(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 text-sm"
+              className="absolute top-4 right-4 text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-extrabold text-sm"
             >
               ✕
             </button>
 
-            <div className="flex items-center space-x-3 text-rose-400">
-              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30">
-                <AlertTriangle className="w-6 h-6 text-rose-400" />
+            <div className="flex items-center space-x-3 text-rose-800 dark:text-rose-400">
+              <div className="p-2.5 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800">
+                <AlertTriangle className="w-6 h-6 text-rose-800 dark:text-rose-300" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-100">Invalidate Suspicious Account</h3>
-                <p className="text-xs text-slate-400">Commission Election Integrity Audit</p>
+                <h3 className="text-base font-black text-neutral-900 dark:text-slate-100">Invalidate Suspicious Account</h3>
+                <p className="text-xs text-neutral-700 dark:text-slate-300 font-bold">Commission Election Integrity Audit</p>
               </div>
             </div>
 
-            <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1 text-xs">
-              <div><strong className="text-slate-400">Student Name:</strong> <span className="text-slate-100 font-bold">{invalidatingVoter.name}</span></div>
-              <div><strong className="text-slate-400">Student ID:</strong> <span className="text-cyan-400 font-mono">{invalidatingVoter.id}</span></div>
-              <div><strong className="text-slate-400">Email:</strong> <span className="text-slate-300 font-mono">{invalidatingVoter.email}</span></div>
+            <div className="bg-neutral-50 dark:bg-slate-800 p-3.5 rounded-2xl border border-neutral-200 dark:border-slate-700 space-y-1 text-xs font-bold">
+              <div><strong className="text-neutral-700 dark:text-slate-300">Student Name:</strong> <span className="text-neutral-900 dark:text-slate-100 font-black">{invalidatingVoter.name}</span></div>
+              <div><strong className="text-neutral-700 dark:text-slate-300">Student ID:</strong> <span className="text-rose-800 dark:text-rose-400 font-mono font-black">{invalidatingVoter.id}</span></div>
+              <div><strong className="text-neutral-700 dark:text-slate-300">Email:</strong> <span className="text-neutral-900 dark:text-slate-100 font-mono font-bold">{invalidatingVoter.email}</span></div>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-300">
+              <label className="block text-xs font-black text-neutral-900 dark:text-slate-200">
                 Quick Violation Reason Presets:
               </label>
               <div className="grid grid-cols-2 gap-2 text-[11px]">
@@ -1490,10 +1490,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     type="button"
                     key={preset}
                     onClick={() => setInvalidationReason(preset)}
-                    className={`p-2 rounded-lg border text-left transition-all ${
+                    className={`p-2 rounded-xl border text-left transition-all ${
                       invalidationReason === preset
-                        ? 'bg-rose-500/20 border-rose-500 text-rose-300 font-bold'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                        ? 'bg-rose-700 text-white font-extrabold border-rose-700 shadow-sm'
+                        : 'bg-neutral-50 dark:bg-slate-800 text-neutral-900 dark:text-slate-100 font-bold border-neutral-200 dark:border-slate-700 hover:bg-neutral-100 dark:hover:bg-slate-700'
                     }`}
                   >
                     {preset}
@@ -1503,7 +1503,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">
+              <label className="block text-xs font-black text-neutral-900 dark:text-slate-200 mb-1">
                 Custom Audit Reason Statement *
               </label>
               <textarea
@@ -1511,11 +1511,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 value={invalidationReason}
                 onChange={(e) => setInvalidationReason(e.target.value)}
                 placeholder="State specific reasons for invalidating this student account..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-rose-500"
+                className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl p-3 text-xs text-neutral-900 dark:text-slate-100 font-bold placeholder-neutral-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-700"
               />
             </div>
 
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-[11px] text-rose-300">
+            <div className="p-3 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-[11px] text-rose-900 dark:text-rose-200 font-bold">
               ⚠️ <strong>Immediate Tally Deduction:</strong> Invalidating this account will immediately remove any votes cast by this student from live candidate totals and adjust turnout percentages in real time.
             </div>
 
@@ -1523,7 +1523,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <button
                 type="button"
                 onClick={() => setInvalidatingVoter(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                className="px-4 py-2 rounded-2xl bg-neutral-100 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 text-xs font-extrabold"
               >
                 Cancel
               </button>
@@ -1531,7 +1531,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 type="button"
                 onClick={() => handleToggleVoterInvalidation(invalidatingVoter, true)}
                 disabled={isSubmittingAction || !invalidationReason.trim()}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/30 disabled:opacity-50"
+                className="px-4 py-2 rounded-2xl bg-rose-700 hover:bg-rose-800 border border-rose-700 text-white font-black text-xs shadow-sm active:scale-95 disabled:opacity-50"
               >
                 {isSubmittingAction ? 'Processing...' : 'Confirm Invalidation'}
               </button>
@@ -1542,38 +1542,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {/* Add Candidate Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-neutral-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowAddModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-200"
+              className="absolute top-4 right-4 text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-extrabold text-sm"
             >
               ✕
             </button>
 
-            <h3 className="text-lg font-bold text-slate-100 mb-1">Register Candidate</h3>
-            <p className="text-xs text-slate-400 mb-4">
+            <h3 className="text-lg font-black text-neutral-900 dark:text-slate-100 mb-1">Register Candidate</h3>
+            <p className="text-xs text-neutral-700 dark:text-slate-300 font-bold mb-4">
               Requires candidate full name, school year level, optional photo URL link, and brief description.
             </p>
 
             <form onSubmit={handleAddCandidate} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Full Name *</label>
+                <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1">Full Name *</label>
                 <input
                   type="text"
                   value={newCand.name}
                   onChange={(e) => setNewCand({ ...newCand, name: e.target.value })}
                   placeholder="e.g. Maria Clara Santos"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 text-sm focus:outline-none focus:border-amber-500"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-rose-700"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Position *</label>
+                <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1">Position *</label>
                 <select
                   value={newCand.positionId}
                   onChange={(e) => setNewCand({ ...newCand, positionId: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-amber-500"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                 >
                   {positions.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -1585,11 +1585,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Gender *</label>
+                  <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1">Gender *</label>
                   <select
                     value={newCand.gender}
                     onChange={(e) => setNewCand({ ...newCand, gender: e.target.value as Gender })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-amber-500"
+                    className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                   >
                     <option value="Female">Female</option>
                     <option value="Male">Male</option>
@@ -1599,11 +1599,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">School Year *</label>
+                  <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1">School Year *</label>
                   <select
                     value={newCand.yearLevel}
                     onChange={(e) => setNewCand({ ...newCand, yearLevel: e.target.value as any })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-amber-500"
+                    className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                   >
                     <option value="1st Year">1st Year</option>
                     <option value="2nd Year">2nd Year</option>
@@ -1614,61 +1614,61 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
 
               {(newCand.positionId === 'muse' || positions.find(p => p.id === newCand.positionId)?.title.toLowerCase().includes('muse')) && (
-                <div className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-300 text-[11px]">
+                <div className="p-2.5 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-[11px] font-bold">
                   📌 <strong>Muse Position Rule:</strong> Only female candidates are eligible for the Muse position.
                 </div>
               )}
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1 flex items-center justify-between">
+                <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1 flex items-center justify-between">
                   <span>Profile Photo URL Link (Optional)</span>
-                  <span className="text-[10px] text-amber-400 font-normal">Image link</span>
+                  <span className="text-[10px] text-rose-800 dark:text-rose-400 font-bold">Image link</span>
                 </label>
                 <input
                   type="url"
                   value={newCand.avatarUrl}
                   onChange={(e) => setNewCand({ ...newCand, avatarUrl: e.target.value })}
                   placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                 />
                 {newCand.avatarUrl && (
-                  <div className="mt-2 flex items-center space-x-3 bg-slate-950/80 p-2 rounded-xl border border-slate-800">
+                  <div className="mt-2 flex items-center space-x-3 bg-neutral-50 dark:bg-slate-800 p-2 rounded-2xl border border-neutral-200 dark:border-slate-700">
                     <img
                       src={newCand.avatarUrl}
                       alt="Preview"
                       referrerPolicy="no-referrer"
-                      className="w-10 h-10 rounded-full object-cover border border-slate-700"
+                      className="w-10 h-10 rounded-xl object-cover border border-neutral-300 dark:border-slate-600"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
                       }}
                     />
-                    <span className="text-[11px] text-slate-400">Live Photo Link Preview</span>
+                    <span className="text-[11px] text-neutral-700 dark:text-slate-300 font-bold">Live Photo Link Preview</span>
                   </div>
                 )}
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Brief Description *</label>
+                <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1">Brief Description *</label>
                 <textarea
                   rows={4}
                   value={newCand.description}
                   onChange={(e) => setNewCand({ ...newCand, description: e.target.value })}
                   placeholder="Provide a brief description or platform overview for the candidate..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex justify-end space-x-2">
+              <div className="pt-3 border-t border-neutral-200 dark:border-slate-800 flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300"
+                  className="px-4 py-2 rounded-2xl bg-neutral-100 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold"
+                  className="px-4 py-2 rounded-2xl bg-rose-700 hover:bg-rose-800 border border-rose-700 text-white font-black shadow-sm active:scale-95"
                 >
                   Save Candidate
                 </button>
@@ -1677,39 +1677,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         </div>
       )}
+
       {/* Edit Candidate Modal */}
       {editingCandidate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-neutral-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setEditingCandidate(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-200"
+              className="absolute top-4 right-4 text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-extrabold text-sm"
             >
               ✕
             </button>
 
-            <h3 className="text-lg font-bold text-slate-100 mb-1">Edit Candidate Info</h3>
-            <p className="text-xs text-slate-400 mb-4">
+            <h3 className="text-lg font-black text-neutral-900 dark:text-slate-100 mb-1">Edit Candidate Info</h3>
+            <p className="text-xs text-neutral-700 dark:text-slate-300 font-bold mb-4">
               Update details, photo link, or platform statement for {editingCandidate.name}.
             </p>
 
             <form onSubmit={handleSaveEditCandidate} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Full Name *</label>
+                <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1">Full Name *</label>
                 <input
                   type="text"
                   value={editingCandidate.name}
                   onChange={(e) => setEditingCandidate({ ...editingCandidate, name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 text-sm focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-rose-700"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Position *</label>
+                <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1">Position *</label>
                 <select
                   value={editingCandidate.positionId}
                   onChange={(e) => setEditingCandidate({ ...editingCandidate, positionId: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                 >
                   {positions.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -1721,11 +1722,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Gender *</label>
+                  <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1">Gender *</label>
                   <select
                     value={editingCandidate.gender || 'Female'}
                     onChange={(e) => setEditingCandidate({ ...editingCandidate, gender: e.target.value as Gender })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                   >
                     <option value="Female">Female</option>
                     <option value="Male">Male</option>
@@ -1735,7 +1736,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">School Year</label>
+                  <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1">School Year</label>
                   <select
                     value={editingCandidate.yearLevel || (editingCandidate.bio.includes('1st Year') ? '1st Year' : editingCandidate.bio.includes('2nd Year') ? '2nd Year' : editingCandidate.bio.includes('4th Year') ? '4th Year' : '3rd Year')}
                     onChange={(e) => setEditingCandidate({
@@ -1743,7 +1744,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       yearLevel: e.target.value as any,
                       bio: `${e.target.value} Computer Engineering candidate. ${editingCandidate.manifesto || ''}`
                     })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                   >
                     <option value="1st Year">1st Year</option>
                     <option value="2nd Year">2nd Year</option>
@@ -1754,41 +1755,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
 
               {(editingCandidate.positionId === 'muse' || positions.find(p => p.id === editingCandidate.positionId)?.title.toLowerCase().includes('muse')) && (
-                <div className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-300 text-[11px]">
+                <div className="p-2.5 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-[11px] font-bold">
                   📌 <strong>Muse Position Rule:</strong> Only female candidates are eligible for the Muse position.
                 </div>
               )}
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1 flex items-center justify-between">
+                <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1 flex items-center justify-between">
                   <span>Profile Photo URL Link</span>
-                  <span className="text-[10px] text-cyan-400 font-normal">Image URL</span>
+                  <span className="text-[10px] text-rose-800 dark:text-rose-400 font-bold">Image URL</span>
                 </label>
                 <input
                   type="url"
                   value={editingCandidate.avatarUrl}
                   onChange={(e) => setEditingCandidate({ ...editingCandidate, avatarUrl: e.target.value })}
                   placeholder="https://images.unsplash.com/photo-..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                 />
                 {editingCandidate.avatarUrl && (
-                  <div className="mt-2 flex items-center space-x-3 bg-slate-950/80 p-2 rounded-xl border border-slate-800">
+                  <div className="mt-2 flex items-center space-x-3 bg-neutral-50 dark:bg-slate-800 p-2 rounded-2xl border border-neutral-200 dark:border-slate-700">
                     <img
                       src={editingCandidate.avatarUrl}
                       alt="Preview"
                       referrerPolicy="no-referrer"
-                      className="w-10 h-10 rounded-full object-cover border border-slate-700"
+                      className="w-10 h-10 rounded-xl object-cover border border-neutral-300 dark:border-slate-600"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
                       }}
                     />
-                    <span className="text-[11px] text-slate-400">Live Photo Link Preview</span>
+                    <span className="text-[11px] text-neutral-700 dark:text-slate-300 font-bold">Live Photo Link Preview</span>
                   </div>
                 )}
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Brief Description / Platform</label>
+                <label className="block text-neutral-900 dark:text-slate-200 font-black mb-1">Brief Description / Platform</label>
                 <textarea
                   rows={4}
                   value={editingCandidate.manifesto || editingCandidate.platformHeading}
@@ -1797,21 +1798,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     manifesto: e.target.value,
                     platformHeading: e.target.value,
                   })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 focus:outline-none focus:border-cyan-500"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex justify-end space-x-2">
+              <div className="pt-3 border-t border-neutral-200 dark:border-slate-800 flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setEditingCandidate(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-medium"
+                  className="px-4 py-2 rounded-2xl bg-neutral-100 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 font-bold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold"
+                  className="px-4 py-2 rounded-2xl bg-rose-700 hover:bg-rose-800 border border-rose-700 text-white font-black shadow-sm active:scale-95"
                 >
                   Save Changes
                 </button>
@@ -1823,44 +1824,44 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {/* Reset Votes Confirmation Modal */}
       {showResetVotesModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-rose-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-neutral-900 dark:text-slate-100">
             <button
               onClick={() => {
                 setShowResetVotesModal(false);
                 setResetConfirmInput('');
                 setResetVotesError(null);
               }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 text-sm font-bold"
+              className="absolute top-4 right-4 text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-extrabold text-sm"
             >
               ✕
             </button>
 
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-rose-800 dark:text-rose-300" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-100">Reset All Election Votes</h3>
-                <p className="text-xs text-rose-400 font-semibold">Danger Zone • Permanent Action</p>
+                <h3 className="text-base font-black text-neutral-900 dark:text-slate-100">Reset All Election Votes</h3>
+                <p className="text-xs text-rose-800 dark:text-rose-400 font-extrabold">Danger Zone • Permanent Action</p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              This action will permanently delete all recorded votes and set all voter statuses back to zero. <strong className="text-white">Candidates and positions will NOT be deleted.</strong>
+            <p className="text-xs text-neutral-800 dark:text-slate-200 font-bold leading-relaxed mb-4">
+              This action will permanently delete all recorded votes and set all voter statuses back to zero. <strong className="text-black dark:text-white">Candidates and positions will NOT be deleted.</strong>
             </p>
 
             {resetVotesError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <div className="mb-4 p-3 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs font-black flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-800 dark:text-rose-300" />
                 <span>{resetVotesError}</span>
               </div>
             )}
 
             <form onSubmit={handleResetVotes} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  To confirm vote reset, please type <span className="font-mono text-rose-400 font-bold bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-800">confirm</span> below:
+                <label className="block text-xs font-black text-neutral-900 dark:text-slate-200 mb-1.5">
+                  To confirm vote reset, please type <span className="font-mono text-rose-800 dark:text-rose-300 font-extrabold bg-rose-100 dark:bg-rose-950 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-800">confirm</span> below:
                 </label>
                 <input
                   type="text"
@@ -1871,7 +1872,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   }}
                   placeholder="type confirm"
                   autoFocus
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 text-xs font-mono focus:outline-none focus:border-rose-500"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
                 />
               </div>
 
@@ -1883,17 +1884,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     setResetConfirmInput('');
                     setResetVotesError(null);
                   }}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors"
+                  className="px-4 py-2 rounded-2xl bg-neutral-100 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 text-xs font-black transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={resetConfirmInput.trim() !== 'confirm' || isSubmittingAction}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 transition-all ${
+                  className={`px-4 py-2 rounded-2xl text-xs font-black flex items-center space-x-2 transition-all border ${
                     resetConfirmInput.trim() === 'confirm' && !isSubmittingAction
-                      ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-900/40 cursor-pointer'
-                      : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
+                      ? 'bg-rose-700 hover:bg-rose-800 border-rose-700 text-white shadow-sm active:scale-95 cursor-pointer'
+                      : 'bg-neutral-200 dark:bg-slate-800 text-neutral-500 dark:text-slate-500 border-neutral-300 dark:border-slate-700 cursor-not-allowed opacity-60'
                   }`}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
@@ -1907,27 +1908,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {/* Delete Voter Account Confirmation Modal */}
       {voterToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-rose-500/30 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-neutral-900 dark:text-slate-100">
             <button
               onClick={() => setVoterToDelete(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 text-sm font-bold"
+              className="absolute top-4 right-4 text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-extrabold text-sm"
             >
               ✕
             </button>
 
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center flex-shrink-0">
-                <Trash2 className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-800 dark:text-rose-300" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-100">Delete Student Voter Account</h3>
-                <p className="text-xs text-rose-400 font-semibold">Account Duplication Cleanup</p>
+                <h3 className="text-base font-black text-neutral-900 dark:text-slate-100">Delete Student Voter Account</h3>
+                <p className="text-xs text-rose-800 dark:text-rose-400 font-extrabold">Account Duplication Cleanup</p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed mb-4">
-              Are you sure you want to permanently delete the voter record for <strong className="text-white">{voterToDelete.name}</strong> (<span className="text-cyan-400">{voterToDelete.email || voterToDelete.studentId || voterToDelete.id}</span>)?
+            <p className="text-xs text-neutral-800 dark:text-slate-200 font-bold leading-relaxed mb-4">
+              Are you sure you want to permanently delete the voter record for <strong className="text-black dark:text-white">{voterToDelete.name}</strong> (<span className="text-rose-800 dark:text-rose-400 font-mono">{voterToDelete.email || voterToDelete.studentId || voterToDelete.id}</span>)?
               <br /><br />
               This will remove their registration record and any associated votes from the system. This action cannot be undone.
             </p>
@@ -1936,7 +1937,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <button
                 type="button"
                 onClick={() => setVoterToDelete(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors"
+                className="px-4 py-2 rounded-2xl bg-neutral-100 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 text-xs font-black transition-colors"
               >
                 Cancel
               </button>
@@ -1944,7 +1945,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 type="button"
                 onClick={executeDeleteVoter}
                 disabled={isSubmittingAction}
-                className="px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 transition-all bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-900/40 cursor-pointer"
+                className="px-4 py-2 rounded-2xl text-xs font-black flex items-center space-x-2 transition-all bg-rose-700 hover:bg-rose-800 border border-rose-700 text-white shadow-sm active:scale-95 cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{isSubmittingAction ? 'Deleting...' : 'Delete Account'}</span>
