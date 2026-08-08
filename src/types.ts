@@ -106,6 +106,12 @@ export interface ElectionSettings {
   allowAbstain: boolean;
   votingDeadline: string;
   totalRegisteredVoters: number;
+  yearLevelVoterCounts?: {
+    '1st Year'?: number;
+    '2nd Year'?: number;
+    '3rd Year'?: number;
+    '4th Year'?: number;
+  };
 }
 
 export interface AIComparisonRequest {

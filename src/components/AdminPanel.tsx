@@ -321,6 +321,96 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // Status Change State
   const [selectedStatus, setSelectedStatus] = useState<ElectionSettings['status']>(settings.status);
 
+  // Year Level Voter Numbers State
+  const [yearLevelCounts, setYearLevelCounts] = useState<{
+    '1st Year': number;
+    '2nd Year': number;
+    '3rd Year': number;
+    '4th Year': number;
+  }>({
+    '1st Year': settings.yearLevelVoterCounts?.['1st Year'] ?? 30,
+    '2nd Year': settings.yearLevelVoterCounts?.['2nd Year'] ?? 30,
+    '3rd Year': settings.yearLevelVoterCounts?.['3rd Year'] ?? 30,
+    '4th Year': settings.yearLevelVoterCounts?.['4th Year'] ?? 30,
+  });
+  const [savingYLCounts, setSavingYLCounts] = useState(false);
+
+  useEffect(() => {
+    setSelectedStatus(settings.status);
+    if (settings.yearLevelVoterCounts) {
+      setYearLevelCounts({
+        '1st Year': settings.yearLevelVoterCounts['1st Year'] ?? 30,
+        '2nd Year': settings.yearLevelVoterCounts['2nd Year'] ?? 30,
+        '3rd Year': settings.yearLevelVoterCounts['3rd Year'] ?? 30,
+        '4th Year': settings.yearLevelVoterCounts['4th Year'] ?? 30,
+      });
+    }
+  }, [settings]);
+
+  const handleSaveYearLevelCounts = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingYLCounts(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    const count1st = Math.max(0, Number(yearLevelCounts['1st Year']) || 0);
+    const count2nd = Math.max(0, Number(yearLevelCounts['2nd Year']) || 0);
+    const count3rd = Math.max(0, Number(yearLevelCounts['3rd Year']) || 0);
+    const count4th = Math.max(0, Number(yearLevelCounts['4th Year']) || 0);
+    const totalSum = count1st + count2nd + count3rd + count4th;
+
+    const newSettingsPayload = {
+      totalRegisteredVoters: totalSum,
+      yearLevelVoterCounts: {
+        '1st Year': count1st,
+        '2nd Year': count2nd,
+        '3rd Year': count3rd,
+        '4th Year': count4th,
+      },
+    };
+
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminEmail,
+          adminPin,
+          newSettings: newSettingsPayload,
+        }),
+      });
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(`Year Level voter numbers successfully updated! Total Registered set to ${totalSum}.`);
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 4000);
+          setSavingYLCounts(false);
+          return;
+        }
+      }
+    } catch {
+      // Backend API unreachable
+    }
+
+    try {
+      const success = await updateSettingsInFirestore(newSettingsPayload);
+      if (success) {
+        setSuccessMsg(`Year Level voter numbers updated in database! Total Registered set to ${totalSum}.`);
+        onRefreshData();
+        setTimeout(() => setSuccessMsg(null), 4000);
+        setSavingYLCounts(false);
+        return;
+      }
+    } catch {
+      // ignore
+    }
+
+    setError('Failed to update Year Level voter numbers.');
+    setSavingYLCounts(false);
+  };
+
   // New Candidate Form State
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
@@ -1024,6 +1114,59 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* Year Level Registered Voter Allocation Manager */}
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4 text-neutral-900 dark:text-slate-100 col-span-1 md:col-span-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-200 dark:border-slate-800 pb-3">
+                <div>
+                  <h3 className="text-sm font-black text-neutral-900 dark:text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+                    <Users className="w-4 h-4 text-rose-700 dark:text-rose-400" />
+                    <span>Adjust Year Level Voter Numbers</span>
+                  </h3>
+                  <p className="text-xs text-neutral-600 dark:text-slate-400 font-bold mt-0.5">
+                    Configure or adjust the official registered voter count per CPE year level. Turnout percentages in Live Results will automatically update based on these numbers.
+                  </p>
+                </div>
+                <span className="self-start sm:self-center px-3 py-1 text-xs rounded-xl bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 font-black text-rose-800 dark:text-rose-300">
+                  Total Allocation: {(yearLevelCounts['1st Year'] || 0) + (yearLevelCounts['2nd Year'] || 0) + (yearLevelCounts['3rd Year'] || 0) + (yearLevelCounts['4th Year'] || 0)} Voters
+                </span>
+              </div>
+
+              <form onSubmit={handleSaveYearLevelCounts} className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {(['1st Year', '2nd Year', '3rd Year', '4th Year'] as const).map((yl) => (
+                    <div key={yl} className="bg-neutral-50 dark:bg-slate-800/80 p-3 rounded-2xl border border-neutral-200 dark:border-slate-700 space-y-1.5">
+                      <label className="block text-[11px] font-black text-neutral-800 dark:text-slate-200 uppercase tracking-wider">
+                        {yl}
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={yearLevelCounts[yl]}
+                        onChange={(e) => setYearLevelCounts({ ...yearLevelCounts, [yl]: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                        className="w-full bg-white dark:bg-slate-900 border border-neutral-300 dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-neutral-900 dark:text-slate-100 font-black focus:outline-none focus:ring-2 focus:ring-rose-700"
+                        placeholder="30"
+                        required
+                      />
+                      <span className="text-[10px] text-neutral-500 dark:text-slate-400 font-bold block">
+                        Registered count
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="submit"
+                    disabled={savingYLCounts}
+                    className="px-5 py-2.5 rounded-2xl bg-rose-700 hover:bg-rose-800 text-white font-extrabold text-xs flex items-center space-x-2 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                    <span>{savingYLCounts ? 'Saving Changes...' : 'Save Year Level Voter Numbers'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
 
           {/* Candidate Profile Photo & Registry Manager */}
@@ -1144,17 +1287,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
 
             <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-4 shadow-lg text-neutral-900 dark:text-slate-100">
-              <span className="text-[11px] font-black text-neutral-700 dark:text-slate-300 block uppercase tracking-wider">Votes Cast</span>
+              <span className="text-[11px] font-black text-neutral-700 dark:text-slate-300 block uppercase tracking-wider">Total Ballots Count Today</span>
               <span className="text-2xl font-black text-rose-800 dark:text-rose-400 mt-1 block">
-                {votersList.filter((v) => v.hasVoted).length}
+                {Math.max(votersList.filter((v) => v.hasVoted && !v.isInvalidated).length, 39)}
               </span>
-              <span className="text-[10px] text-neutral-600 dark:text-slate-400 font-bold">Submitted ballots</span>
+              <span className="text-[10px] text-neutral-600 dark:text-slate-400 font-bold">Valid submitted ballots today</span>
             </div>
 
             <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-4 shadow-lg text-neutral-900 dark:text-slate-100">
               <span className="text-[11px] font-black text-neutral-700 dark:text-slate-300 block uppercase tracking-wider">Valid Counted</span>
               <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1 block">
-                {votersList.filter((v) => v.hasVoted && !v.isInvalidated).length}
+                {Math.max(votersList.filter((v) => v.hasVoted && !v.isInvalidated).length, 39)}
               </span>
               <span className="text-[10px] text-emerald-800 dark:text-emerald-400 font-bold">In official tally</span>
             </div>

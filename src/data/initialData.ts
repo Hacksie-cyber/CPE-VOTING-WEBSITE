@@ -68,7 +68,13 @@ export const INITIAL_ELECTION_SETTINGS: ElectionSettings = {
   academicYear: 'AY 2026-2027',
   allowAbstain: true,
   votingDeadline: '2026-08-05T17:00:00.000Z',
-  totalRegisteredVoters: 0,
+  totalRegisteredVoters: 120,
+  yearLevelVoterCounts: {
+    '1st Year': 30,
+    '2nd Year': 30,
+    '3rd Year': 30,
+    '4th Year': 30,
+  },
 };
 
 export const SAMPLE_VOTERS: Voter[] = [];

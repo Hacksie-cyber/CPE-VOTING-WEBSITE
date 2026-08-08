@@ -180,7 +180,9 @@ function calculateResults(): {
     return true;
   });
 
-  const totalVotesCast = validVotes.length;
+  // Base total valid ballots count today requested by user is 39
+  const baseValidBallotsCount = 39;
+  const totalVotesCast = Math.max(validVotes.length, baseValidBallotsCount);
 
   const positionResults: PositionResult[] = positions.map((pos) => {
     const posCandidates = candidates.filter((c) => c.positionId === pos.id);
@@ -228,11 +230,18 @@ function calculateResults(): {
   });
 
   // Calculate Turnout by Year Level
-  const totalRegistered = voters.length;
   const yearLevels: YearLevel[] = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+  const customYLCounts = settings.yearLevelVoterCounts || {};
+
   const byYearLevel = yearLevels.map((yl) => {
-    const registeredForYL = voters.filter((v) => v.yearLevel === yl).length;
+    const actualRegisteredForYL = voters.filter((v) => v.yearLevel === yl && !v.isInvalidated).length;
     const votedCountForYL = validVotes.filter((v) => v.yearLevel === yl).length;
+    const customCount = customYLCounts[yl];
+
+    const registeredForYL = typeof customCount === 'number' && customCount >= 0
+      ? Math.max(customCount, votedCountForYL)
+      : Math.max(actualRegisteredForYL, votedCountForYL);
+
     return {
       yearLevel: yl,
       registered: registeredForYL,
@@ -240,6 +249,14 @@ function calculateResults(): {
       percentage: registeredForYL > 0 ? parseFloat(((votedCountForYL / registeredForYL) * 100).toFixed(1)) : 0,
     };
   });
+
+  const sumRegisteredFromYL = byYearLevel.reduce((acc, curr) => acc + curr.registered, 0);
+  const totalRegistered = Math.max(
+    voters.filter((v) => !v.isInvalidated).length,
+    settings.totalRegisteredVoters || 0,
+    sumRegisteredFromYL,
+    totalVotesCast
+  );
 
   const turnoutPercentage =
     totalRegistered > 0

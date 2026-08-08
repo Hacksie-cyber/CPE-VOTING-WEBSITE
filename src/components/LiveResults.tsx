@@ -142,17 +142,17 @@ export const LiveResults: React.FC<LiveResultsProps> = ({ settings }) => {
       {/* Top Stat Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Votes */}
-        <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-5 shadow-lg relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-5 shadow-lg relative overflow-hidden transition-all hover:shadow-xl">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-black text-neutral-700 dark:text-slate-300 uppercase tracking-wider">Total Ballots Cast</span>
+            <span className="text-xs font-black text-neutral-700 dark:text-slate-300 uppercase tracking-wider">Total Ballots Count Today</span>
             <div className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 flex items-center justify-center font-bold">
               <Vote className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-3xl font-black text-neutral-900 dark:text-slate-100 font-mono">
+          <div className="text-3xl font-black text-rose-800 dark:text-rose-400 font-mono tracking-tight">
             {turnoutStats?.totalVoted || 0}
           </div>
-          <p className="text-xs text-neutral-700 dark:text-slate-400 font-bold mt-1">Out of {turnoutStats?.totalRegistered || 0} Registered Voters</p>
+          <p className="text-xs text-neutral-600 dark:text-slate-400 font-bold mt-1">Out of {turnoutStats?.totalRegistered || 0} Registered Voters Today</p>
         </div>
 
         {/* Voter Turnout % */}
