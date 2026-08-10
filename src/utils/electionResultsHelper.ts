@@ -72,9 +72,7 @@ export async function fetchOrCalculateResults(customSettings?: ElectionSettings)
     return true;
   });
 
-  // Base total valid ballots count today requested by user is 39
-  const baseValidBallotsCount = 39;
-  const totalVotesCast = Math.max(validVotes.length, baseValidBallotsCount);
+  const totalVotesCast = validVotes.length;
 
   const positionResults: PositionResult[] = positions.map((pos) => {
     const posCandidates = candidates.filter((c) => c.positionId === pos.id);

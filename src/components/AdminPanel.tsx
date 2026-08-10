@@ -812,6 +812,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       if (res.ok && contentType && contentType.includes('application/json')) {
         const data = await res.json();
         if (data.success) {
+          try {
+            const saved = localStorage.getItem('cpe_voter');
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              parsed.hasVoted = false;
+              parsed.votedAt = undefined;
+              parsed.receiptHash = undefined;
+              localStorage.setItem('cpe_voter', JSON.stringify(parsed));
+            }
+          } catch {
+            // ignore
+          }
+
           setSuccessMsg('All election votes have been reset to zero. Candidate profiles and positions remain untouched.');
           setShowResetVotesModal(false);
           setResetConfirmInput('');
@@ -1289,7 +1302,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-4 shadow-lg text-neutral-900 dark:text-slate-100">
               <span className="text-[11px] font-black text-neutral-700 dark:text-slate-300 block uppercase tracking-wider">Total Ballots Count Today</span>
               <span className="text-2xl font-black text-rose-800 dark:text-rose-400 mt-1 block">
-                {Math.max(votersList.filter((v) => v.hasVoted && !v.isInvalidated).length, 39)}
+                {votersList.filter((v) => v.hasVoted && !v.isInvalidated).length}
               </span>
               <span className="text-[10px] text-neutral-600 dark:text-slate-400 font-bold">Valid submitted ballots today</span>
             </div>
@@ -1297,7 +1310,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-4 shadow-lg text-neutral-900 dark:text-slate-100">
               <span className="text-[11px] font-black text-neutral-700 dark:text-slate-300 block uppercase tracking-wider">Valid Counted</span>
               <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-1 block">
-                {Math.max(votersList.filter((v) => v.hasVoted && !v.isInvalidated).length, 39)}
+                {votersList.filter((v) => v.hasVoted && !v.isInvalidated).length}
               </span>
               <span className="text-[10px] text-emerald-800 dark:text-emerald-400 font-bold">In official tally</span>
             </div>
