@@ -44,6 +44,12 @@ export const BallotStation: React.FC<BallotStationProps> = ({
   const [selectedCandidateModal, setSelectedCandidateModal] = useState<Candidate | null>(null);
   const [ruleViolationNotice, setRuleViolationNotice] = useState<string | null>(null);
 
+  const stNorm = (settings?.status || '').toString().trim().toUpperCase();
+  const isPaused = stNorm === 'PAUSED';
+  const isConcluded = stNorm === 'CONCLUDED';
+  const isVotingDisabled = isPaused || isConcluded || (stNorm !== 'VOTING_OPEN' && stNorm !== 'ACTIVE');
+  const isAdmin = voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com';
+
   const totalPositions = positions.length;
   const selectedCount = Object.keys(choices).length;
   const isComplete = selectedCount === totalPositions;
@@ -68,6 +74,18 @@ export const BallotStation: React.FC<BallotStationProps> = ({
 
   const handleCandidateClick = (posId: string, cand: Candidate) => {
     if (voter?.hasVoted) return;
+
+    if (isVotingDisabled && !isAdmin) {
+      if (isPaused) {
+        setRuleViolationNotice('Voting Currently Paused. Voting is currently paused by the election committee until further notice.');
+      } else if (isConcluded) {
+        setRuleViolationNotice('Election Already Concluded, You will be able to cast your vote, until further notice.');
+      } else {
+        setRuleViolationNotice('Voting is currently closed.');
+      }
+      setTimeout(() => setRuleViolationNotice(null), 6000);
+      return;
+    }
 
     const otherPos = getSelectedOtherPosition(cand, posId);
     if (otherPos) {
@@ -106,7 +124,52 @@ export const BallotStation: React.FC<BallotStationProps> = ({
             ✕
           </button>
         </div>
-      )}      {/* Banner / Instructions */}
+      )}
+
+      {/* Operational Status Prominent Notice Banners */}
+      {isPaused && (
+        <div className="bg-amber-50 dark:bg-amber-950/80 border-2 border-amber-500 dark:border-amber-700 rounded-2xl p-5 shadow-md flex items-start space-x-4 text-amber-950 dark:text-amber-100">
+          <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black flex-shrink-0 text-lg shadow-sm">
+            ⏸
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2">
+              <span className="bg-amber-600 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+                POLL STATUS: PAUSED
+              </span>
+            </div>
+            <h3 className="text-lg font-black tracking-tight text-amber-900 dark:text-amber-200 uppercase">
+              Voting Currently Paused
+            </h3>
+            <p className="text-xs sm:text-sm font-bold text-amber-800 dark:text-amber-300 leading-relaxed">
+              Voting is currently paused by the election committee. You will not be able to log in or cast your vote until further notice.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isConcluded && (
+        <div className="bg-rose-50 dark:bg-rose-950/80 border-2 border-rose-600 dark:border-rose-800 rounded-2xl p-5 shadow-md flex items-start space-x-4 text-rose-950 dark:text-rose-100">
+          <div className="w-10 h-10 rounded-xl bg-rose-700 text-white flex items-center justify-center font-black flex-shrink-0 text-lg shadow-sm">
+            🔒
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2">
+              <span className="bg-rose-700 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+                POLL STATUS: CONCLUDED
+              </span>
+            </div>
+            <h3 className="text-lg font-black tracking-tight text-rose-900 dark:text-rose-200 uppercase">
+              Election Already Concluded
+            </h3>
+            <p className="text-xs sm:text-sm font-bold text-rose-800 dark:text-rose-300 leading-relaxed">
+              Election Already Concluded, You will be able to cast your vote, until further notice.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Banner / Instructions */}
       <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm relative overflow-hidden">
         <div className="absolute -right-10 -bottom-10 w-60 h-60 bg-rose-700/10 rounded-full blur-3xl pointer-events-none" />
         
@@ -747,9 +810,21 @@ export const BallotStation: React.FC<BallotStationProps> = ({
             {!voter ? (
               <button
                 onClick={onOpenAuth}
-                className="w-full sm:w-auto bg-rose-700 hover:bg-rose-800 text-white font-extrabold px-6 py-2.5 rounded-xl text-sm transition-all border border-rose-700 shadow-sm flex items-center justify-center space-x-2"
+                className={`w-full sm:w-auto font-extrabold px-6 py-2.5 rounded-xl text-sm transition-all border shadow-sm flex items-center justify-center space-x-2 ${
+                  isPaused
+                    ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-600'
+                    : isConcluded
+                    ? 'bg-neutral-800 hover:bg-black text-white border-neutral-800'
+                    : 'bg-rose-700 hover:bg-rose-800 text-white border-rose-700'
+                }`}
               >
-                <span>Login to Cast Ballot</span>
+                <span>
+                  {isPaused
+                    ? 'Voting Currently Paused'
+                    : isConcluded
+                    ? 'Election Already Concluded'
+                    : 'Login to Cast Ballot'}
+                </span>
               </button>
             ) : voter.hasVoted ? (
               <span className="text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950/80 px-4 py-2 rounded-xl border border-emerald-300 dark:border-emerald-800 flex items-center space-x-1.5">

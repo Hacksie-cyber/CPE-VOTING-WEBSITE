@@ -449,6 +449,27 @@ async function startServer() {
     await loadStateFromFirestore();
     const { email, studentNumber, name, yearLevel } = req.body;
 
+    const stNorm = (settings.status || '').toString().trim().toUpperCase();
+    const isPaused = stNorm === 'PAUSED';
+    const isConcluded = stNorm === 'CONCLUDED';
+
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    const isAdmin = cleanEmail === 'bamuyahacksie@gmail.com';
+
+    if (!isAdmin && isPaused) {
+      return res.status(403).json({
+        success: false,
+        message: 'Voting Currently Paused. Voting is currently paused by the election committee until further notice.',
+      });
+    }
+
+    if (!isAdmin && isConcluded) {
+      return res.status(403).json({
+        success: false,
+        message: 'Election Already Concluded, You will be able to cast your vote, until further notice.',
+      });
+    }
+
     if (!email || !email.includes('@')) {
       return res.status(400).json({ success: false, message: 'A valid email address is required.' });
     }
@@ -459,7 +480,6 @@ async function startServer() {
       return res.status(400).json({ success: false, message: 'Full Name is required.' });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
     if (cleanEmail === 'bamuyahacksie@gmail.com') {
       return res.status(403).json({
         success: false,
@@ -549,11 +569,31 @@ async function startServer() {
     await loadStateFromFirestore();
     const { email, name } = req.body;
 
+    const stNorm = (settings.status || '').toString().trim().toUpperCase();
+    const isPaused = stNorm === 'PAUSED';
+    const isConcluded = stNorm === 'CONCLUDED';
+
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    const isAdmin = cleanEmail === 'bamuyahacksie@gmail.com';
+
+    if (!isAdmin && isPaused) {
+      return res.status(403).json({
+        success: false,
+        message: 'Voting Currently Paused. Voting is currently paused by the election committee until further notice.',
+      });
+    }
+
+    if (!isAdmin && isConcluded) {
+      return res.status(403).json({
+        success: false,
+        message: 'Election Already Concluded, You will be able to cast your vote, until further notice.',
+      });
+    }
+
     if (!email) {
       return res.status(400).json({ success: false, message: 'Google Account email is required.' });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
     const cleanName = name ? name.trim() : '';
     const normName = normalizeName(cleanName);
 
@@ -627,7 +667,20 @@ async function startServer() {
     await loadStateFromFirestore();
     const { voterId, voterName, voterEmail, voterYearLevel, choices } = req.body;
 
-    if (settings.status !== 'VOTING_OPEN') {
+    const stNorm = (settings.status || '').toString().trim().toUpperCase();
+    if (stNorm !== 'VOTING_OPEN' && stNorm !== 'ACTIVE') {
+      if (stNorm === 'PAUSED') {
+        return res.status(400).json({
+          success: false,
+          message: 'Voting Currently Paused. Voting is currently paused by the election committee until further notice.',
+        });
+      }
+      if (stNorm === 'CONCLUDED') {
+        return res.status(400).json({
+          success: false,
+          message: 'Election Already Concluded, You will be able to cast your vote, until further notice.',
+        });
+      }
       return res.status(400).json({
         success: false,
         message: 'Voting is currently closed or paused by the Commission on Elections.',

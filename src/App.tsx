@@ -279,6 +279,7 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
         preventClose={!voter}
         onOpenTermsPrivacy={openTermsPrivacy}
+        settings={settings}
       />
 
       {voter && (

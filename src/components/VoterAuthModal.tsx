@@ -16,7 +16,7 @@ import {
   Phone,
   Sparkles,
 } from 'lucide-react';
-import { Voter, YearLevel } from '../types';
+import { Voter, YearLevel, ElectionSettings } from '../types';
 import { signInWithGoogle } from '../lib/firebase';
 
 interface VoterAuthModalProps {
@@ -26,6 +26,7 @@ interface VoterAuthModalProps {
   preventClose?: boolean;
   onOpenTermsPrivacy?: (tab?: 'terms' | 'privacy') => void;
   initialStep?: 'intro' | 'email' | 'details';
+  settings?: ElectionSettings;
 }
 
 export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
@@ -35,6 +36,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
   preventClose = false,
   onOpenTermsPrivacy,
   initialStep = 'intro',
+  settings,
 }) => {
   const [step, setStep] = useState<'intro' | 'email' | 'details'>(initialStep);
   const [email, setEmail] = useState('');
@@ -45,6 +47,10 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [infoNotice, setInfoNotice] = useState<string | null>(null);
+
+  const stNorm = (settings?.status || '').toString().trim().toUpperCase();
+  const isPaused = stNorm === 'PAUSED';
+  const isConcluded = stNorm === 'CONCLUDED';
 
   if (!isOpen) return null;
 
@@ -57,6 +63,16 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
   ) => {
     const cleanEmail = userEmail.trim().toLowerCase();
     const isAdmin = cleanEmail === 'bamuyahacksie@gmail.com';
+
+    if (!isAdmin && isPaused) {
+      setError('Voting Currently Paused. Voting is currently paused by the election committee until further notice.');
+      return;
+    }
+
+    if (!isAdmin && isConcluded) {
+      setError('Election Already Concluded, You will be able to cast your vote, until further notice.');
+      return;
+    }
 
     if (isAdmin && !isGoogleAuth) {
       setError('Admin access (bamuyahacksie@gmail.com) is restricted to Google Sign-In only. Please click "Sign in with Google Email".');
@@ -239,6 +255,43 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
           >
             <X className="w-5 h-5" />
           </button>
+        )}
+
+        {/* Poll Operational Status Banner (Paused or Concluded) */}
+        {isPaused && (
+          <div className="mb-5 p-4 rounded-2xl bg-amber-50 border-2 border-amber-600 text-amber-950 text-xs shadow-md">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 font-black">
+                ⏸
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-black text-sm text-amber-900 uppercase tracking-wider">
+                  Voting Currently Paused
+                </h4>
+                <p className="font-bold text-amber-800 leading-relaxed">
+                  Voting is currently paused by the election committee. You will not be able to log in or cast your vote until further notice.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isConcluded && (
+          <div className="mb-5 p-4 rounded-2xl bg-rose-50 border-2 border-rose-600 text-rose-950 text-xs shadow-md">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 rounded-xl bg-rose-700 text-white flex items-center justify-center flex-shrink-0 font-black">
+                🔒
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-black text-sm text-rose-900 uppercase tracking-wider">
+                  Election Already Concluded
+                </h4>
+                <p className="font-bold text-rose-800 leading-relaxed">
+                  Election Already Concluded, You will be able to cast your vote, until further notice.
+                </p>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Info Notification Popup */}
