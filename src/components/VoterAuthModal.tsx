@@ -42,6 +42,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [studentId, setStudentId] = useState('');
+  const [course, setCourse] = useState('BS Computer Engineering');
   const [yearLevel, setYearLevel] = useState<YearLevel>('3rd Year');
 
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +60,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
     providedName?: string,
     providedStudentId?: string,
     providedYearLevel?: YearLevel,
+    providedCourse?: string,
     isGoogleAuth: boolean = false
   ) => {
     const cleanEmail = userEmail.trim().toLowerCase();
@@ -90,6 +92,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
       studentId.trim() ||
       (isAdmin ? 'ADMIN-2026' : `2026-${cleanEmail.split('@')[0].toUpperCase().slice(0, 8)}`);
     const cleanYearLevel = providedYearLevel || yearLevel || '3rd Year';
+    const cleanCourse = providedCourse || course || 'BS Computer Engineering';
 
     setLoading(true);
     setError(null);
@@ -103,6 +106,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
           studentNumber: cleanStudentId,
           name: cleanName,
           yearLevel: cleanYearLevel,
+          course: cleanCourse,
         }),
       });
 
@@ -122,8 +126,10 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
       // Fallback for Vercel static environment or non-JSON responses
       const fallbackVoter: Voter = {
         id: cleanStudentId,
+        studentNumber: cleanStudentId,
         name: cleanName,
         email: cleanEmail,
+        course: cleanCourse,
         yearLevel: cleanYearLevel,
         hasVoted: false,
       };
@@ -133,8 +139,10 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
       // Fallback if API server is unreachable on Vercel
       const fallbackVoter: Voter = {
         id: cleanStudentId,
+        studentNumber: cleanStudentId,
         name: cleanName,
         email: cleanEmail,
+        course: cleanCourse,
         yearLevel: cleanYearLevel,
         hasVoted: false,
       };
@@ -213,7 +221,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
         }
 
         if (cleanEmail === 'bamuyahacksie@gmail.com') {
-          await performDirectLogin(cleanEmail, user.displayName || undefined, undefined, undefined, true);
+          await performDirectLogin(cleanEmail, user.displayName || undefined, undefined, undefined, undefined, true);
         } else {
           setStep('details');
         }
@@ -238,7 +246,11 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
       setError('Please enter your student ID number (e.g. 2023-10294).');
       return;
     }
-    performDirectLogin(email, fullName, studentId, yearLevel);
+    if (!course.trim()) {
+      setError('Please specify your course.');
+      return;
+    }
+    performDirectLogin(email, fullName, studentId, yearLevel, course);
   };
 
   return (
@@ -616,6 +628,24 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
                 </div>
 
                 <div>
+                  <label className="block text-neutral-800 font-extrabold mb-1">Degree Program / Course *</label>
+                  <div className="relative">
+                    <select
+                      value={course}
+                      onChange={(e) => setCourse(e.target.value)}
+                      className="w-full bg-neutral-50 border-2 border-black rounded-xl px-3.5 py-2.5 text-neutral-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-rose-700 appearance-none"
+                    >
+                      <option value="BS Computer Engineering">BS Computer Engineering (BSCPE)</option>
+                      <option value="BS Electronics Engineering">BS Electronics Engineering (BSECE)</option>
+                      <option value="BS Electrical Engineering">BS Electrical Engineering (BSEE)</option>
+                      <option value="BS Computer Science">BS Computer Science (BSCS)</option>
+                      <option value="BS Information Technology">BS Information Technology (BSIT)</option>
+                      <option value="BS Software Engineering">BS Software Engineering (BSSE)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
                   <label className="block text-neutral-800 font-extrabold mb-1">School Year Level *</label>
                   <div className="relative">
                     <select
@@ -623,10 +653,10 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
                       onChange={(e) => setYearLevel(e.target.value as YearLevel)}
                       className="w-full bg-neutral-50 border-2 border-black rounded-xl px-3.5 py-2.5 text-neutral-900 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-rose-700 appearance-none"
                     >
-                      <option value="1st Year">1st Year Computer Engineering</option>
-                      <option value="2nd Year">2nd Year Computer Engineering</option>
-                      <option value="3rd Year">3rd Year Computer Engineering</option>
-                      <option value="4th Year">4th Year Computer Engineering</option>
+                      <option value="1st Year">1st Year</option>
+                      <option value="2nd Year">2nd Year</option>
+                      <option value="3rd Year">3rd Year</option>
+                      <option value="4th Year">4th Year</option>
                     </select>
                     <GraduationCap className="w-4 h-4 text-neutral-500 absolute right-3.5 top-3 pointer-events-none" />
                   </div>

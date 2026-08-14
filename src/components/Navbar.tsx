@@ -1,5 +1,20 @@
 import React from 'react';
-import { Vote, Users, BarChart3, ShieldCheck, Settings, LogIn, LogOut, CheckCircle2, Cpu, FileText, Sun, Moon } from 'lucide-react';
+import {
+  Vote,
+  Users,
+  BarChart3,
+  ShieldCheck,
+  Settings,
+  LogIn,
+  LogOut,
+  CheckCircle2,
+  Cpu,
+  FileText,
+  Sun,
+  Moon,
+  UserCheck,
+  Edit3,
+} from 'lucide-react';
 import { Voter, ElectionSettings } from '../types';
 
 interface NavbarProps {
@@ -9,6 +24,7 @@ interface NavbarProps {
   settings: ElectionSettings;
   onOpenAuth: () => void;
   onLogout: () => void;
+  onOpenProfile?: () => void;
   onOpenTermsPrivacy?: (tab?: 'terms' | 'privacy') => void;
   theme?: 'light' | 'dark';
   onToggleTheme?: () => void;
@@ -21,6 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   settings,
   onOpenAuth,
   onLogout,
+  onOpenProfile,
   onOpenTermsPrivacy,
   theme = 'light',
   onToggleTheme,
@@ -126,10 +143,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {voter ? (
-              <div className="flex items-center space-x-3 bg-white dark:bg-slate-800 text-neutral-900 dark:text-slate-100 px-3.5 py-2 rounded-xl border border-rose-100 dark:border-slate-700 shadow-sm">
-                <div className="text-right hidden sm:block">
+              <div className="flex items-center space-x-2 bg-white dark:bg-slate-800 text-neutral-900 dark:text-slate-100 p-1.5 pl-3 rounded-xl border border-rose-100 dark:border-slate-700 shadow-sm">
+                <button
+                  type="button"
+                  onClick={onOpenProfile}
+                  className="text-right hidden sm:block hover:opacity-80 transition-opacity text-left group"
+                  title="Click to view or edit your personal information"
+                >
                   <div className="flex items-center justify-end space-x-1.5">
-                    <span className="text-sm font-bold text-neutral-900 dark:text-slate-100">{voter.name}</span>
+                    <span className="text-sm font-bold text-neutral-900 dark:text-slate-100 group-hover:text-rose-700 dark:group-hover:text-rose-400 transition-colors flex items-center space-x-1">
+                      <span>{voter.name}</span>
+                      <Edit3 className="w-3 h-3 text-neutral-400 group-hover:text-rose-700 dark:group-hover:text-rose-400" />
+                    </span>
                     {isAdmin && (
                       <span className="text-[10px] bg-rose-700 text-white px-1.5 py-0.5 rounded font-black">ADMIN</span>
                     )}
@@ -138,15 +163,27 @@ export const Navbar: React.FC<NavbarProps> = ({
                     )}
                   </div>
                   {!isAdmin && (
-                    <p className="text-xs text-neutral-600 dark:text-slate-400 font-mono font-medium">
-                      {voter.id} • <span className="text-rose-700 dark:text-rose-400 font-bold">{voter.yearLevel}</span>
+                    <p className="text-[11px] text-neutral-600 dark:text-slate-400 font-mono font-medium truncate max-w-[190px]">
+                      {voter.id} • <span className="text-rose-700 dark:text-rose-400 font-bold">{voter.course || 'BS CpE'}</span>
                     </p>
                   )}
-                </div>
+                </button>
+
+                {onOpenProfile && (
+                  <button
+                    type="button"
+                    onClick={onOpenProfile}
+                    className="p-1.5 sm:px-2 sm:py-1 rounded-lg bg-neutral-100 dark:bg-slate-700 hover:bg-rose-50 dark:hover:bg-slate-600 text-neutral-700 dark:text-slate-200 hover:text-rose-700 dark:hover:text-rose-300 border border-neutral-200 dark:border-slate-600 text-xs font-bold flex items-center space-x-1 transition-all"
+                    title="Edit Personal Information"
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span className="hidden lg:inline text-[11px]">Edit Profile</span>
+                  </button>
+                )}
 
                 <button
                   onClick={onLogout}
-                  className="p-2 rounded-lg text-neutral-700 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-rose-100 dark:hover:bg-slate-700 border border-transparent hover:border-neutral-200 dark:hover:border-slate-600 transition-colors"
+                  className="p-1.5 rounded-lg text-neutral-700 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-rose-100 dark:hover:bg-slate-700 border border-transparent hover:border-neutral-200 dark:hover:border-slate-600 transition-colors"
                   title="Sign Out"
                 >
                   <LogOut className="w-4 h-4" />

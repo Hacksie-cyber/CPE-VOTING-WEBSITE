@@ -310,6 +310,77 @@ export const updateSettingsInFirestore = async (newSettings: any) => {
   return false;
 };
 
+export const updateVoterProfileInFirestore = async (
+  currentIdOrEmail: string,
+  updates: { name: string; studentNumber: string; course?: string; yearLevel?: string; email?: string }
+) => {
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const currentVoters = Array.isArray(data.voters) ? [...data.voters] : [];
+      const currentVotes = Array.isArray(data.votes) ? [...data.votes] : [];
+
+      const cleanQuery = currentIdOrEmail.toLowerCase().trim();
+      const cleanNewId = updates.studentNumber.trim().toUpperCase();
+      const cleanNewName = updates.name.trim();
+      const cleanNewCourse = updates.course?.trim() || 'BS Computer Engineering';
+      const cleanNewYear = updates.yearLevel || '3rd Year';
+
+      let oldId = '';
+      let matched = false;
+
+      const updatedVoters = currentVoters.map((v: any) => {
+        const vId = v.id ? String(v.id).toLowerCase().trim() : '';
+        const vEmail = v.email ? String(v.email).toLowerCase().trim() : '';
+        if (vId === cleanQuery || vEmail === cleanQuery || (cleanNewId && vId === cleanNewId.toLowerCase())) {
+          matched = true;
+          oldId = v.id;
+          return {
+            ...v,
+            id: cleanNewId,
+            studentNumber: cleanNewId,
+            name: cleanNewName,
+            course: cleanNewCourse,
+            yearLevel: cleanNewYear,
+            ...(updates.email ? { email: updates.email.trim().toLowerCase() } : {}),
+          };
+        }
+        return v;
+      });
+
+      if (!matched) {
+        updatedVoters.push({
+          id: cleanNewId,
+          studentNumber: cleanNewId,
+          name: cleanNewName,
+          email: updates.email || `${cleanNewId.toLowerCase()}@cpe.edu.ph`,
+          course: cleanNewCourse,
+          yearLevel: cleanNewYear,
+          hasVoted: false,
+        });
+      }
+
+      // Update associated votes if id changed
+      const updatedVotes = oldId && oldId !== cleanNewId
+        ? currentVotes.map((vt: any) => (vt.voterId === oldId ? { ...vt, voterId: cleanNewId } : vt))
+        : currentVotes;
+
+      await setDoc(docRef, {
+        ...data,
+        voters: updatedVoters,
+        votes: updatedVotes,
+        updatedAt: new Date().toISOString(),
+      });
+      return updatedVoters.find((v: any) => v.id === cleanNewId) || true;
+    }
+  } catch (err) {
+    console.warn('Firestore voter profile update error:', err);
+  }
+  return null;
+};
+
 export const deleteVoterInFirestore = async (voterId: string, voterEmail?: string) => {
   try {
     const docRef = doc(db, 'elections', 'cpe2026');

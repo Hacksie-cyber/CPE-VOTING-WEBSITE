@@ -21,6 +21,7 @@ import {
 } from '../data/initialData';
 import { generateElectionPDF } from '../utils/pdfGenerator';
 import { fetchOrCalculateResults } from '../utils/electionResultsHelper';
+import { UserProfileModal } from './UserProfileModal';
 
 interface AdminPanelProps {
   settings: ElectionSettings;
@@ -54,6 +55,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [voterSearch, setVoterSearch] = useState<string>('');
   const [voterFilter, setVoterFilter] = useState<'ALL' | 'VOTED' | 'VALID' | 'INVALIDATED'>('ALL');
   const [invalidatingVoter, setInvalidatingVoter] = useState<Voter | null>(null);
+  const [editingVoter, setEditingVoter] = useState<Voter | null>(null);
   const [invalidationReason, setInvalidationReason] = useState<string>('');
   const [selectedVoterIds, setSelectedVoterIds] = useState<string[]>([]);
   const [isSubmittingAction, setIsSubmittingAction] = useState<boolean>(false);
@@ -85,7 +87,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     try {
       const fsData = await loadElectionDataFromFirestore();
       if (fsData && Array.isArray(fsData.voters)) {
-        setVotersList(fsData.voters);
+        const currentVotes = Array.isArray(fsData.votes) ? fsData.votes : [];
+        const validReceipts = new Set(currentVotes.map((vt: any) => vt.receiptHash?.toUpperCase()).filter(Boolean));
+        const validVoterIds = new Set(currentVotes.map((vt: any) => vt.voterId?.toUpperCase()).filter(Boolean));
+
+        const sanitizedVoters = fsData.voters.map((v: Voter) => {
+          if (currentVotes.length === 0) {
+            return { ...v, hasVoted: false, receiptHash: undefined, votedAt: undefined };
+          }
+          const hasVote =
+            (v.receiptHash && validReceipts.has(v.receiptHash.toUpperCase())) ||
+            (v.id && validVoterIds.has(v.id.toUpperCase()));
+          return hasVote ? v : { ...v, hasVoted: false, receiptHash: undefined, votedAt: undefined };
+        });
+
+        setVotersList(sanitizedVoters);
         setLoadingVoters(false);
         return;
       }
@@ -819,10 +835,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               parsed.hasVoted = false;
               parsed.votedAt = undefined;
               parsed.receiptHash = undefined;
+              parsed.isInvalidated = false;
+              delete parsed.invalidatedReason;
+              delete parsed.invalidatedAt;
               localStorage.setItem('cpe_voter', JSON.stringify(parsed));
             }
           } catch {
             // ignore
+          }
+
+          if (data.voters) {
+            setVotersList(data.voters);
+          } else {
+            setVotersList((prev) =>
+              prev.map((v) => ({
+                ...v,
+                hasVoted: false,
+                votedAt: undefined,
+                receiptHash: undefined,
+                isInvalidated: false,
+                invalidatedReason: undefined,
+                invalidatedAt: undefined,
+              }))
+            );
           }
 
           setSuccessMsg('All election votes have been reset to zero. Candidate profiles and positions remain untouched.');
@@ -855,11 +890,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             parsed.hasVoted = false;
             parsed.votedAt = undefined;
             parsed.receiptHash = undefined;
+            parsed.isInvalidated = false;
+            delete parsed.invalidatedReason;
+            delete parsed.invalidatedAt;
             localStorage.setItem('cpe_voter', JSON.stringify(parsed));
           }
         } catch {
           // ignore
         }
+
+        setVotersList((prev) =>
+          prev.map((v) => ({
+            ...v,
+            hasVoted: false,
+            votedAt: undefined,
+            receiptHash: undefined,
+            isInvalidated: false,
+            invalidatedReason: undefined,
+            invalidatedAt: undefined,
+          }))
+        );
 
         setSuccessMsg('All election votes have been reset to zero. Candidate profiles and positions remain untouched.');
         setShowResetVotesModal(false);
@@ -1112,9 +1162,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     setResetVotesError(null);
                     setShowResetVotesModal(true);
                   }}
-                  className="w-full bg-rose-100 dark:bg-rose-950 border border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 hover:bg-rose-200 dark:hover:bg-rose-900 font-extrabold p-3 rounded-2xl text-xs flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-95"
+                  className="w-full bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-900/80 font-extrabold p-3 rounded-2xl text-xs flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-95 cursor-pointer"
                 >
-                  <RotateCcw className="w-4 h-4 text-rose-900 dark:text-rose-200" />
+                  <RotateCcw className="w-4 h-4 text-rose-700 dark:text-rose-400" />
                   <span>Reset All Votes (Keep Candidates)</span>
                 </button>
 
@@ -1582,6 +1632,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                     <span>Invalidate</span>
                                   </button>
                                 )}
+                                <button
+                                  onClick={() => setEditingVoter(voter)}
+                                  disabled={isSubmittingAction}
+                                  className="p-1.5 px-2 rounded-xl bg-neutral-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-slate-700 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 text-xs font-black transition-all inline-flex items-center space-x-1 shadow-sm"
+                                  title="Edit Student Personal Information"
+                                >
+                                  <Pencil className="w-3.5 h-3.5 text-rose-700 dark:text-rose-400" />
+                                  <span className="hidden xl:inline text-[11px]">Edit</span>
+                                </button>
                                 <button
                                   onClick={() => setVoterToDelete(voter)}
                                   disabled={isSubmittingAction}
@@ -2109,6 +2168,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Admin Voter Profile Edit Modal */}
+      {editingVoter && (
+        <UserProfileModal
+          isOpen={!!editingVoter}
+          onClose={() => setEditingVoter(null)}
+          voter={editingVoter}
+          onProfileUpdated={(updated) => {
+            setEditingVoter(null);
+            fetchVoters();
+            onRefreshData();
+            setSuccessMsg(`Personal information for ${updated.name} has been updated.`);
+            setTimeout(() => setSuccessMsg(null), 4000);
+          }}
+        />
       )}
     </div>
   );

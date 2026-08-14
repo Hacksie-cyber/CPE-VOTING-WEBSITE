@@ -99,14 +99,45 @@ async function loadStateFromFirestore() {
       } else {
         candidates = [];
       }
-      if (Array.isArray(data.voters)) {
-        voters = data.voters.filter(isActualAccount).filter((v) => !v.id.startsWith('2023-1000') && !v.id.startsWith('2022-10045') && !v.id.startsWith('2024-10112'));
-      }
       if (Array.isArray(data.votes)) {
         votes = data.votes.filter((vt) => !vt.id.startsWith('vote-sample-'));
+      } else {
+        votes = [];
       }
+      if (Array.isArray(data.voters)) {
+        voters = data.voters.filter(isActualAccount).filter((v) => !v.id.startsWith('2023-1000') && !v.id.startsWith('2022-10045') && !v.id.startsWith('2024-10112'));
+      } else {
+        voters = [];
+      }
+
+      // Enforce voter voting status integrity: sync hasVoted with actual votes
+      const validVoteReceipts = new Set(votes.map((vt) => vt.receiptHash?.toUpperCase()).filter(Boolean));
+      const validVoterIds = new Set(votes.map((vt) => vt.voterId?.toUpperCase()).filter(Boolean));
+
+      voters.forEach((v) => {
+        if (votes.length === 0) {
+          v.hasVoted = false;
+          delete v.receiptHash;
+          delete v.votedAt;
+          v.isInvalidated = false;
+          delete v.invalidatedReason;
+          delete v.invalidatedAt;
+        } else {
+          const hasActualVote =
+            (v.receiptHash && validVoteReceipts.has(v.receiptHash.toUpperCase())) ||
+            (v.id && validVoterIds.has(v.id.toUpperCase()));
+          if (!hasActualVote) {
+            v.hasVoted = false;
+            delete v.receiptHash;
+            delete v.votedAt;
+          } else {
+            v.hasVoted = true;
+          }
+        }
+      });
+
       if (Array.isArray(data.nominations)) nominations = data.nominations;
-      console.log('Firebase Firestore: Loaded election state successfully. Candidate count:', candidates.length);
+      console.log('Firebase Firestore: Loaded election state successfully. Candidate count:', candidates.length, 'Votes:', votes.length);
       await saveStateToFirestore();
     } else {
       console.log('Firebase Firestore: Initializing new election record for cpe2026');
@@ -444,10 +475,10 @@ async function startServer() {
     });
   });
 
-  // Voter Registration via Email + Full Name + Student ID + Year Level
+  // Voter Registration via Email + Full Name + Student ID + Year Level + Course
   app.post('/api/voter/register-email', async (req, res) => {
     await loadStateFromFirestore();
-    const { email, studentNumber, name, yearLevel } = req.body;
+    const { email, studentNumber, name, yearLevel, course } = req.body;
 
     const stNorm = (settings.status || '').toString().trim().toUpperCase();
     const isPaused = stNorm === 'PAUSED';
@@ -491,6 +522,7 @@ async function startServer() {
     const cleanName = name.trim();
     const normName = normalizeName(cleanName);
     const cleanYearLevel = (yearLevel as YearLevel) || '3rd Year';
+    const cleanCourse = course ? course.trim() : 'BS Computer Engineering';
 
     // Find if an account already exists by email, student ID, OR matching normalized full name
     let voter = voters.find(
@@ -503,24 +535,34 @@ async function startServer() {
     if (voter) {
       // Link/update existing record while preserving voting status
       voter.id = cleanStudentId;
+      voter.studentNumber = cleanStudentId;
       voter.name = cleanName;
       voter.email = cleanEmail;
       voter.yearLevel = cleanYearLevel;
+      voter.course = cleanCourse;
     } else {
       // Check if anyone with the same normalized name has already voted under another record
-      const matchingVoted = voters.find(
-        (v) => normName.length > 2 && normalizeName(v.name) === normName && v.hasVoted
-      );
+      const matchingVoted = votes.length > 0
+        ? voters.find((v) => normName.length > 2 && normalizeName(v.name) === normName && v.hasVoted)
+        : undefined;
 
       voter = {
         id: cleanStudentId,
+        studentNumber: cleanStudentId,
         name: cleanName,
         email: cleanEmail,
+        course: cleanCourse,
         yearLevel: cleanYearLevel,
-        hasVoted: !!matchingVoted,
-        receiptHash: matchingVoted ? matchingVoted.receiptHash : undefined,
+        hasVoted: votes.length > 0 && !!matchingVoted,
+        receiptHash: votes.length > 0 && matchingVoted ? matchingVoted.receiptHash : undefined,
       };
       voters.push(voter);
+    }
+
+    if (votes.length === 0) {
+      voter.hasVoted = false;
+      delete voter.receiptHash;
+      delete voter.votedAt;
     }
 
     await saveStateToFirestore();
@@ -608,17 +650,17 @@ async function startServer() {
       const emailPrefix = cleanEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
       const studentId = `2026-${emailPrefix.toUpperCase().slice(0, 8)}`;
       
-      const matchingVoted = voters.find(
-        (v) => normName.length > 2 && normalizeName(v.name) === normName && v.hasVoted
-      );
+      const matchingVoted = votes.length > 0
+        ? voters.find((v) => normName.length > 2 && normalizeName(v.name) === normName && v.hasVoted)
+        : undefined;
 
       voter = {
         id: studentId,
         name: cleanName || `CPE Student (${cleanEmail})`,
         email: cleanEmail,
         yearLevel: '3rd Year',
-        hasVoted: !!matchingVoted,
-        receiptHash: matchingVoted ? matchingVoted.receiptHash : undefined,
+        hasVoted: votes.length > 0 && !!matchingVoted,
+        receiptHash: votes.length > 0 && matchingVoted ? matchingVoted.receiptHash : undefined,
       };
       voters.push(voter);
       await saveStateToFirestore();
@@ -629,11 +671,148 @@ async function startServer() {
       if (!voter.email) voter.email = cleanEmail;
     }
 
+    if (votes.length === 0) {
+      voter.hasVoted = false;
+      delete voter.receiptHash;
+      delete voter.votedAt;
+    } else if (voter.hasVoted) {
+      const hasActualVote = votes.some(
+        (vt) =>
+          (voter.receiptHash && vt.receiptHash?.toUpperCase() === voter.receiptHash.toUpperCase()) ||
+          (voter.id && vt.voterId?.toUpperCase() === voter.id.toUpperCase())
+      );
+      if (!hasActualVote) {
+        voter.hasVoted = false;
+        delete voter.receiptHash;
+        delete voter.votedAt;
+      }
+    }
+
     res.json({
       success: true,
       voter,
       token: `google-token-${voter.id}-${Date.now()}`,
     });
+  });
+
+  // Voter Update Personal Information (Full Name, Student Number, Course, Year Level)
+  app.post('/api/voter/update-profile', async (req, res) => {
+    await loadStateFromFirestore();
+    const { currentId, email, name, studentNumber, course, yearLevel } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Full Name is required.' });
+    }
+
+    if (!studentNumber || !studentNumber.trim()) {
+      return res.status(400).json({ success: false, message: 'Student Number is required.' });
+    }
+
+    const cleanName = name.trim();
+    const cleanStudentNumber = studentNumber.trim().toUpperCase();
+    const cleanCourse = course ? course.trim() : 'BS Computer Engineering';
+    const cleanYearLevel = (yearLevel as YearLevel) || '3rd Year';
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    const cleanCurrentId = currentId ? currentId.toString().trim().toUpperCase() : '';
+
+    // Check if new student number is taken by another account
+    const conflictingVoter = voters.find(
+      (v) =>
+        v.id.toUpperCase() === cleanStudentNumber &&
+        (cleanCurrentId ? v.id.toUpperCase() !== cleanCurrentId : true) &&
+        (cleanEmail && v.email ? v.email.toLowerCase() !== cleanEmail : true)
+    );
+
+    if (conflictingVoter && conflictingVoter.id.toUpperCase() !== cleanCurrentId) {
+      // If conflicting voter has different email/name
+      if (cleanEmail && conflictingVoter.email && conflictingVoter.email.toLowerCase() !== cleanEmail) {
+        return res.status(400).json({
+          success: false,
+          message: `Student Number ${cleanStudentNumber} is already registered to another student account (${conflictingVoter.email}).`,
+        });
+      }
+    }
+
+    // Locate the voter to update
+    let voterIndex = voters.findIndex((v) => {
+      if (cleanCurrentId && v.id && v.id.toUpperCase() === cleanCurrentId) return true;
+      if (cleanEmail && v.email && v.email.toLowerCase() === cleanEmail) return true;
+      if (v.id && v.id.toUpperCase() === cleanStudentNumber) return true;
+      return false;
+    });
+
+    if (voterIndex === -1) {
+      // Create new registered voter
+      const newVoter: Voter = {
+        id: cleanStudentNumber,
+        studentNumber: cleanStudentNumber,
+        name: cleanName,
+        email: cleanEmail || `${cleanStudentNumber.toLowerCase()}@cpe.edu.ph`,
+        course: cleanCourse,
+        yearLevel: cleanYearLevel,
+        hasVoted: false,
+      };
+      voters.push(newVoter);
+      voterIndex = voters.length - 1;
+    } else {
+      const oldId = voters[voterIndex].id;
+      voters[voterIndex].name = cleanName;
+      voters[voterIndex].id = cleanStudentNumber;
+      voters[voterIndex].studentNumber = cleanStudentNumber;
+      voters[voterIndex].course = cleanCourse;
+      voters[voterIndex].yearLevel = cleanYearLevel;
+      if (cleanEmail && !voters[voterIndex].email) {
+        voters[voterIndex].email = cleanEmail;
+      }
+
+      // If student ID changed, migrate any associated vote records' voterId so audit logs stay intact
+      if (oldId && oldId !== cleanStudentNumber) {
+        votes.forEach((vt) => {
+          if (vt.voterId === oldId) {
+            vt.voterId = cleanStudentNumber;
+          }
+        });
+      }
+    }
+
+    await saveStateToFirestore();
+
+    res.json({
+      success: true,
+      message: 'Personal information updated successfully.',
+      voter: voters[voterIndex],
+    });
+  });
+
+  // Admin Update Voter Details
+  app.post('/api/admin/voter/update', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+    await loadStateFromFirestore();
+    const { voterId, name, studentNumber, course, yearLevel, email } = req.body;
+
+    const targetVoter = voters.find((v) => v.id === voterId);
+    if (!targetVoter) {
+      return res.status(404).json({ success: false, message: 'Voter record not found.' });
+    }
+
+    if (name && name.trim()) targetVoter.name = name.trim();
+    if (course && course.trim()) targetVoter.course = course.trim();
+    if (yearLevel) targetVoter.yearLevel = yearLevel;
+    if (email && email.trim()) targetVoter.email = email.trim().toLowerCase();
+    if (studentNumber && studentNumber.trim()) {
+      const newId = studentNumber.trim().toUpperCase();
+      const oldId = targetVoter.id;
+      targetVoter.id = newId;
+      targetVoter.studentNumber = newId;
+      if (oldId !== newId) {
+        votes.forEach((vt) => {
+          if (vt.voterId === oldId) vt.voterId = newId;
+        });
+      }
+    }
+
+    await saveStateToFirestore();
+    res.json({ success: true, voter: targetVoter });
   });
 
   // Quick Preset Demo Voter Select

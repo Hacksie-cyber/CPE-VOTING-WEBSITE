@@ -8,6 +8,7 @@ import { VoterAuthModal } from './components/VoterAuthModal';
 import { BallotConfirmationModal } from './components/BallotConfirmationModal';
 import { VoteReceiptModal } from './components/VoteReceiptModal';
 import { TermsPrivacyModal } from './components/TermsPrivacyModal';
+import { UserProfileModal } from './components/UserProfileModal';
 import { Position, Candidate, Voter, VoteChoices, ElectionSettings } from './types';
 import { INITIAL_ELECTION_SETTINGS, INITIAL_POSITIONS, INITIAL_CANDIDATES } from './data/initialData';
 import { loadElectionDataFromFirestore, subscribeToElectionData } from './lib/firebase';
@@ -76,9 +77,87 @@ export default function App() {
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [termsModalTab, setTermsModalTab] = useState<'terms' | 'privacy'>('terms');
 
+  // User Profile Modal State
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
   const openTermsPrivacy = (tab: 'terms' | 'privacy' = 'terms') => {
     setTermsModalTab(tab);
     setIsTermsModalOpen(true);
+  };
+
+  const handleProfileUpdated = (updatedVoter: Voter) => {
+    setVoter(updatedVoter);
+    localStorage.setItem('cpe_voter', JSON.stringify(updatedVoter));
+    fetchData();
+  };
+
+  // Helper to synchronize voter state and resolve any stale 'Ballot Submitted' flags
+  const syncVoterStateFromElectionData = (data: any, currentVoter: Voter | null): Voter | null => {
+    if (!currentVoter) return null;
+    const currentVotes = Array.isArray(data?.votes) ? data.votes : [];
+    const currentVoters = Array.isArray(data?.voters) ? data.voters : [];
+
+    // If total votes in election is 0 (e.g. after election vote reset), clear voting status
+    if (currentVotes.length === 0) {
+      if (currentVoter.hasVoted || currentVoter.receiptHash || currentVoter.votedAt || currentVoter.isInvalidated) {
+        const updated: Voter = {
+          ...currentVoter,
+          hasVoted: false,
+          receiptHash: undefined,
+          votedAt: undefined,
+          isInvalidated: false,
+          invalidatedReason: undefined,
+          invalidatedAt: undefined,
+        };
+        localStorage.setItem('cpe_voter', JSON.stringify(updated));
+        return updated;
+      }
+      return currentVoter;
+    }
+
+    // Match voter in database roster
+    const normName = currentVoter.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+    const match = currentVoters.find(
+      (v: Voter) =>
+        v.id.toUpperCase() === currentVoter.id.toUpperCase() ||
+        (v.email && currentVoter.email && v.email.toLowerCase() === currentVoter.email.toLowerCase()) ||
+        (normName.length > 2 && v.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ') === normName)
+    );
+
+    // Verify if voter actually has a recorded ballot in active votes
+    const hasActualVote = currentVotes.some(
+      (vt: any) =>
+        (currentVoter.receiptHash && vt.receiptHash?.toUpperCase() === currentVoter.receiptHash.toUpperCase()) ||
+        (currentVoter.id && vt.voterId?.toUpperCase() === currentVoter.id.toUpperCase())
+    );
+
+    const actualHasVoted = hasActualVote || (match ? Boolean(match.hasVoted) : false);
+    const isInvalidated = match ? Boolean(match.isInvalidated) : Boolean(currentVoter.isInvalidated);
+
+    if (
+      currentVoter.hasVoted !== actualHasVoted ||
+      (match && currentVoter.receiptHash !== match.receiptHash) ||
+      currentVoter.isInvalidated !== isInvalidated ||
+      (match && currentVoter.name !== match.name && !match.name.startsWith('CPE Student'))
+    ) {
+      const updated: Voter = {
+        ...currentVoter,
+        name: match && !match.name.startsWith('CPE Student') ? match.name : currentVoter.name,
+        studentNumber: match?.studentNumber || match?.id || currentVoter.studentNumber,
+        course: match?.course || currentVoter.course,
+        yearLevel: match?.yearLevel || currentVoter.yearLevel,
+        hasVoted: actualHasVoted,
+        votedAt: match?.votedAt || (actualHasVoted ? currentVoter.votedAt : undefined),
+        receiptHash: match?.receiptHash || (actualHasVoted ? currentVoter.receiptHash : undefined),
+        isInvalidated,
+        invalidatedReason: match?.invalidatedReason || currentVoter.invalidatedReason,
+        invalidatedAt: match?.invalidatedAt || currentVoter.invalidatedAt,
+      };
+      localStorage.setItem('cpe_voter', JSON.stringify(updated));
+      return updated;
+    }
+
+    return currentVoter;
   };
 
   // Fetch Candidates & Election Info
@@ -105,6 +184,7 @@ export default function App() {
       if (fsData.positions && fsData.positions.length > 0) setPositions(fsData.positions);
       if (fsData.candidates) setCandidates(fsData.candidates);
       if (fsData.settings) setSettings(fsData.settings);
+      setVoter((prevVoter) => syncVoterStateFromElectionData(fsData, prevVoter));
     }
   };
 
@@ -118,40 +198,7 @@ export default function App() {
         if (Array.isArray(data.candidates)) setCandidates(data.candidates);
         if (data.settings) setSettings(data.settings);
 
-        if (Array.isArray(data.voters)) {
-          setVoter((prevVoter) => {
-            if (!prevVoter) return prevVoter;
-            const normName = prevVoter.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
-            const match = data.voters.find(
-              (v: Voter) =>
-                v.id.toUpperCase() === prevVoter.id.toUpperCase() ||
-                (v.email && prevVoter.email && v.email.toLowerCase() === prevVoter.email.toLowerCase()) ||
-                (normName.length > 2 && v.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ') === normName)
-            );
-            if (match) {
-              const hasVoted = Boolean(match.hasVoted);
-              const isInvalidated = Boolean(match.isInvalidated);
-              if (
-                prevVoter.hasVoted !== hasVoted ||
-                prevVoter.receiptHash !== match.receiptHash ||
-                prevVoter.isInvalidated !== isInvalidated
-              ) {
-                const updated: Voter = {
-                  ...prevVoter,
-                  hasVoted,
-                  votedAt: match.votedAt,
-                  receiptHash: match.receiptHash,
-                  isInvalidated,
-                  invalidatedReason: match.invalidatedReason,
-                  invalidatedAt: match.invalidatedAt,
-                };
-                localStorage.setItem('cpe_voter', JSON.stringify(updated));
-                return updated;
-              }
-            }
-            return prevVoter;
-          });
-        }
+        setVoter((prevVoter) => syncVoterStateFromElectionData(data, prevVoter));
       }
     });
 
@@ -224,6 +271,7 @@ export default function App() {
         settings={settings}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
         onOpenTermsPrivacy={openTermsPrivacy}
         theme={theme}
         onToggleTheme={toggleTheme}
@@ -241,6 +289,7 @@ export default function App() {
             onSelectCandidate={handleSelectCandidate}
             onOpenReview={() => setIsReviewModalOpen(true)}
             onOpenAuth={() => setIsAuthModalOpen(true)}
+            onOpenProfile={() => setIsProfileModalOpen(true)}
           />
         )}
 
@@ -307,6 +356,13 @@ export default function App() {
         isOpen={isTermsModalOpen}
         onClose={() => setIsTermsModalOpen(false)}
         defaultTab={termsModalTab}
+      />
+
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        voter={voter}
+        onProfileUpdated={handleProfileUpdated}
       />
     </div>
   );

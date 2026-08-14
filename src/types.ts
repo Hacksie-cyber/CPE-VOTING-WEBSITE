@@ -45,10 +45,12 @@ export interface Candidate {
 }
 
 export interface Voter {
-  id: string; // e.g. '2023-10294'
+  id: string; // e.g. '2023-10294' (student number)
+  studentNumber?: string;
   name: string;
   email: string;
   yearLevel: YearLevel;
+  course?: string; // e.g. 'BS Computer Engineering'
   hasVoted: boolean;
   votedAt?: string;
   receiptHash?: string;

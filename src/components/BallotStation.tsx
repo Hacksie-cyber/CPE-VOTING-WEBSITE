@@ -15,7 +15,9 @@ import {
   Layers,
   ArrowRight,
   ArrowLeft,
-  Grid
+  Grid,
+  Edit3,
+  User,
 } from 'lucide-react';
 
 interface BallotStationProps {
@@ -27,6 +29,7 @@ interface BallotStationProps {
   onSelectCandidate: (positionId: string, choiceId: string) => void;
   onOpenReview: () => void;
   onOpenAuth: () => void;
+  onOpenProfile?: () => void;
 }
 
 export const BallotStation: React.FC<BallotStationProps> = ({
@@ -38,6 +41,7 @@ export const BallotStation: React.FC<BallotStationProps> = ({
   onSelectCandidate,
   onOpenReview,
   onOpenAuth,
+  onOpenProfile,
 }) => {
   const [activePosIndex, setActivePosIndex] = useState(0);
   const [viewMode, setViewMode] = useState<'horizontal' | 'grid'>('horizontal');
@@ -166,6 +170,48 @@ export const BallotStation: React.FC<BallotStationProps> = ({
               Election Already Concluded, You will be able to cast your vote, until further notice.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Logged In Voter Profile Card */}
+      {voter && (
+        <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center space-x-3.5">
+            <div className="w-11 h-11 rounded-xl bg-rose-50 dark:bg-rose-950/70 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-rose-700 dark:text-rose-400 font-black text-base flex-shrink-0">
+              {voter.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm sm:text-base font-extrabold text-neutral-900 dark:text-slate-100">
+                  {voter.name}
+                </span>
+                {voter.hasVoted && (
+                  <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Voted</span>
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-neutral-600 dark:text-slate-400 font-medium mt-0.5">
+                <span className="font-mono font-bold text-neutral-800 dark:text-slate-200">{voter.studentNumber || voter.id}</span>
+                <span>•</span>
+                <span className="text-rose-700 dark:text-rose-400 font-bold">{voter.course || 'BS Computer Engineering'}</span>
+                <span>•</span>
+                <span>{voter.yearLevel}</span>
+              </div>
+            </div>
+          </div>
+
+          {onOpenProfile && (
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-neutral-100 dark:bg-slate-800 hover:bg-neutral-200 dark:hover:bg-slate-700 text-neutral-900 dark:text-slate-100 border border-neutral-200 dark:border-slate-700 text-xs font-extrabold flex items-center justify-center space-x-2 transition-all shadow-sm active:scale-95"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-rose-700 dark:text-rose-400" />
+              <span>Edit Personal Information</span>
+            </button>
+          )}
         </div>
       )}
 
