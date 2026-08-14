@@ -120,10 +120,27 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
 
   const filteredCandidates = candidates.filter((cand) => {
     const matchesPosition = selectedPositionId === 'all' || cand.positionId === selectedPositionId;
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return matchesPosition;
+
+    const yl = (cand.yearLevel || '').toLowerCase();
+    const digit = yl.charAt(0);
+    const yearAliases: Record<string, string[]> = {
+      '1': ['1st', '1st year', '1st yr', 'year 1', 'yr 1', 'first', 'first year', 'freshman', 'freshmen', '1'],
+      '2': ['2nd', '2nd year', '2nd yr', 'year 2', 'yr 2', 'second', 'second year', 'sophomore', '2'],
+      '3': ['3rd', '3rd year', '3rd yr', 'year 3', 'yr 3', 'third', 'third year', 'junior', '3'],
+      '4': ['4th', '4th year', '4th yr', 'year 4', 'yr 4', 'fourth', 'fourth year', 'senior', '4'],
+    };
+
+    const matchYear =
+      yl.includes(q) ||
+      (digit && yearAliases[digit]?.some((alias) => q === alias || q.includes(alias) || alias.includes(q)));
+
     const matchesQuery =
-      searchQuery.trim() === '' ||
-      cand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cand.platformHeading.toLowerCase().includes(searchQuery.toLowerCase());
+      cand.name.toLowerCase().includes(q) ||
+      cand.platformHeading.toLowerCase().includes(q) ||
+      (cand.manifesto && cand.manifesto.toLowerCase().includes(q)) ||
+      matchYear;
 
     return matchesPosition && matchesQuery;
   });
@@ -288,9 +305,19 @@ export const CandidateDirectory: React.FC<CandidateDirectoryProps> = ({ position
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search candidates by name or platform..."
-            className="w-full bg-neutral-50 dark:bg-slate-800 border-2 border-black dark:border-rose-800 rounded-xl pl-10 pr-4 py-2 text-xs font-bold text-neutral-900 dark:text-slate-100 placeholder-neutral-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-700"
+            placeholder="Search candidates by name, platform, or year level (1st, 2nd, 3rd, 4th Year)..."
+            className="w-full bg-neutral-50 dark:bg-slate-800 border-2 border-black dark:border-rose-800 rounded-xl pl-10 pr-9 py-2 text-xs font-bold text-neutral-900 dark:text-slate-100 placeholder-neutral-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-700"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-slate-200 text-xs font-black p-1 rounded-full"
+              title="Clear search"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

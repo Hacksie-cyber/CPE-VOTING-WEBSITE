@@ -1504,9 +1504,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   type="text"
                   value={voterSearch}
                   onChange={(e) => setVoterSearch(e.target.value)}
-                  placeholder="Search student by name, ID (e.g. 2026-004), email, or receipt hash..."
-                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-neutral-900 dark:text-slate-100 font-bold placeholder-neutral-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-700"
+                  placeholder="Search by name, ID (e.g. 2026-004), email, year level (1st, 2nd, 3rd, 4th Year), or receipt..."
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl pl-10 pr-9 py-2.5 text-xs text-neutral-900 dark:text-slate-100 font-bold placeholder-neutral-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-700"
                 />
+                {voterSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setVoterSearch('')}
+                    className="absolute right-3 top-2.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-slate-200 text-xs font-black p-1 rounded-full"
+                    title="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center space-x-2">
@@ -1674,11 +1684,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     {votersList
                       .filter((voter) => {
                         const searchLower = voterSearch.toLowerCase().trim();
+                        if (!searchLower) {
+                          if (voterFilter === 'VOTED') return voter.hasVoted;
+                          if (voterFilter === 'VALID') return voter.hasVoted && !voter.isInvalidated;
+                          if (voterFilter === 'INVALIDATED') return voter.isInvalidated;
+                          return true;
+                        }
+
+                        // Year level aliases and natural queries
+                        const yl = (voter.yearLevel || '').toLowerCase(); // e.g. "1st year", "2nd year", "3rd year", "4th year"
+                        const course = (voter.course || 'BS CpE').toLowerCase();
+                        const combinedYearCourse = `${yl} ${course}`.toLowerCase();
+
+                        const yearAliases: Record<string, string[]> = {
+                          '1': ['1st', '1st year', '1st yr', '1st yr.', '1st-year', 'year 1', 'yr 1', 'yr1', 'first', 'first year', 'freshman', 'freshmen', 'freshie', '1st year cpe', '1'],
+                          '2': ['2nd', '2nd year', '2nd yr', '2nd yr.', '2nd-year', 'year 2', 'yr 2', 'yr2', 'second', 'second year', 'sophomore', 'sophomores', '2nd year cpe', '2'],
+                          '3': ['3rd', '3rd year', '3rd yr', '3rd yr.', '3rd-year', 'year 3', 'yr 3', 'yr3', 'third', 'third year', 'junior', 'juniors', '3rd year cpe', '3'],
+                          '4': ['4th', '4th year', '4th yr', '4th yr.', '4th-year', 'year 4', 'yr 4', 'yr4', 'fourth', 'fourth year', 'senior', 'seniors', 'graduating', '4th year cpe', '4'],
+                        };
+
+                        const digit = yl.charAt(0);
+                        const matchYearAlias =
+                          yl.includes(searchLower) ||
+                          combinedYearCourse.includes(searchLower) ||
+                          (digit && yearAliases[digit]?.some((alias) => searchLower === alias || searchLower.includes(alias) || alias.includes(searchLower)));
+
                         const matchSearch =
-                          !searchLower ||
                           voter.name.toLowerCase().includes(searchLower) ||
                           voter.id.toLowerCase().includes(searchLower) ||
                           voter.email.toLowerCase().includes(searchLower) ||
+                          course.includes(searchLower) ||
+                          matchYearAlias ||
                           (voter.receiptHash && voter.receiptHash.toLowerCase().includes(searchLower));
 
                         if (!matchSearch) return false;
