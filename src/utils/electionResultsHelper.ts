@@ -17,58 +17,48 @@ import {
   SAMPLE_VOTERS,
 } from '../data/initialData';
 
-export async function fetchOrCalculateResults(customSettings?: ElectionSettings): Promise<{
+export function computeResultsFromData(
+  positions: Position[] = INITIAL_POSITIONS,
+  candidates: Candidate[] = INITIAL_CANDIDATES,
+  votes: VoteRecord[] = [],
+  voters: Voter[] = [],
+  settings: ElectionSettings = INITIAL_ELECTION_SETTINGS,
+  updatedAt: string = new Date().toISOString()
+): {
   positionResults: PositionResult[];
   turnoutStats: VoterTurnoutStats;
   lastUpdated: string;
-}> {
-  // 1. Try Express API endpoint first
-  try {
-    const res = await fetch('/api/election/results');
-    const contentType = res.headers.get('content-type');
-    if (res.ok && contentType && contentType.includes('application/json')) {
-      const data = await res.json();
-      if (data && Array.isArray(data.positionResults)) {
-        return {
-          positionResults: data.positionResults,
-          turnoutStats: data.turnoutStats || null,
-          lastUpdated: data.lastUpdated || new Date().toISOString(),
-        };
+} {
+  // Build active registered voters lookup map and receipt hash set
+  const activeVotersMap = new Map<string, Voter>();
+  const activeReceiptsSet = new Set<string>();
+
+  voters.forEach((vr) => {
+    if (!vr.isInvalidated) {
+      if (vr.id) activeVotersMap.set(vr.id.toUpperCase().trim(), vr);
+      if (vr.email) activeVotersMap.set(vr.email.toLowerCase().trim(), vr);
+      if (vr.receiptHash) activeReceiptsSet.add(vr.receiptHash.trim());
+    }
+  });
+
+  // Count only VALID votes (exclude invalidated votes, invalidated voters, and deleted voter accounts)
+  const validVotes = votes.filter((v) => {
+    // Exclude explicitly invalidated votes
+    if (v.isInvalidated) return false;
+
+    // If voter ledger exists, ensure the vote belongs to an active, non-deleted, non-invalidated voter
+    if (voters.length > 0) {
+      const vId = v.voterId ? v.voterId.toUpperCase().trim() : '';
+      const vReceipt = v.receiptHash ? v.receiptHash.trim() : '';
+      
+      const hasActiveVoter = (vId && activeVotersMap.has(vId)) || (vReceipt && activeReceiptsSet.has(vReceipt));
+
+      // If the vote has an associated voter identifier or receipt, but that voter is no longer in active voters ledger (e.g. deleted or invalidated)
+      if (vId || vReceipt) {
+        if (!hasActiveVoter) return false;
       }
     }
-  } catch {
-    // Server endpoint unreachable (e.g. deployed on Vercel or static host)
-  }
 
-  // 2. Client-side Firestore Calculation Fallback (Works seamlessly on Vercel & static deployments)
-  let positions: Position[] = INITIAL_POSITIONS;
-  let candidates: Candidate[] = INITIAL_CANDIDATES;
-  let votes: VoteRecord[] = INITIAL_VOTES;
-  let voters: Voter[] = SAMPLE_VOTERS;
-  let settings: ElectionSettings = customSettings || INITIAL_ELECTION_SETTINGS;
-  let updatedAt = new Date().toISOString();
-
-  try {
-    const fsData = await loadElectionDataFromFirestore();
-    if (fsData) {
-      if (Array.isArray(fsData.positions) && fsData.positions.length > 0) positions = fsData.positions;
-      if (Array.isArray(fsData.candidates) && fsData.candidates.length > 0) candidates = fsData.candidates;
-      if (Array.isArray(fsData.votes)) votes = fsData.votes;
-      if (Array.isArray(fsData.voters)) voters = fsData.voters;
-      if (fsData.settings) settings = fsData.settings;
-      if (fsData.updatedAt) updatedAt = fsData.updatedAt;
-    }
-  } catch (fsErr) {
-    console.warn('Firestore load fallback note:', fsErr);
-  }
-
-  // Calculate valid votes (exclude invalidated)
-  const validVotes = votes.filter((v) => {
-    if (v.isInvalidated) return false;
-    const voter = voters.find(
-      (vr) => (v.voterId && vr.id === v.voterId) || (v.receiptHash && vr.receiptHash === v.receiptHash)
-    );
-    if (voter && voter.isInvalidated) return false;
     return true;
   });
 
@@ -129,9 +119,10 @@ export async function fetchOrCalculateResults(customSettings?: ElectionSettings)
     const votedCountForYL = validVotes.filter((v) => v.yearLevel === yl).length;
     const customCount = customYLCounts[yl];
 
-    const registeredForYL = typeof customCount === 'number' && customCount >= 0
-      ? Math.max(customCount, votedCountForYL)
-      : Math.max(actualRegisteredForYL, votedCountForYL);
+    const registeredForYL =
+      typeof customCount === 'number' && customCount >= 0
+        ? Math.max(customCount, votedCountForYL)
+        : Math.max(actualRegisteredForYL, votedCountForYL);
 
     return {
       yearLevel: yl,
@@ -165,4 +156,52 @@ export async function fetchOrCalculateResults(customSettings?: ElectionSettings)
     },
     lastUpdated: updatedAt,
   };
+}
+
+export async function fetchOrCalculateResults(customSettings?: ElectionSettings): Promise<{
+  positionResults: PositionResult[];
+  turnoutStats: VoterTurnoutStats;
+  lastUpdated: string;
+}> {
+  // 1. Try Express API endpoint first
+  try {
+    const res = await fetch('/api/election/results');
+    const contentType = res.headers.get('content-type');
+    if (res.ok && contentType && contentType.includes('application/json')) {
+      const data = await res.json();
+      if (data && Array.isArray(data.positionResults)) {
+        return {
+          positionResults: data.positionResults,
+          turnoutStats: data.turnoutStats || null,
+          lastUpdated: data.lastUpdated || new Date().toISOString(),
+        };
+      }
+    }
+  } catch {
+    // Server endpoint unreachable (e.g. deployed on Vercel or static host)
+  }
+
+  // 2. Client-side Firestore Calculation Fallback (Works seamlessly on Vercel & static deployments)
+  let positions: Position[] = INITIAL_POSITIONS;
+  let candidates: Candidate[] = INITIAL_CANDIDATES;
+  let votes: VoteRecord[] = INITIAL_VOTES;
+  let voters: Voter[] = SAMPLE_VOTERS;
+  let settings: ElectionSettings = customSettings || INITIAL_ELECTION_SETTINGS;
+  let updatedAt = new Date().toISOString();
+
+  try {
+    const fsData = await loadElectionDataFromFirestore();
+    if (fsData) {
+      if (Array.isArray(fsData.positions) && fsData.positions.length > 0) positions = fsData.positions;
+      if (Array.isArray(fsData.candidates) && fsData.candidates.length > 0) candidates = fsData.candidates;
+      if (Array.isArray(fsData.votes)) votes = fsData.votes;
+      if (Array.isArray(fsData.voters)) voters = fsData.voters;
+      if (fsData.settings) settings = fsData.settings;
+      if (fsData.updatedAt) updatedAt = fsData.updatedAt;
+    }
+  } catch (fsErr) {
+    console.warn('Firestore load fallback note:', fsErr);
+  }
+
+  return computeResultsFromData(positions, candidates, votes, voters, settings, updatedAt);
 }

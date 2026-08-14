@@ -203,11 +203,35 @@ function calculateResults(): {
   positionResults: PositionResult[];
   turnoutStats: VoterTurnoutStats;
 } {
-  // Only count valid votes (excluding votes from invalidated voters or invalidated votes)
+  // Build active registered voters lookup map and receipt hash set
+  const activeVotersMap = new Map<string, Voter>();
+  const activeReceiptsSet = new Set<string>();
+
+  voters.forEach((vr) => {
+    if (!vr.isInvalidated) {
+      if (vr.id) activeVotersMap.set(vr.id.toUpperCase().trim(), vr);
+      if (vr.email) activeVotersMap.set(vr.email.toLowerCase().trim(), vr);
+      if (vr.receiptHash) activeReceiptsSet.add(vr.receiptHash.trim());
+    }
+  });
+
+  // Only count VALID votes (excluding votes from invalidated voters, invalidated votes, and deleted voter accounts)
   const validVotes = votes.filter((v) => {
+    // Exclude explicitly invalidated votes
     if (v.isInvalidated) return false;
-    const voter = voters.find((vr) => (v.voterId && vr.id === v.voterId) || (v.receiptHash && vr.receiptHash === v.receiptHash));
-    if (voter && voter.isInvalidated) return false;
+
+    // If voter ledger exists, ensure the vote belongs to an active, non-deleted, non-invalidated voter
+    if (voters.length > 0) {
+      const vId = v.voterId ? v.voterId.toUpperCase().trim() : '';
+      const vReceipt = v.receiptHash ? v.receiptHash.trim() : '';
+
+      const hasActiveVoter = (vId && activeVotersMap.has(vId)) || (vReceipt && activeReceiptsSet.has(vReceipt));
+
+      if (vId || vReceipt) {
+        if (!hasActiveVoter) return false;
+      }
+    }
+
     return true;
   });
 

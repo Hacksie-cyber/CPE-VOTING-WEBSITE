@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { PositionResult, VoterTurnoutStats, ElectionSettings } from '../types';
 import { generateElectionPDF } from '../utils/pdfGenerator';
-import { fetchOrCalculateResults } from '../utils/electionResultsHelper';
+import { fetchOrCalculateResults, computeResultsFromData } from '../utils/electionResultsHelper';
+import { subscribeToElectionData } from '../lib/firebase';
+import {
+  INITIAL_POSITIONS,
+  INITIAL_CANDIDATES,
+  INITIAL_ELECTION_SETTINGS,
+} from '../data/initialData';
 import {
   BarChart,
   Bar,
@@ -23,6 +29,7 @@ import {
   CheckCircle2,
   Download,
   FileText,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface LiveResultsProps {
@@ -50,14 +57,38 @@ export const LiveResults: React.FC<LiveResultsProps> = ({ settings }) => {
   };
 
   useEffect(() => {
+    // 1. Initial immediate fetch
     fetchResults();
 
+    // 2. Real-time Firebase Firestore Push Listener (Instant 0-delay updates on votes / deletions / invalidations)
+    const unsubscribe = subscribeToElectionData((fsData) => {
+      if (fsData) {
+        const positions = Array.isArray(fsData.positions) && fsData.positions.length > 0 ? fsData.positions : INITIAL_POSITIONS;
+        const candidates = Array.isArray(fsData.candidates) && fsData.candidates.length > 0 ? fsData.candidates : INITIAL_CANDIDATES;
+        const votes = Array.isArray(fsData.votes) ? fsData.votes : [];
+        const voters = Array.isArray(fsData.voters) ? fsData.voters : [];
+        const effSettings = fsData.settings || settings || INITIAL_ELECTION_SETTINGS;
+        const effUpdatedAt = fsData.updatedAt || new Date().toISOString();
+
+        const calculated = computeResultsFromData(positions, candidates, votes, voters, effSettings, effUpdatedAt);
+        setPositionResults(calculated.positionResults || []);
+        setTurnoutStats(calculated.turnoutStats || null);
+        setLastUpdated(calculated.lastUpdated || new Date().toISOString());
+        setLoading(false);
+      }
+    });
+
+    // 3. Fallback Interval Poller
     let interval: NodeJS.Timeout;
     if (autoRefresh) {
-      interval = setInterval(fetchResults, 4000); // 4-second live poll
+      interval = setInterval(fetchResults, 3000); // 3-second periodic sync
     }
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+      if (interval) clearInterval(interval);
+    };
+  }, [autoRefresh, settings]);
 
   if (loading) {
     return (
@@ -141,7 +172,7 @@ export const LiveResults: React.FC<LiveResultsProps> = ({ settings }) => {
 
       {/* Top Stat Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Votes */}
+        {/* Total Ballots Count Today */}
         <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-5 shadow-lg relative overflow-hidden transition-all hover:shadow-xl">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-black text-neutral-700 dark:text-slate-300 uppercase tracking-wider">Total Ballots Count Today</span>
@@ -149,10 +180,21 @@ export const LiveResults: React.FC<LiveResultsProps> = ({ settings }) => {
               <Vote className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-3xl font-black text-rose-800 dark:text-rose-400 font-mono tracking-tight">
-            {turnoutStats?.totalVoted || 0}
+          <div className="flex items-baseline space-x-2">
+            <div className="text-3xl font-black text-rose-800 dark:text-rose-400 font-mono tracking-tight">
+              {turnoutStats?.totalVoted || 0}
+            </div>
+            <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              Valid Only
+            </span>
           </div>
-          <p className="text-xs text-neutral-600 dark:text-slate-400 font-bold mt-1">Out of {turnoutStats?.totalRegistered || 0} Registered Voters Today</p>
+          <p className="text-xs text-neutral-600 dark:text-slate-400 font-bold mt-1">
+            Out of {turnoutStats?.totalRegistered || 0} Registered Voters Today
+          </p>
+          <div className="mt-2 text-[10px] font-bold text-neutral-700 dark:text-slate-300 flex items-center space-x-1">
+            <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+            <span>Excludes invalid & deleted votes</span>
+          </div>
         </div>
 
         {/* Voter Turnout % */}
