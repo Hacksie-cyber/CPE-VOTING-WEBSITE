@@ -420,6 +420,62 @@ export const deleteVoterInFirestore = async (voterId: string, voterEmail?: strin
   return null;
 };
 
+export const clearAllVotersInFirestore = async () => {
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      await setDoc(docRef, {
+        ...data,
+        voters: [],
+        votes: [],
+        updatedAt: new Date().toISOString(),
+      });
+      return [];
+    }
+  } catch (err) {
+    console.warn('Firestore clear all voters error:', err);
+  }
+  return null;
+};
+
+export const deleteBulkVotersInFirestore = async (voterIds: string[]) => {
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const currentVoters = Array.isArray(data.voters) ? data.voters : [];
+      const currentVotes = Array.isArray(data.votes) ? data.votes : [];
+
+      const idsSet = new Set(voterIds.map((id) => String(id).toLowerCase().trim()));
+
+      const updatedVoters = currentVoters.filter((v: any) => {
+        const vId = v.id ? String(v.id).toLowerCase() : '';
+        const vEmail = v.email ? String(v.email).toLowerCase() : '';
+        return !idsSet.has(vId) && !idsSet.has(vEmail);
+      });
+
+      const updatedVotes = currentVotes.filter((v: any) => {
+        const vId = v.voterId ? String(v.voterId).toLowerCase() : '';
+        return !idsSet.has(vId);
+      });
+
+      await setDoc(docRef, {
+        ...data,
+        voters: updatedVoters,
+        votes: updatedVotes,
+        updatedAt: new Date().toISOString(),
+      });
+      return updatedVoters;
+    }
+  } catch (err) {
+    console.warn('Firestore bulk delete voters error:', err);
+  }
+  return null;
+};
+
 export { signOut };
 export default app;
 

@@ -11,6 +11,8 @@ import {
   deleteCandidateInFirestore,
   updateSettingsInFirestore,
   deleteVoterInFirestore,
+  clearAllVotersInFirestore,
+  deleteBulkVotersInFirestore,
 } from '../lib/firebase';
 import {
   INITIAL_POSITIONS,
@@ -64,6 +66,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [showResetVotesModal, setShowResetVotesModal] = useState<boolean>(false);
   const [resetConfirmInput, setResetConfirmInput] = useState<string>('');
   const [resetVotesError, setResetVotesError] = useState<string | null>(null);
+
+  // Clear All Voter Accounts Modal State
+  const [showClearAllModal, setShowClearAllModal] = useState<boolean>(false);
+  const [clearAllConfirmInput, setClearAllConfirmInput] = useState<string>('');
+  const [clearAllError, setClearAllError] = useState<string | null>(null);
+
+  // Bulk Delete Modal State
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState<boolean>(false);
 
   // Fetch voters list from backend or Firestore
   const fetchVoters = async () => {
@@ -252,6 +262,117 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
 
     setVoterToDelete(null);
+    setIsSubmittingAction(false);
+  };
+
+  // Clear All Voter Accounts Handler (Batch Wipe to Minimize Workload)
+  const executeClearAllVoters = async () => {
+    setIsSubmittingAction(true);
+    setError(null);
+    setSuccessMsg(null);
+    setClearAllError(null);
+
+    const totalToClear = votersList.length;
+
+    // Optimistically clear local state
+    setVotersList([]);
+    setSelectedVoterIds([]);
+
+    try {
+      const res = await fetch('/api/admin/voters/clear-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminEmail,
+          adminPin,
+        }),
+      });
+
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(data.message || `All student voter accounts (${totalToClear}) cleared successfully.`);
+          onRefreshData();
+          setShowClearAllModal(false);
+          setClearAllConfirmInput('');
+          setTimeout(() => setSuccessMsg(null), 4000);
+          setIsSubmittingAction(false);
+          return;
+        }
+      }
+    } catch {
+      // Backend API call failed or on static hosting
+    }
+
+    // Direct Firestore fallback
+    try {
+      await clearAllVotersInFirestore();
+      setSuccessMsg(`All student voter accounts (${totalToClear}) permanently cleared.`);
+      onRefreshData();
+      setShowClearAllModal(false);
+      setClearAllConfirmInput('');
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch {
+      setError('Failed to clear voter accounts in database.');
+    }
+
+    setIsSubmittingAction(false);
+  };
+
+  // Bulk Delete Selected Voter Accounts Handler
+  const executeBulkDeleteVoters = async () => {
+    if (selectedVoterIds.length === 0) return;
+    setIsSubmittingAction(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    const targets = [...selectedVoterIds];
+    setVotersList((prev) => prev.filter((v) => !targets.includes(v.id)));
+    setSelectedVoterIds([]);
+
+    try {
+      const res = await fetch('/api/admin/voters/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminEmail,
+          adminPin,
+          voterIds: targets,
+        }),
+      });
+
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(data.message || `${targets.length} voter account(s) deleted successfully.`);
+          if (data.voters) setVotersList(data.voters);
+          onRefreshData();
+          setShowBulkDeleteModal(false);
+          setTimeout(() => setSuccessMsg(null), 4000);
+          setIsSubmittingAction(false);
+          return;
+        }
+      }
+    } catch {
+      // API call failed or on static host
+    }
+
+    // Fallback direct Firestore bulk delete
+    try {
+      const updatedVoters = await deleteBulkVotersInFirestore(targets);
+      if (updatedVoters) {
+        setVotersList(updatedVoters);
+        setSuccessMsg(`${targets.length} voter account(s) deleted successfully.`);
+        onRefreshData();
+        setShowBulkDeleteModal(false);
+        setTimeout(() => setSuccessMsg(null), 4000);
+      }
+    } catch {
+      setError('Failed to delete selected voter accounts.');
+    }
+
     setIsSubmittingAction(false);
   };
 
@@ -1397,6 +1518,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <RefreshCw className={`w-3.5 h-3.5 ${loadingVoters ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setClearAllConfirmInput('');
+                    setClearAllError(null);
+                    setShowClearAllModal(true);
+                  }}
+                  disabled={votersList.length === 0 || isSubmittingAction}
+                  className="px-3.5 py-2 rounded-2xl bg-rose-700 hover:bg-rose-800 text-white border border-rose-700 text-xs font-black flex items-center space-x-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                  title="Clear all registered accounts to reset voter registry"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear All Accounts</span>
+                </button>
               </div>
             </div>
 
@@ -1451,6 +1585,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <span>Restore</span>
                   </button>
                   <button
+                    onClick={() => setShowBulkDeleteModal(true)}
+                    disabled={isSubmittingAction}
+                    className="px-2.5 py-1 rounded-xl bg-rose-800 border border-rose-800 text-white hover:bg-rose-900 text-xs font-black flex items-center space-x-1 transition-all"
+                  >
+                    <Trash2 className="w-3 h-3 text-white" />
+                    <span>Delete ({selectedVoterIds.length})</span>
+                  </button>
+                  <button
                     onClick={() => setSelectedVoterIds([])}
                     className="text-[10px] text-neutral-800 dark:text-slate-200 hover:text-black dark:hover:text-white font-extrabold underline pl-1"
                   >
@@ -1463,14 +1605,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
           {/* Voter List Table Card */}
           <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden text-neutral-900 dark:text-slate-100">
-            <div className="p-4 border-b border-neutral-200 dark:border-slate-800 flex items-center justify-between">
+            <div className="p-4 border-b border-neutral-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-xs font-black text-neutral-900 dark:text-slate-100 uppercase tracking-wider flex items-center space-x-2">
                 <ShieldAlert className="w-4 h-4 text-rose-700 dark:text-rose-400" />
                 <span>Student Voter Ledger & Integrity Audit</span>
               </h3>
-              <span className="text-[11px] text-neutral-700 dark:text-slate-300 font-bold">
-                Audit Table
-              </span>
+              <div className="flex items-center space-x-2.5">
+                <span className="text-[11px] text-neutral-700 dark:text-slate-300 font-bold hidden sm:inline">
+                  {votersList.length} Account{votersList.length === 1 ? '' : 's'} Registered
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setClearAllConfirmInput('');
+                    setClearAllError(null);
+                    setShowClearAllModal(true);
+                  }}
+                  disabled={votersList.length === 0 || isSubmittingAction}
+                  className="px-3.5 py-1.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-black text-xs flex items-center space-x-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+                  title="Permanently clear and delete all voter accounts from the ledger"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear All Accounts</span>
+                </button>
+              </div>
             </div>
 
             {loadingVoters ? (
@@ -2164,6 +2322,150 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{isSubmittingAction ? 'Deleting...' : 'Delete Account'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear All Voter Accounts Confirmation Modal */}
+      {showClearAllModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-neutral-900 dark:text-slate-100">
+            <button
+              onClick={() => {
+                setShowClearAllModal(false);
+                setClearAllConfirmInput('');
+                setClearAllError(null);
+              }}
+              className="absolute top-4 right-4 text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-extrabold text-sm"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-800 dark:text-rose-300" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-neutral-900 dark:text-slate-100">Clear All Voter Accounts</h3>
+                <p className="text-xs text-rose-800 dark:text-rose-400 font-extrabold">Batch Ledger Cleanup • Permanent Action</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-neutral-800 dark:text-slate-200 font-bold leading-relaxed mb-4">
+              This action will permanently delete and wipe all <strong className="text-rose-800 dark:text-rose-400">{votersList.length} registered student voter accounts</strong> from the audit ledger and reset associated voting data.
+              <br /><br />
+              <span className="text-neutral-600 dark:text-slate-400 font-medium">Candidate profiles, positions, and operational election settings will remain intact.</span>
+            </p>
+
+            {clearAllError && (
+              <div className="mb-4 p-3 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200 text-xs font-black flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-800 dark:text-rose-300" />
+                <span>{clearAllError}</span>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-black text-neutral-900 dark:text-slate-200 mb-1.5">
+                  To confirm clearing all accounts, please type <span className="font-mono text-rose-800 dark:text-rose-300 font-extrabold bg-rose-100 dark:bg-rose-950 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-800">Confirm</span> below:
+                </label>
+                <input
+                  type="text"
+                  value={clearAllConfirmInput}
+                  onChange={(e) => {
+                    setClearAllConfirmInput(e.target.value);
+                    if (clearAllError) setClearAllError(null);
+                  }}
+                  placeholder="Type Confirm to delete"
+                  autoFocus
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl px-3.5 py-2.5 text-neutral-900 dark:text-slate-100 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowClearAllModal(false);
+                    setClearAllConfirmInput('');
+                    setClearAllError(null);
+                  }}
+                  className="px-4 py-2 rounded-2xl bg-neutral-100 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 text-xs font-black transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={executeClearAllVoters}
+                  disabled={
+                    (clearAllConfirmInput.trim().toLowerCase() !== 'confirm' &&
+                     clearAllConfirmInput.trim().toLowerCase() !== 'confirm to delete' &&
+                     clearAllConfirmInput.trim().toLowerCase() !== 'clear') ||
+                    isSubmittingAction
+                  }
+                  className={`px-4 py-2 rounded-2xl text-xs font-black flex items-center space-x-2 transition-all border ${
+                    (clearAllConfirmInput.trim().toLowerCase() === 'confirm' ||
+                     clearAllConfirmInput.trim().toLowerCase() === 'confirm to delete' ||
+                     clearAllConfirmInput.trim().toLowerCase() === 'clear') &&
+                    !isSubmittingAction
+                      ? 'bg-rose-700 hover:bg-rose-800 border-rose-700 text-white shadow-sm active:scale-95 cursor-pointer'
+                      : 'bg-neutral-200 dark:bg-slate-800 text-neutral-500 dark:text-slate-500 border-neutral-300 dark:border-slate-700 cursor-not-allowed opacity-60'
+                  }`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isSubmittingAction ? 'Clearing All Accounts...' : `Clear All (${votersList.length}) Accounts`}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Selected Accounts Confirmation Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-neutral-900 dark:text-slate-100">
+            <button
+              onClick={() => setShowBulkDeleteModal(false)}
+              className="absolute top-4 right-4 text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-extrabold text-sm"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-800 dark:text-rose-300" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-neutral-900 dark:text-slate-100">Delete Selected Voter Accounts</h3>
+                <p className="text-xs text-rose-800 dark:text-rose-400 font-extrabold">Bulk Account Deletion</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-neutral-800 dark:text-slate-200 font-bold leading-relaxed mb-4">
+              Are you sure you want to permanently delete the <strong className="text-rose-800 dark:text-rose-400">{selectedVoterIds.length} selected student accounts</strong> and their associated election records?
+              <br /><br />
+              This action will remove them from the ledger and cannot be undone.
+            </p>
+
+            <div className="pt-2 flex items-center justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setShowBulkDeleteModal(false)}
+                className="px-4 py-2 rounded-2xl bg-neutral-100 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 text-xs font-black transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeBulkDeleteVoters}
+                disabled={isSubmittingAction}
+                className="px-4 py-2 rounded-2xl text-xs font-black flex items-center space-x-2 transition-all bg-rose-700 hover:bg-rose-800 border border-rose-700 text-white shadow-sm active:scale-95 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isSubmittingAction ? 'Deleting...' : `Delete ${selectedVoterIds.length} Accounts`}</span>
               </button>
             </div>
           </div>

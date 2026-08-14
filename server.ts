@@ -1390,6 +1390,82 @@ async function startServer() {
     });
   });
 
+  // Admin Clear All Voter Accounts (Batch Deletion to Minimize Workload)
+  app.post('/api/admin/voters/clear-all', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+
+    await loadStateFromFirestore();
+    const countBefore = voters.length;
+
+    // Clear all voter accounts
+    voters = [];
+
+    // Clear any voter-linked votes to keep the ledger consistent
+    votes = [];
+
+    await saveStateToFirestore();
+
+    const { positionResults, turnoutStats } = calculateResults();
+
+    res.json({
+      success: true,
+      message: `All ${countBefore} student voter accounts and audit records have been permanently cleared.`,
+      voters: [],
+      turnoutStats,
+      positionResults,
+    });
+  });
+
+  // Admin Bulk Delete Selected Voter Accounts
+  app.post('/api/admin/voters/bulk-delete', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+
+    await loadStateFromFirestore();
+    const { voterIds } = req.body;
+
+    if (!Array.isArray(voterIds) || voterIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'An array of voterIds is required.' });
+    }
+
+    const idsSet = new Set(voterIds.map((id: string) => String(id).toUpperCase().trim()));
+
+    // Collect receipts of deleted voters
+    const deletedReceipts = new Set(
+      voters
+        .filter((v) => (v.id && idsSet.has(v.id.toUpperCase())) || (v.email && idsSet.has(v.email.toUpperCase())))
+        .map((v) => v.receiptHash)
+        .filter(Boolean)
+    );
+
+    const initialLength = voters.length;
+    voters = voters.filter((v) => {
+      const vId = v.id ? v.id.toUpperCase() : '';
+      const vEmail = v.email ? v.email.toUpperCase() : '';
+      return !idsSet.has(vId) && !idsSet.has(vEmail);
+    });
+
+    const deletedCount = initialLength - voters.length;
+
+    // Filter out votes of deleted voters
+    votes = votes.filter((v) => {
+      const vId = v.voterId ? v.voterId.toUpperCase() : '';
+      return !idsSet.has(vId) && (!v.receiptHash || !deletedReceipts.has(v.receiptHash));
+    });
+
+    await saveStateToFirestore();
+
+    const { positionResults, turnoutStats } = calculateResults();
+    const actualVoters = voters.filter(isActualAccount);
+
+    res.json({
+      success: true,
+      message: `${deletedCount} selected voter account(s) deleted successfully.`,
+      voters: actualVoters,
+      turnoutStats,
+      positionResults,
+    });
+  });
+
 
   // Gemini AI Candidate Comparison Assistant
   app.post('/api/ai/compare-candidates', async (req, res) => {
