@@ -1,6 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import confetti from 'canvas-confetti';
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
+import {
   Cpu,
   Search,
   Trophy,
@@ -14,6 +23,9 @@ import {
   Award,
   ArrowUpDown,
   Vote,
+  BarChart3,
+  EyeOff,
+  Lightbulb,
 } from 'lucide-react';
 import {
   ExhibitProject,
@@ -51,6 +63,7 @@ export const ProjectExhibitSection: React.FC<ProjectExhibitSectionProps> = ({
   onOpenAuth,
   onVoteSuccess,
 }) => {
+  const [viewMode, setViewMode] = useState<'browse' | 'results'>('browse');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'title' | 'votes'>('title');
 
@@ -59,6 +72,8 @@ export const ProjectExhibitSection: React.FC<ProjectExhibitSectionProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [feedbackSuccess, setFeedbackSuccess] = useState<string | null>(null);
+
+  const isAdmin = voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com';
 
   const stNorm = (electionSettings?.status || '').toString().trim().toUpperCase();
   const isExhibitLockedMode = Boolean(
@@ -111,8 +126,8 @@ export const ProjectExhibitSection: React.FC<ProjectExhibitSectionProps> = ({
     return { counts, totalVotes, maxVotes };
   }, [projects, validExhibitVotes]);
 
-  // Ranked leaderboard (top 3)
-  const topProjects = useMemo(() => {
+  // Full ranked list & year-level stats for Live Exhibit Results
+  const rankedProjects = useMemo(() => {
     return [...projects]
       .map((p) => {
         const votes = projectStats.counts[p.id] || 0;
@@ -122,9 +137,33 @@ export const ProjectExhibitSection: React.FC<ProjectExhibitSectionProps> = ({
             : 0;
         return { ...p, votes, percentage: pct };
       })
-      .sort((a, b) => b.votes - a.votes || a.title.localeCompare(b.title))
-      .slice(0, 3);
+      .sort((a, b) => b.votes - a.votes || a.title.localeCompare(b.title));
   }, [projects, projectStats]);
+
+  // Ranked leaderboard (top 3)
+  const topProjects = useMemo(() => rankedProjects.slice(0, 3), [rankedProjects]);
+
+  const exhibitYearBreakdown = useMemo(() => {
+    const yearLevels = ['1st Year', '2nd Year', '3rd Year', '4th Year'] as const;
+    return yearLevels.map((yl) => {
+      const count = validExhibitVotes.filter((v) => v.yearLevel === yl).length;
+      const pct =
+        projectStats.totalVotes > 0
+          ? parseFloat(((count / projectStats.totalVotes) * 100).toFixed(1))
+          : 0;
+      return { yearLevel: yl, count, pct };
+    });
+  }, [validExhibitVotes, projectStats.totalVotes]);
+
+  const exhibitChartData = useMemo(() => {
+    return rankedProjects.map((p) => ({
+      name: p.teamName.length > 22 ? `${p.teamName.slice(0, 20)}…` : p.teamName,
+      fullTitle: p.title,
+      votes: p.votes,
+      percentage: p.percentage,
+      isLeading: projectStats.maxVotes > 0 && p.votes === projectStats.maxVotes,
+    }));
+  }, [rankedProjects, projectStats.maxVotes]);
 
   // Filtered and sorted projects
   const filteredProjects = useMemo(() => {
@@ -332,6 +371,47 @@ export const ProjectExhibitSection: React.FC<ProjectExhibitSectionProps> = ({
             </div>
           </div>
         </div>
+
+        {/* View Mode Switcher: Browse & Vote vs Live Exhibit Results */}
+        <div className="flex flex-wrap items-center gap-2 pt-5 mt-5 border-t border-neutral-200 dark:border-slate-800 relative z-10">
+          <button
+            type="button"
+            onClick={() => setViewMode('browse')}
+            className={`px-4 py-2 rounded-xl text-xs font-black flex items-center space-x-2 transition-all border ${
+              viewMode === 'browse'
+                ? 'bg-rose-700 text-white border-rose-700 shadow-sm'
+                : 'bg-neutral-100 dark:bg-slate-800 text-neutral-800 dark:text-slate-200 border-neutral-200 dark:border-slate-700 hover:bg-neutral-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            <Lightbulb className="w-3.5 h-3.5" />
+            <span>Browse &amp; Vote Projects</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setViewMode('results')}
+            className={`px-4 py-2 rounded-xl text-xs font-black flex items-center space-x-2 transition-all border ${
+              viewMode === 'results'
+                ? 'bg-rose-700 text-white border-rose-700 shadow-sm'
+                : 'bg-neutral-100 dark:bg-slate-800 text-neutral-800 dark:text-slate-200 border-neutral-200 dark:border-slate-700 hover:bg-neutral-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <BarChart3 className="w-3.5 h-3.5" />
+            <span>Live Exhibit Results</span>
+            {(exhibitSettings.showLiveStandings || isAdmin) && (
+              <span
+                className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono ${
+                  viewMode === 'results'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300'
+                }`}
+              >
+                {projectStats.totalVotes}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Feedback Alerts */}
@@ -449,18 +529,300 @@ export const ProjectExhibitSection: React.FC<ProjectExhibitSectionProps> = ({
         </div>
       )}
 
-      {/* Top 3 Leaderboard Preview */}
-      {exhibitSettings.showLiveStandings && projects.length > 0 && projectStats.totalVotes > 0 && (
-        <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-slate-100 flex items-center space-x-2">
-              <Trophy className="w-4 h-4 text-amber-500" />
-              <span>Current People&apos;s Choice Leaders</span>
+      {viewMode === 'results' ? (
+        !exhibitSettings.showLiveStandings && !isAdmin ? (
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-10 text-center space-y-3 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 flex items-center justify-center mx-auto">
+              <EyeOff className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-black text-neutral-900 dark:text-slate-100">
+              Live Standings Temporarily Hidden
             </h3>
-            <span className="text-[11px] font-bold text-neutral-500 dark:text-slate-400">
-              Live Standings
-            </span>
+            <p className="text-xs text-neutral-600 dark:text-slate-400 max-w-md mx-auto font-medium">
+              The Election Commission has temporarily disabled public live standings visibility while Project Exhibit voting is underway.
+            </p>
+            <button
+              type="button"
+              onClick={() => setViewMode('browse')}
+              className="px-5 py-2.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-black transition-all"
+            >
+              Back to Project Exhibits
+            </button>
           </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Live Exhibit Results Header + Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500 dark:text-slate-400 block">
+                  Total Valid Exhibit Votes
+                </span>
+                <div className="flex items-baseline space-x-2 mt-1">
+                  <span className="text-3xl font-black text-rose-700 dark:text-rose-400 font-mono">
+                    {projectStats.totalVotes}
+                  </span>
+                  <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                    Real-Time
+                  </span>
+                </div>
+                <p className="text-[11px] font-bold text-neutral-500 dark:text-slate-400 mt-1">
+                  People&apos;s Choice ballots cast
+                </p>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500 dark:text-slate-400 block">
+                  Competing Projects
+                </span>
+                <span className="text-3xl font-black text-neutral-900 dark:text-slate-100 font-mono mt-1 block">
+                  {projects.length}
+                </span>
+                <p className="text-[11px] font-bold text-neutral-500 dark:text-slate-400 mt-1">
+                  Active exhibit entries
+                </p>
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500 dark:text-slate-400 block">
+                  Current Leader
+                </span>
+                {rankedProjects[0] && rankedProjects[0].votes > 0 ? (
+                  <>
+                    <span className="text-sm font-black text-rose-700 dark:text-rose-400 mt-1 block truncate">
+                      {rankedProjects[0].title}
+                    </span>
+                    <p className="text-[11px] font-bold text-neutral-600 dark:text-slate-300 mt-1 truncate">
+                      {rankedProjects[0].votes} votes ({rankedProjects[0].percentage}%) • {rankedProjects[0].teamName}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-black text-neutral-500 dark:text-slate-400 mt-1 block">
+                      No votes cast yet
+                    </span>
+                    <p className="text-[11px] font-bold text-neutral-400 mt-1">
+                      Be the first to vote
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                <span className="text-[10px] font-black uppercase tracking-wider text-neutral-500 dark:text-slate-400 block">
+                  Voting Status
+                </span>
+                <span
+                  className={`text-lg font-black mt-1 block ${
+                    isExhibitClosed
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-emerald-600 dark:text-emerald-400'
+                  }`}
+                >
+                  {isExhibitClosed ? 'CLOSED' : 'LIVE & OPEN'}
+                </span>
+                <p className="text-[11px] font-bold text-neutral-500 dark:text-slate-400 mt-1">
+                  Updates automatically
+                </p>
+              </div>
+            </div>
+
+            {/* Year-Level Participation Breakdown */}
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+              <h3 className="text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-slate-100 mb-3 flex items-center space-x-2">
+                <Users className="w-4 h-4 text-rose-700 dark:text-rose-400" />
+                <span>Exhibit Votes by Year Level</span>
+              </h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {exhibitYearBreakdown.map((yl) => (
+                  <div
+                    key={yl.yearLevel}
+                    className="bg-neutral-50 dark:bg-slate-800/80 border border-neutral-200 dark:border-slate-700 rounded-xl p-3 space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-black text-neutral-900 dark:text-slate-100">{yl.yearLevel}</span>
+                      <span className="font-mono font-black text-rose-700 dark:text-rose-400">{yl.pct}%</span>
+                    </div>
+                    <div className="w-full bg-white dark:bg-slate-900 h-2 rounded-full overflow-hidden border border-neutral-200 dark:border-slate-700">
+                      <div
+                        className="bg-rose-700 h-full transition-all duration-500"
+                        style={{ width: `${yl.pct}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-neutral-500 dark:text-slate-400 block">
+                      {yl.count} {yl.count === 1 ? 'vote' : 'votes'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bar Chart + Complete Ranked Leaderboard */}
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-neutral-200 dark:border-slate-800">
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-neutral-900 dark:text-slate-100 flex items-center space-x-2">
+                    <Trophy className="w-5 h-5 text-amber-500" />
+                    <span>Project Exhibit Live Standings</span>
+                  </h3>
+                  <p className="text-xs text-neutral-600 dark:text-slate-400 font-medium">
+                    Click any project row to view details{!userExhibitVote && !isExhibitClosed ? ' or cast your vote' : ''}.
+                  </p>
+                </div>
+                <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-[11px] font-black self-start sm:self-auto">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Live Synced</span>
+                </span>
+              </div>
+
+              {projects.length === 0 ? (
+                <p className="text-xs text-neutral-500 py-8 text-center font-bold">
+                  No project exhibits registered yet.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                  <div
+                    className="lg:col-span-6 bg-neutral-50 dark:bg-slate-800 p-4 rounded-2xl border border-neutral-200 dark:border-slate-700"
+                    style={{ height: Math.max(250, projects.length * 50) }}
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={exhibitChartData}
+                        layout="vertical"
+                        margin={{ top: 8, right: 24, left: 8, bottom: 5 }}
+                      >
+                        <XAxis
+                          type="number"
+                          stroke="#94a3b8"
+                          fontSize={11}
+                          fontWeight={700}
+                          allowDecimals={false}
+                        />
+                        <YAxis
+                          dataKey="name"
+                          type="category"
+                          stroke="#94a3b8"
+                          fontSize={11}
+                          fontWeight={700}
+                          width={135}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#0f172a',
+                            borderColor: '#334155',
+                            borderWidth: '1px',
+                            borderRadius: '0.75rem',
+                            color: '#f8fafc',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                          }}
+                          formatter={(value: number, _name: string, props: any) => [
+                            `${value} votes (${props?.payload?.percentage || 0}%)`,
+                            props?.payload?.fullTitle || 'Exhibit',
+                          ]}
+                        />
+                        <Bar dataKey="votes" radius={[0, 6, 6, 0]}>
+                          {exhibitChartData.map((entry, idx) => (
+                            <Cell
+                              key={`exhibit-bar-${idx}`}
+                              fill={entry.isLeading ? '#be123c' : '#64748b'}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="lg:col-span-6 space-y-2.5">
+                    {rankedProjects.map((proj, idx) => {
+                      const isLeader = projectStats.maxVotes > 0 && proj.votes === projectStats.maxVotes;
+                      const isVotedForThis = userExhibitVote?.projectId === proj.id;
+                      return (
+                        <div
+                          key={proj.id}
+                          onClick={() => setDetailProject(proj)}
+                          className={`p-3.5 rounded-2xl border cursor-pointer transition-all hover:shadow-md ${
+                            isLeader
+                              ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-800'
+                              : 'bg-neutral-50 dark:bg-slate-800 border-neutral-200 dark:border-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span
+                                  className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                                    idx === 0 && proj.votes > 0
+                                      ? 'bg-amber-500 text-white'
+                                      : idx === 1 && proj.votes > 0
+                                      ? 'bg-neutral-700 text-white'
+                                      : 'bg-rose-700/15 dark:bg-rose-900/50 text-rose-800 dark:text-rose-300'
+                                  }`}
+                                >
+                                  #{idx + 1}
+                                </span>
+                                <span className="text-[10px] font-black uppercase text-rose-700 dark:text-rose-400 truncate">
+                                  {proj.teamName}
+                                </span>
+                                {isLeader && (
+                                  <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200">
+                                    LEADING
+                                  </span>
+                                )}
+                                {isVotedForThis && (
+                                  <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-600 text-white">
+                                    YOUR VOTE
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="text-xs font-extrabold text-neutral-900 dark:text-slate-100 truncate mt-1">
+                                {proj.title}
+                              </h4>
+                            </div>
+                            <div className="text-right font-mono flex-shrink-0">
+                              <span className="text-sm font-black text-rose-800 dark:text-rose-400">
+                                {proj.votes}
+                              </span>
+                              <span className="text-[11px] font-bold text-neutral-600 dark:text-slate-300 block">
+                                {proj.percentage}%
+                              </span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-white dark:bg-slate-900 h-2 rounded-full overflow-hidden border border-neutral-200 dark:border-slate-700">
+                            <div
+                              className={`h-full transition-all duration-500 ${
+                                isLeader ? 'bg-rose-700' : 'bg-neutral-500 dark:bg-slate-500'
+                              }`}
+                              style={{ width: `${proj.percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      ) : (
+        <>
+          {/* Top 3 Leaderboard Preview */}
+          {exhibitSettings.showLiveStandings && projects.length > 0 && projectStats.totalVotes > 0 && (
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs font-black uppercase tracking-wider text-neutral-900 dark:text-slate-100 flex items-center space-x-2">
+                  <Trophy className="w-4 h-4 text-amber-500" />
+                  <span>Current People&apos;s Choice Leaders</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('results')}
+                  className="text-[11px] font-black text-rose-700 dark:text-rose-400 hover:underline flex items-center space-x-1"
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  <span>Full Live Results →</span>
+                </button>
+              </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {topProjects.map((proj, idx) => (
@@ -679,6 +1041,8 @@ export const ProjectExhibitSection: React.FC<ProjectExhibitSectionProps> = ({
             );
           })}
         </div>
+      )}
+        </>
       )}
 
       {/* Project Detail Modal */}

@@ -1,5 +1,12 @@
 import { jsPDF } from 'jspdf';
-import { PositionResult, VoterTurnoutStats, ElectionSettings } from '../types';
+import {
+  PositionResult,
+  VoterTurnoutStats,
+  ElectionSettings,
+  ExhibitProject,
+  ExhibitVote,
+  ExhibitSettings,
+} from '../types';
 
 export const generateElectionPDF = (
   positionResults: PositionResult[],
@@ -299,4 +306,168 @@ export const generateElectionPDF = (
   // Save the generated PDF
   doc.save(`CPESG_Election_Results_2026_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
+
+export const generateExhibitPDF = (
+  exhibitProjects: ExhibitProject[],
+  exhibitVotes: ExhibitVote[],
+  exhibitSettings: ExhibitSettings | undefined,
+  lastUpdated: string
+) => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  let y = 15;
+
+  const primaryColor: [number, number, number] = [15, 23, 42];
+  const roseColor: [number, number, number] = [190, 18, 60];
+  const darkGray: [number, number, number] = [51, 65, 85];
+  const lightBg: [number, number, number] = [241, 245, 249];
+
+  const validVotes = exhibitVotes.filter((v) => !v.isInvalidated);
+  const totalVotes = validVotes.length;
+  const counts: Record<string, number> = {};
+  exhibitProjects.forEach((p) => (counts[p.id] = 0));
+  validVotes.forEach((v) => {
+    if (counts[v.projectId] !== undefined) counts[v.projectId]++;
+  });
+
+  const ranked = [...exhibitProjects]
+    .map((p) => {
+      const votes = counts[p.id] || 0;
+      const percentage = totalVotes > 0 ? parseFloat(((votes / totalVotes) * 100).toFixed(1)) : 0;
+      return { ...p, votes, percentage };
+    })
+    .sort((a, b) => b.votes - a.votes || a.title.localeCompare(b.title));
+
+  const maxVotes = ranked.length > 0 ? ranked[0].votes : 0;
+
+  // Header Banner
+  doc.setFillColor(...primaryColor);
+  doc.rect(0, 0, pageWidth, 28, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('COMPUTER ENGINEERING DEPARTMENT — PROJECT EXHIBIT 2026', pageWidth / 2, 11, { align: 'center' });
+
+  doc.setFontSize(10);
+  doc.setTextColor(251, 113, 133);
+  doc.text("OFFICIAL PEOPLE'S CHOICE EXHIBIT LIVE RESULTS", pageWidth / 2, 17, { align: 'center' });
+
+  doc.setFontSize(7.5);
+  doc.setTextColor(203, 213, 225);
+  doc.setFont('helvetica', 'normal');
+  const timestampStr = new Date(lastUpdated || Date.now()).toLocaleString('en-US', {
+    dateStyle: 'full',
+    timeStyle: 'medium',
+  });
+  const statusLabel = exhibitSettings?.isOpen ? 'OPEN' : 'CLOSED';
+  doc.text(`Official Timestamp: ${timestampStr} | Exhibit Status: ${statusLabel}`, pageWidth / 2, 23, { align: 'center' });
+
+  y = 35;
+
+  // Summary Box
+  doc.setFillColor(...lightBg);
+  doc.setDrawColor(203, 213, 225);
+  doc.roundedRect(margin, y, pageWidth - margin * 2, 24, 3, 3, 'FD');
+
+  doc.setTextColor(...primaryColor);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('PROJECT EXHIBIT VOTING SUMMARY', margin + 5, y + 6);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...darkGray);
+  doc.text(`Total Valid Exhibit Votes: ${totalVotes}`, margin + 5, y + 13);
+  doc.text(`Participating Projects: ${exhibitProjects.length}`, margin + 90, y + 13);
+
+  const yearLevels = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+  const yrSummary = yearLevels
+    .map((yl) => `${yl}: ${validVotes.filter((v) => v.yearLevel === yl).length}`)
+    .join('   |   ');
+  doc.setFontSize(8);
+  doc.text(`Votes by Year Level:   ${yrSummary}`, margin + 5, y + 20);
+
+  y += 31;
+
+  // Table Section Header
+  doc.setFillColor(...roseColor);
+  doc.rect(margin, y, pageWidth - margin * 2, 7, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.text('RANKED PROJECT EXHIBIT STANDINGS', margin + 4, y + 5);
+  y += 10;
+
+  // Table Column Headers
+  const drawCols = () => {
+    doc.setFillColor(226, 232, 240);
+    doc.rect(margin, y, pageWidth - margin * 2, 6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...darkGray);
+    doc.text('RANK', margin + 3, y + 4);
+    doc.text('PROJECT TITLE', margin + 17, y + 4);
+    doc.text('TEAM NAME', margin + 98, y + 4);
+    doc.text('VOTES', margin + 145, y + 4);
+    doc.text('SHARE', margin + 165, y + 4);
+    y += 6;
+  };
+
+  drawCols();
+
+  if (ranked.length === 0) {
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(8.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text('No project exhibits registered.', margin + 4, y + 6);
+    y += 10;
+  } else {
+    ranked.forEach((proj, idx) => {
+      if (y + 9 > pageHeight - 25) {
+        doc.addPage();
+        y = 18;
+        drawCols();
+      }
+      const isEven = idx % 2 === 0;
+      const isLeader = maxVotes > 0 && proj.votes === maxVotes;
+      doc.setFillColor(isLeader ? 255 : isEven ? 255 : 248, isLeader ? 241 : isEven ? 255 : 250, isLeader ? 242 : isEven ? 255 : 252);
+      doc.rect(margin, y, pageWidth - margin * 2, 7.5, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...(isLeader ? roseColor : primaryColor));
+      doc.text(`#${idx + 1}`, margin + 4, y + 5);
+
+      const truncTitle = proj.title.length > 42 ? `${proj.title.slice(0, 39)}...` : proj.title;
+      const truncTeam = proj.teamName.length > 24 ? `${proj.teamName.slice(0, 21)}...` : proj.teamName;
+
+      doc.setFont('helvetica', isLeader ? 'bold' : 'normal');
+      doc.setTextColor(...primaryColor);
+      doc.text(truncTitle, margin + 17, y + 5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...darkGray);
+      doc.text(truncTeam, margin + 98, y + 5);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...roseColor);
+      doc.text(`${proj.votes}`, margin + 147, y + 5);
+
+      doc.setTextColor(...primaryColor);
+      doc.text(`${proj.percentage}%`, margin + 165, y + 5);
+
+      y += 7.5;
+    });
+  }
+
+  doc.save(`CPE_Project_Exhibit_Results_2026_${new Date().toISOString().slice(0, 10)}.pdf`);
+};
+
 

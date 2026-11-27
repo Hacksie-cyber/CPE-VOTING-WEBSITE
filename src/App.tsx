@@ -369,6 +369,7 @@ export default function App() {
             settings={settings}
             exhibitProjects={exhibitProjects}
             exhibitVotes={exhibitVotes}
+            exhibitSettings={exhibitSettings}
           />
         )}
 
