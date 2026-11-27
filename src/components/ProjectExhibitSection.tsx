@@ -61,7 +61,10 @@ export const ProjectExhibitSection: React.FC<ProjectExhibitSectionProps> = ({
   const [feedbackSuccess, setFeedbackSuccess] = useState<string | null>(null);
 
   const stNorm = (electionSettings?.status || '').toString().trim().toUpperCase();
-  const isElectionPaused = stNorm === 'PAUSED';
+  const isExhibitLockedMode = Boolean(
+    exhibitSettings.lockToExhibit || electionSettings?.officialsVotingDisabled
+  );
+  const isElectionPaused = stNorm === 'PAUSED' && !isExhibitLockedMode;
   const isExhibitClosed = !exhibitSettings.isOpen || isElectionPaused;
 
   // Active valid exhibit votes
@@ -286,6 +289,12 @@ export const ProjectExhibitSection: React.FC<ProjectExhibitSectionProps> = ({
                 />
                 <span>{isExhibitClosed ? 'Exhibit Voting Closed' : 'Live Exhibit Voting Open'}</span>
               </span>
+              {isExhibitLockedMode && (
+                <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-neutral-900 dark:bg-slate-800 text-white border border-neutral-800 dark:border-slate-700">
+                  <Lock className="w-3 h-3 text-amber-300" />
+                  <span>Exhibit-Only Mode • Officials Disabled</span>
+                </span>
+              )}
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-slate-100 tracking-tight">

@@ -108,6 +108,7 @@ export interface ElectionSettings {
   allowAbstain: boolean;
   votingDeadline: string;
   totalRegisteredVoters: number;
+  officialsVotingDisabled?: boolean;
   yearLevelVoterCounts?: {
     '1st Year'?: number;
     '2nd Year'?: number;
@@ -153,6 +154,7 @@ export interface ExhibitVote {
 export interface ExhibitSettings {
   isOpen: boolean;
   showLiveStandings: boolean;
+  lockToExhibit?: boolean;
   title: string;
   subtitle: string;
 }

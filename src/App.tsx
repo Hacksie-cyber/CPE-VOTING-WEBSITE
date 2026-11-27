@@ -239,15 +239,24 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  const isExhibitLockedMode = Boolean(settings?.officialsVotingDisabled || exhibitSettings?.lockToExhibit);
+
   useEffect(() => {
     const isAdminUser = voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com';
     if ((activeTab === 'admin' || activeTab === 'results') && !isAdminUser) {
-      setActiveTab('ballot');
+      setActiveTab(isExhibitLockedMode ? 'exhibit' : 'ballot');
       if (!voter) {
         setIsAuthModalOpen(true);
       }
     }
-  }, [voter, activeTab]);
+  }, [voter, activeTab, isExhibitLockedMode]);
+
+  useEffect(() => {
+    const isAdminUser = voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com';
+    if (isExhibitLockedMode && !isAdminUser && activeTab === 'ballot') {
+      setActiveTab('exhibit');
+    }
+  }, [isExhibitLockedMode]);
 
   const handleSelectCandidate = (positionId: string, choiceId: string) => {
     setChoices((prev) => ({
@@ -262,6 +271,8 @@ export default function App() {
     setIsAuthModalOpen(false);
     if (authenticatedVoter.email?.toLowerCase() === 'bamuyahacksie@gmail.com') {
       setActiveTab('admin');
+    } else if (isExhibitLockedMode) {
+      setActiveTab('exhibit');
     } else {
       setActiveTab('ballot');
     }
@@ -331,11 +342,13 @@ export default function App() {
             candidates={candidates}
             voter={voter}
             settings={settings}
+            exhibitSettings={exhibitSettings}
             choices={choices}
             onSelectCandidate={handleSelectCandidate}
             onOpenReview={() => setIsReviewModalOpen(true)}
             onOpenAuth={() => setIsAuthModalOpen(true)}
             onOpenProfile={() => setIsProfileModalOpen(true)}
+            onGoToExhibit={() => setActiveTab('exhibit')}
           />
         )}
 
@@ -396,6 +409,7 @@ export default function App() {
         preventClose={!voter}
         onOpenTermsPrivacy={openTermsPrivacy}
         settings={settings}
+        exhibitSettings={exhibitSettings}
       />
 
       {voter && (

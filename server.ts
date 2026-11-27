@@ -902,6 +902,12 @@ async function startServer() {
     const { voterId, voterName, voterEmail, voterYearLevel, choices } = req.body;
 
     const stNorm = (settings.status || '').toString().trim().toUpperCase();
+    if (settings.officialsVotingDisabled || exhibitSettings.lockToExhibit) {
+      return res.status(403).json({
+        success: false,
+        message: 'Voting for department officials is currently disabled. Voting is locked to the Project Exhibit.',
+      });
+    }
     if (stNorm !== 'VOTING_OPEN' && stNorm !== 'ACTIVE') {
       if (stNorm === 'PAUSED') {
         return res.status(400).json({
@@ -1678,7 +1684,7 @@ Return ONLY valid raw JSON with no markdown block markers around it.`;
     }
 
     const stNorm = (settings.status || '').toString().trim().toUpperCase();
-    if (stNorm === 'PAUSED') {
+    if (stNorm === 'PAUSED' && !exhibitSettings.lockToExhibit && !settings.officialsVotingDisabled) {
       return res.status(403).json({
         success: false,
         message: 'Voting is currently paused by the election committee until further notice.',

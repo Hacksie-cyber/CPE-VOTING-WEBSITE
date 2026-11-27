@@ -122,6 +122,10 @@ export const saveVoteToFirestoreDirect = async (
     const snap = await getDoc(docRef);
     if (snap.exists()) {
       const data = snap.data();
+      if (data.settings?.officialsVotingDisabled || data.exhibitSettings?.lockToExhibit) {
+        console.warn('Official ballot voting is disabled while locked to Project Exhibit.');
+        return;
+      }
       const currentVotes = Array.isArray(data.votes) ? [...data.votes] : [];
       const currentVoters = Array.isArray(data.voters) ? [...data.voters] : [];
 

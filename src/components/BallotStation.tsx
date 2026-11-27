@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Position, Candidate, Voter, VoteChoices, ElectionSettings } from '../types';
+import { Position, Candidate, Voter, VoteChoices, ElectionSettings, ExhibitSettings } from '../types';
 import {
   CheckCircle2,
   Info,
@@ -18,6 +18,8 @@ import {
   Grid,
   Edit3,
   User,
+  Lock,
+  Lightbulb,
 } from 'lucide-react';
 
 interface BallotStationProps {
@@ -25,11 +27,13 @@ interface BallotStationProps {
   candidates: Candidate[];
   voter: Voter | null;
   settings: ElectionSettings;
+  exhibitSettings?: ExhibitSettings;
   choices: VoteChoices;
   onSelectCandidate: (positionId: string, choiceId: string) => void;
   onOpenReview: () => void;
   onOpenAuth: () => void;
   onOpenProfile?: () => void;
+  onGoToExhibit?: () => void;
 }
 
 export const BallotStation: React.FC<BallotStationProps> = ({
@@ -37,11 +41,13 @@ export const BallotStation: React.FC<BallotStationProps> = ({
   candidates,
   voter,
   settings,
+  exhibitSettings,
   choices,
   onSelectCandidate,
   onOpenReview,
   onOpenAuth,
   onOpenProfile,
+  onGoToExhibit,
 }) => {
   const [activePosIndex, setActivePosIndex] = useState(0);
   const [viewMode, setViewMode] = useState<'horizontal' | 'grid'>('horizontal');
@@ -49,9 +55,10 @@ export const BallotStation: React.FC<BallotStationProps> = ({
   const [ruleViolationNotice, setRuleViolationNotice] = useState<string | null>(null);
 
   const stNorm = (settings?.status || '').toString().trim().toUpperCase();
+  const isOfficialsDisabled = Boolean(settings?.officialsVotingDisabled || exhibitSettings?.lockToExhibit);
   const isPaused = stNorm === 'PAUSED';
   const isConcluded = stNorm === 'CONCLUDED';
-  const isVotingDisabled = isPaused || isConcluded || (stNorm !== 'VOTING_OPEN' && stNorm !== 'ACTIVE');
+  const isVotingDisabled = isOfficialsDisabled || isPaused || isConcluded || (stNorm !== 'VOTING_OPEN' && stNorm !== 'ACTIVE');
   const isAdmin = voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com';
 
   const totalPositions = positions.length;
@@ -80,7 +87,9 @@ export const BallotStation: React.FC<BallotStationProps> = ({
     if (voter?.hasVoted) return;
 
     if (isVotingDisabled && !isAdmin) {
-      if (isPaused) {
+      if (isOfficialsDisabled) {
+        setRuleViolationNotice('Voting for Officials is currently disabled. Voting is locked to the Project Exhibit.');
+      } else if (isPaused) {
         setRuleViolationNotice('Voting Currently Paused. Voting is currently paused by the election committee until further notice.');
       } else if (isConcluded) {
         setRuleViolationNotice('Election Already Concluded, You will be able to cast your vote, until further notice.');
@@ -131,7 +140,40 @@ export const BallotStation: React.FC<BallotStationProps> = ({
       )}
 
       {/* Operational Status Prominent Notice Banners */}
-      {isPaused && (
+      {isOfficialsDisabled && (
+        <div className="bg-rose-50 dark:bg-rose-950/80 border-2 border-rose-600 dark:border-rose-700 rounded-2xl p-5 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-rose-950 dark:text-rose-100">
+          <div className="flex items-start space-x-4">
+            <div className="w-10 h-10 rounded-xl bg-rose-700 text-white flex items-center justify-center font-black flex-shrink-0 shadow-sm">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <span className="bg-rose-700 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+                  OFFICIALS VOTING: DISABLED
+                </span>
+              </div>
+              <h3 className="text-lg font-black tracking-tight text-rose-900 dark:text-rose-200 uppercase">
+                Voting Locked to Project Exhibit
+              </h3>
+              <p className="text-xs sm:text-sm font-bold text-rose-800 dark:text-rose-300 leading-relaxed">
+                Voting for department officials is currently disabled. Please proceed to the Project Exhibit section to cast your People&apos;s Choice vote.
+              </p>
+            </div>
+          </div>
+          {onGoToExhibit && (
+            <button
+              type="button"
+              onClick={onGoToExhibit}
+              className="px-5 py-2.5 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-black shadow-sm flex items-center justify-center space-x-2 flex-shrink-0 transition-all active:scale-95"
+            >
+              <Lightbulb className="w-4 h-4" />
+              <span>Go to Project Exhibit</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {isPaused && !isOfficialsDisabled && (
         <div className="bg-amber-50 dark:bg-amber-950/80 border-2 border-amber-500 dark:border-amber-700 rounded-2xl p-5 shadow-md flex items-start space-x-4 text-amber-950 dark:text-amber-100">
           <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black flex-shrink-0 text-lg shadow-sm">
             ⏸
@@ -513,11 +555,19 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                     {settings.allowAbstain && (
                       <div
                         onClick={() => {
-                          if (!voter?.hasVoted) {
-                            onSelectCandidate(activePosition.id, 'ABSTAIN');
-                            if (activePosIndex < totalPositions - 1) {
-                              setTimeout(() => setActivePosIndex((prev) => prev + 1), 350);
-                            }
+                          if (voter?.hasVoted) return;
+                          if (isVotingDisabled && !isAdmin) {
+                            setRuleViolationNotice(
+                              isOfficialsDisabled
+                                ? 'Voting for Officials is currently disabled. Voting is locked to the Project Exhibit.'
+                                : 'Voting is currently unavailable.'
+                            );
+                            setTimeout(() => setRuleViolationNotice(null), 5000);
+                            return;
+                          }
+                          onSelectCandidate(activePosition.id, 'ABSTAIN');
+                          if (activePosIndex < totalPositions - 1) {
+                            setTimeout(() => setActivePosIndex((prev) => prev + 1), 350);
                           }
                         }}
                         className={`rounded-2xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
@@ -589,10 +639,15 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                 ) : (
                   <button
                     type="button"
+                    disabled={isVotingDisabled && !isAdmin}
                     onClick={onOpenReview}
-                    className="flex items-center space-x-2 px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-600 shadow-sm transition-all"
+                    className={`flex items-center space-x-2 px-5 py-2 rounded-xl text-xs font-bold border shadow-sm transition-all ${
+                      isVotingDisabled && !isAdmin
+                        ? 'bg-neutral-200 dark:bg-slate-800 text-neutral-500 dark:text-slate-400 border-neutral-300 dark:border-slate-700 cursor-not-allowed'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600'
+                    }`}
                   >
-                    <span>Review & Cast Ballot</span>
+                    <span>{isOfficialsDisabled && !isAdmin ? 'Officials Voting Disabled' : 'Review & Cast Ballot'}</span>
                     <ShieldCheck className="w-4 h-4" />
                   </button>
                 )}
@@ -782,9 +837,17 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                       {settings.allowAbstain && (
                         <div
                           onClick={() => {
-                            if (!voter?.hasVoted) {
-                              onSelectCandidate(pos.id, 'ABSTAIN');
+                            if (voter?.hasVoted) return;
+                            if (isVotingDisabled && !isAdmin) {
+                              setRuleViolationNotice(
+                                isOfficialsDisabled
+                                  ? 'Voting for Officials is currently disabled. Voting is locked to the Project Exhibit.'
+                                  : 'Voting is currently unavailable.'
+                              );
+                              setTimeout(() => setRuleViolationNotice(null), 5000);
+                              return;
                             }
+                            onSelectCandidate(pos.id, 'ABSTAIN');
                           }}
                           className={`rounded-2xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
                             currentChoice === 'ABSTAIN'
@@ -877,11 +940,29 @@ export const BallotStation: React.FC<BallotStationProps> = ({
                 <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
                 <span>Ballot Submitted</span>
               </span>
+            ) : isOfficialsDisabled && !isAdmin ? (
+              onGoToExhibit ? (
+                <button
+                  type="button"
+                  onClick={onGoToExhibit}
+                  className="w-full sm:w-auto font-black px-6 py-2.5 rounded-xl text-sm bg-rose-700 hover:bg-rose-800 text-white border border-rose-700 shadow-sm flex items-center justify-center space-x-2"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  <span>Vote in Project Exhibit</span>
+                </button>
+              ) : (
+                <span className="text-xs font-bold text-rose-800 dark:text-rose-200 bg-rose-100 dark:bg-rose-950/80 px-4 py-2 rounded-xl border border-rose-300 dark:border-rose-800">
+                  Officials Voting Disabled
+                </span>
+              )
             ) : (
               <button
                 onClick={onOpenReview}
+                disabled={isVotingDisabled && !isAdmin}
                 className={`w-full sm:w-auto font-black px-6 py-2.5 rounded-xl text-sm transition-all border flex items-center justify-center space-x-2 ${
-                  isComplete
+                  isVotingDisabled && !isAdmin
+                    ? 'bg-neutral-200 dark:bg-slate-800 text-neutral-500 dark:text-slate-400 border-neutral-300 dark:border-slate-700 cursor-not-allowed'
+                    : isComplete
                     ? 'bg-rose-700 hover:bg-rose-800 text-white border-rose-700 shadow-md animate-pulse'
                     : 'bg-neutral-100 dark:bg-slate-800 text-neutral-800 dark:text-slate-100 hover:bg-neutral-200 dark:hover:bg-slate-700 border-neutral-200 dark:border-slate-700 shadow-sm'
                 }`}

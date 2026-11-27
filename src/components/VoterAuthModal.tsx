@@ -16,7 +16,7 @@ import {
   Phone,
   Sparkles,
 } from 'lucide-react';
-import { Voter, YearLevel, ElectionSettings } from '../types';
+import { Voter, YearLevel, ElectionSettings, ExhibitSettings } from '../types';
 import { signInWithGoogle } from '../lib/firebase';
 
 interface VoterAuthModalProps {
@@ -27,6 +27,7 @@ interface VoterAuthModalProps {
   onOpenTermsPrivacy?: (tab?: 'terms' | 'privacy') => void;
   initialStep?: 'intro' | 'email' | 'details';
   settings?: ElectionSettings;
+  exhibitSettings?: ExhibitSettings;
 }
 
 export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
@@ -37,6 +38,7 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
   onOpenTermsPrivacy,
   initialStep = 'intro',
   settings,
+  exhibitSettings,
 }) => {
   const [step, setStep] = useState<'intro' | 'email' | 'details'>(initialStep);
   const [email, setEmail] = useState('');
@@ -50,8 +52,9 @@ export const VoterAuthModal: React.FC<VoterAuthModalProps> = ({
   const [infoNotice, setInfoNotice] = useState<string | null>(null);
 
   const stNorm = (settings?.status || '').toString().trim().toUpperCase();
-  const isPaused = stNorm === 'PAUSED';
-  const isConcluded = stNorm === 'CONCLUDED';
+  const isExhibitLockedMode = Boolean(settings?.officialsVotingDisabled || exhibitSettings?.lockToExhibit);
+  const isPaused = stNorm === 'PAUSED' && !isExhibitLockedMode;
+  const isConcluded = stNorm === 'CONCLUDED' && !isExhibitLockedMode;
 
   if (!isOpen) return null;
 

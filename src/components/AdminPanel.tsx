@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Position, Candidate, ElectionSettings, Gender, Voter, ExhibitProject, ExhibitSettings, ExhibitVote, YearLevel } from '../types';
-import { Settings, ShieldAlert, Key, RefreshCw, Plus, CheckCircle2, AlertCircle, FileText, Camera, Link, Trash2, Image, Pencil, Download, Users, UserX, UserCheck, Search, Filter, CheckSquare, Square, Ban, RotateCcw, AlertTriangle, Lightbulb, Trophy } from 'lucide-react';
+import { Settings, ShieldAlert, Key, RefreshCw, Plus, CheckCircle2, AlertCircle, FileText, Camera, Link, Trash2, Image, Pencil, Download, Users, UserX, UserCheck, Search, Filter, CheckSquare, Square, Ban, RotateCcw, AlertTriangle, Lightbulb, Trophy, Lock } from 'lucide-react';
 import {
   signInWithGoogle,
   loadElectionDataFromFirestore,
@@ -1246,6 +1246,57 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setIsSubmittingAction(false);
   };
 
+  const isExhibitLockedMode = Boolean(settings.officialsVotingDisabled || exhibitSettings.lockToExhibit);
+
+  const handleToggleExhibitLockMode = async (enableLock: boolean) => {
+    setIsSubmittingAction(true);
+    setError(null);
+
+    const nextElectionSettings: Partial<ElectionSettings> = {
+      officialsVotingDisabled: enableLock,
+    };
+    const nextExhibitSettings: Partial<ExhibitSettings> = enableLock
+      ? { lockToExhibit: true, isOpen: true }
+      : { lockToExhibit: false };
+
+    let updatedApi = false;
+    try {
+      const [resElec, resExh] = await Promise.all([
+        fetch('/api/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminEmail, adminPin, newSettings: nextElectionSettings }),
+        }),
+        fetch('/api/admin/exhibit/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminEmail, adminPin, newExhibitSettings: nextExhibitSettings }),
+        }),
+      ]);
+      if (resElec.ok && resExh.ok) {
+        updatedApi = true;
+      }
+    } catch {
+      // Fallback to direct Firestore
+    }
+
+    const fsElecOk = await updateSettingsInFirestore(nextElectionSettings);
+    const fsExhOk = await updateExhibitSettingsInFirestore(nextExhibitSettings);
+
+    if (updatedApi || (fsElecOk && fsExhOk)) {
+      setSuccessMsg(
+        enableLock
+          ? 'Voting is now locked to Project Exhibit, and voting for Officials is disabled.'
+          : 'Project Exhibit lock turned off. Voting for Officials is re-enabled.'
+      );
+      onRefreshData();
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } else {
+      setError('Failed to update Exhibit Lock / Officials Voting setting.');
+    }
+    setIsSubmittingAction(false);
+  };
+
   const handleResetExhibitVotes = async () => {
     if (!window.confirm('Reset all Project Exhibit votes back to zero? Project entries will remain intact.')) return;
     setIsSubmittingAction(true);
@@ -1502,6 +1553,56 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     </button>
                   )
                 )}
+              </div>
+
+              {/* Voting Lock: Project Exhibit Only / Disable Officials Voting */}
+              <div className="pt-3 border-t border-neutral-200 dark:border-slate-800 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-neutral-800 dark:text-slate-200 flex items-center space-x-1.5">
+                    <Lock className="w-3.5 h-3.5 text-rose-700 dark:text-rose-400" />
+                    <span>Voting Mode Lock</span>
+                  </span>
+                  <span
+                    className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                      isExhibitLockedMode
+                        ? 'bg-rose-700 text-white border-rose-700'
+                        : 'bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-slate-300 border-neutral-300 dark:border-slate-700'
+                    }`}
+                  >
+                    {isExhibitLockedMode ? 'EXHIBIT LOCKED • OFFICIALS OFF' : 'STANDARD MODE'}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isSubmittingAction}
+                  onClick={() => handleToggleExhibitLockMode(!isExhibitLockedMode)}
+                  className={`w-full p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 ${
+                    isExhibitLockedMode
+                      ? 'bg-rose-50 dark:bg-rose-950/70 border-rose-400 dark:border-rose-700 text-rose-950 dark:text-rose-100 shadow-sm'
+                      : 'bg-neutral-50 dark:bg-slate-800 border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 hover:bg-neutral-100 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  <div>
+                    <span className="block text-xs font-black">
+                      Lock Voting to Project Exhibit (Disable Officials Voting)
+                    </span>
+                    <span className="text-[11px] font-semibold text-neutral-600 dark:text-slate-400 block mt-0.5">
+                      {isExhibitLockedMode
+                        ? 'Active: Students can only vote for Project Exhibits. Official Ballot is disabled.'
+                        : 'Off: Students can vote in both Official Ballot and Project Exhibit.'}
+                    </span>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-xl text-[11px] font-black flex-shrink-0 border ${
+                      isExhibitLockedMode
+                        ? 'bg-rose-700 text-white border-rose-700'
+                        : 'bg-white dark:bg-slate-900 text-neutral-700 dark:text-slate-300 border-neutral-300 dark:border-slate-600'
+                    }`}
+                  >
+                    {isExhibitLockedMode ? 'ON' : 'OFF'}
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -2149,6 +2250,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </span>
                 </button>
               </div>
+
+              <button
+                type="button"
+                disabled={isSubmittingAction}
+                onClick={() => handleToggleExhibitLockMode(!isExhibitLockedMode)}
+                className={`w-full p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 ${
+                  isExhibitLockedMode
+                    ? 'bg-rose-700 text-white border-rose-700 shadow-sm'
+                    : 'bg-neutral-50 dark:bg-slate-800 text-neutral-900 dark:text-slate-100 border-neutral-200 dark:border-slate-700 hover:bg-neutral-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                <div className="flex items-start space-x-2.5">
+                  <Lock className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isExhibitLockedMode ? 'text-amber-300' : 'text-rose-700 dark:text-rose-400'}`} />
+                  <div>
+                    <span className="block text-xs font-black">
+                      Lock Voting to Project Exhibit (Disable Officials)
+                    </span>
+                    <span className={`text-[10px] font-bold block ${isExhibitLockedMode ? 'text-rose-100' : 'opacity-75'}`}>
+                      {isExhibitLockedMode
+                        ? 'Active: Project Exhibit voting is locked open & Officials voting is disabled.'
+                        : 'Enable to lock voting to Project Exhibit and disable voting for Officials.'}
+                    </span>
+                  </div>
+                </div>
+                <span
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-black flex-shrink-0 ${
+                    isExhibitLockedMode
+                      ? 'bg-white text-rose-800'
+                      : 'bg-neutral-200 dark:bg-slate-700 text-neutral-700 dark:text-slate-200'
+                  }`}
+                >
+                  {isExhibitLockedMode ? 'LOCKED ON' : 'OFF'}
+                </span>
+              </button>
             </div>
 
             <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">

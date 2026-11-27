@@ -15,6 +15,7 @@ import {
   UserCheck,
   Edit3,
   Lightbulb,
+  Lock,
 } from 'lucide-react';
 import { Voter, ElectionSettings } from '../types';
 
@@ -52,7 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Brand & Logo */}
           <div
             className="flex items-center space-x-3 cursor-pointer min-w-0 flex-shrink-0 group"
-            onClick={() => setActiveTab(voter ? (isAdmin ? 'admin' : 'ballot') : 'results')}
+            onClick={() => setActiveTab(voter ? (isAdmin ? 'admin' : (settings.officialsVotingDisabled ? 'exhibit' : 'ballot')) : 'results')}
             title="Computer Engineering Department Council Election"
           >
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-slate-800 p-0.5 border border-rose-200/40 dark:border-slate-700 shadow-sm flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105">
@@ -83,10 +84,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               className={`flex items-center space-x-2 px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-black transition-all ${
                 activeTab === 'ballot'
                   ? 'bg-white dark:bg-slate-900 text-rose-900 dark:text-slate-100 shadow-sm'
-                  : 'text-rose-100 dark:text-rose-200 hover:text-white hover:bg-rose-900/60 dark:hover:bg-slate-700'
+                  : settings.officialsVotingDisabled
+                    ? 'text-rose-200/75 dark:text-slate-400 hover:text-white hover:bg-rose-900/40 dark:hover:bg-slate-700'
+                    : 'text-rose-100 dark:text-rose-200 hover:text-white hover:bg-rose-900/60 dark:hover:bg-slate-700'
               }`}
+              title={settings.officialsVotingDisabled ? 'Officials voting is currently disabled (Project Exhibit Only)' : 'Official Ballot'}
             >
-              <Vote className="w-4 h-4" />
+              {settings.officialsVotingDisabled ? <Lock className="w-3.5 h-3.5" /> : <Vote className="w-4 h-4" />}
               <span>Official Ballot</span>
             </button>
 
@@ -246,10 +250,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg font-bold transition-all ${
               activeTab === 'ballot'
                 ? 'bg-white/20 text-white shadow-sm'
-                : 'text-rose-200 hover:text-white hover:bg-white/10'
+                : settings.officialsVotingDisabled
+                  ? 'text-rose-200/70 hover:text-white hover:bg-white/10'
+                  : 'text-rose-200 hover:text-white hover:bg-white/10'
             }`}
           >
-            <Vote className="w-3.5 h-3.5" />
+            {settings.officialsVotingDisabled ? <Lock className="w-3 h-3" /> : <Vote className="w-3.5 h-3.5" />}
             <span className="text-[11px]">Ballot</span>
           </button>
           <button

@@ -79,6 +79,7 @@ export const INITIAL_ELECTION_SETTINGS: ElectionSettings = {
   allowAbstain: true,
   votingDeadline: '2026-08-05T17:00:00.000Z',
   totalRegisteredVoters: 120,
+  officialsVotingDisabled: false,
   yearLevelVoterCounts: {
     '1st Year': 30,
     '2nd Year': 30,
@@ -96,6 +97,7 @@ export const SAMPLE_NOMINATIONS: CandidateNomination[] = [];
 export const INITIAL_EXHIBIT_SETTINGS: ExhibitSettings = {
   isOpen: true,
   showLiveStandings: true,
+  lockToExhibit: false,
   title: 'CPE Innovation & Capstone Project Exhibit 2026',
   subtitle: "Cast your People's Choice vote for the most impactful Computer Engineering student prototype and system.",
 };
