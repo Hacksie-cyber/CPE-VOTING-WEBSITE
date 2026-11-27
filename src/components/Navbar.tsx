@@ -14,12 +14,13 @@ import {
   Moon,
   UserCheck,
   Edit3,
+  Lightbulb,
 } from 'lucide-react';
 import { Voter, ElectionSettings } from '../types';
 
 interface NavbarProps {
-  activeTab: 'ballot' | 'results' | 'verify' | 'admin';
-  setActiveTab: (tab: 'ballot' | 'results' | 'verify' | 'admin') => void;
+  activeTab: 'ballot' | 'exhibit' | 'results' | 'verify' | 'admin';
+  setActiveTab: (tab: 'ballot' | 'exhibit' | 'results' | 'verify' | 'admin') => void;
   voter: Voter | null;
   settings: ElectionSettings;
   onOpenAuth: () => void;
@@ -87,6 +88,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Vote className="w-4 h-4" />
               <span>Official Ballot</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('exhibit')}
+              className={`flex items-center space-x-2 px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-black transition-all ${
+                activeTab === 'exhibit'
+                  ? 'bg-white dark:bg-slate-900 text-rose-900 dark:text-slate-100 shadow-sm'
+                  : 'text-rose-100 dark:text-rose-200 hover:text-white hover:bg-rose-900/60 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Lightbulb className="w-4 h-4" />
+              <span>Project Exhibit</span>
             </button>
 
             <button
@@ -238,6 +251,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Vote className="w-3.5 h-3.5" />
             <span className="text-[11px]">Ballot</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('exhibit')}
+            className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-lg font-bold transition-all ${
+              activeTab === 'exhibit'
+                ? 'bg-white/20 text-white shadow-sm'
+                : 'text-rose-200 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <Lightbulb className="w-3.5 h-3.5" />
+            <span className="text-[11px]">Exhibit</span>
           </button>
           <button
             onClick={() => setActiveTab('verify')}

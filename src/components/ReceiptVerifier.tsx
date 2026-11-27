@@ -93,6 +93,38 @@ export const ReceiptVerifier: React.FC = () => {
           setLoading(false);
           return;
         }
+
+        const exhibitVotes = Array.isArray(electionData.exhibitVotes) ? electionData.exhibitVotes : [];
+        const exhibitProjects = Array.isArray(electionData.exhibitProjects) ? electionData.exhibitProjects : [];
+        const exhibitRecord = exhibitVotes.find(
+          (ev: any) => ev.receiptHash && ev.receiptHash.toUpperCase() === cleanHash
+        );
+        if (exhibitRecord) {
+          const project = exhibitProjects.find((p: any) => p.id === exhibitRecord.projectId);
+          const matchedVoter = voters.find((vr: any) => exhibitRecord.voterId && vr.id === exhibitRecord.voterId);
+          const isInvalidated = Boolean(exhibitRecord.isInvalidated || matchedVoter?.isInvalidated);
+          setVerificationResult({
+            success: true,
+            receiptHash: exhibitRecord.receiptHash,
+            timestamp: exhibitRecord.timestamp || new Date().toISOString(),
+            yearLevel: exhibitRecord.yearLevel || 'N/A',
+            choicesDetails: {
+              "Project Exhibit People's Choice": {
+                positionTitle: "Project Exhibit People's Choice",
+                selectedChoice: project
+                  ? `${project.title} (${project.teamName})`
+                  : exhibitRecord.projectId,
+              },
+            },
+            status: isInvalidated ? 'INVALIDATED_BY_COMMISSION' : 'VERIFIED_TAMPER_PROOF',
+            isInvalidated,
+            invalidatedReason: isInvalidated
+              ? matchedVoter?.invalidatedReason || 'Flagged during audit by the Commission on Elections'
+              : undefined,
+          });
+          setLoading(false);
+          return;
+        }
       }
     } catch (fsErr) {
       console.warn('Firestore verification fallback note:', fsErr);

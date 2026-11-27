@@ -20,17 +20,44 @@
     },
     "Election": {
       "title": "Election",
-      "description": "Main election record containing settings, candidates, positions, voters, and votes",
+      "description": "Main election record containing settings, candidates, positions, voters, votes, exhibit projects, and exhibit votes",
       "type": "object",
       "properties": {
         "updatedAt": { "type": "string" }
       }
+    },
+    "ExhibitProject": {
+      "title": "ExhibitProject",
+      "description": "Student project exhibit entry eligible for People's Choice voting",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "teamName": { "type": "string", "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 3000 }
+      },
+      "required": ["id", "title", "teamName", "description"]
+    },
+    "ExhibitVote": {
+      "title": "ExhibitVote",
+      "description": "Student People's Choice vote cast for a project exhibit",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "receiptHash": { "type": "string", "maxLength": 64 },
+        "voterId": { "type": "string", "maxLength": 128 },
+        "voterName": { "type": "string", "maxLength": 150 },
+        "projectId": { "type": "string", "maxLength": 128 },
+        "yearLevel": { "type": "string", "enum": ["1st Year", "2nd Year", "3rd Year", "4th Year"] },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "receiptHash", "voterId", "projectId", "timestamp"]
     }
   },
   "firestore": {
     "/elections/{electionId}": {
       "schema": { "$ref": "#/entities/Election" },
-      "description": "Main election record"
+      "description": "Main election and project exhibit record"
     },
     "/candidates/{candidateId}": {
       "schema": { "$ref": "#/entities/Candidate" },
@@ -38,3 +65,4 @@
     }
   }
 }
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Position, Candidate, ElectionSettings, Gender, Voter } from '../types';
-import { Settings, ShieldAlert, Key, RefreshCw, Plus, CheckCircle2, AlertCircle, FileText, Camera, Link, Trash2, Image, Pencil, Download, Users, UserX, UserCheck, Search, Filter, CheckSquare, Square, Ban, RotateCcw, AlertTriangle } from 'lucide-react';
+import { Position, Candidate, ElectionSettings, Gender, Voter, ExhibitProject, ExhibitSettings, ExhibitVote, YearLevel } from '../types';
+import { Settings, ShieldAlert, Key, RefreshCw, Plus, CheckCircle2, AlertCircle, FileText, Camera, Link, Trash2, Image, Pencil, Download, Users, UserX, UserCheck, Search, Filter, CheckSquare, Square, Ban, RotateCcw, AlertTriangle, Lightbulb, Trophy } from 'lucide-react';
 import {
   signInWithGoogle,
   loadElectionDataFromFirestore,
@@ -13,6 +13,10 @@ import {
   deleteVoterInFirestore,
   clearAllVotersInFirestore,
   deleteBulkVotersInFirestore,
+  saveExhibitProjectInFirestore,
+  deleteExhibitProjectInFirestore,
+  updateExhibitSettingsInFirestore,
+  resetExhibitVotesInFirestore,
 } from '../lib/firebase';
 import {
   INITIAL_POSITIONS,
@@ -20,6 +24,8 @@ import {
   INITIAL_VOTES,
   SAMPLE_VOTERS,
   INITIAL_ELECTION_SETTINGS,
+  INITIAL_EXHIBIT_PROJECTS,
+  INITIAL_EXHIBIT_SETTINGS,
 } from '../data/initialData';
 import { generateElectionPDF } from '../utils/pdfGenerator';
 import { fetchOrCalculateResults } from '../utils/electionResultsHelper';
@@ -29,6 +35,9 @@ interface AdminPanelProps {
   settings: ElectionSettings;
   positions: Position[];
   candidates: Candidate[];
+  exhibitProjects?: ExhibitProject[];
+  exhibitVotes?: ExhibitVote[];
+  exhibitSettings?: ExhibitSettings;
   onRefreshData: () => void;
 }
 
@@ -36,6 +45,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   settings,
   positions,
   candidates,
+  exhibitProjects = INITIAL_EXHIBIT_PROJECTS,
+  exhibitVotes = [],
+  exhibitSettings = INITIAL_EXHIBIT_SETTINGS,
   onRefreshData,
 }) => {
   const [adminEmail, setAdminEmail] = useState('bamuyahacksie@gmail.com');
@@ -49,7 +61,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [savingPhotoId, setSavingPhotoId] = useState<string | null>(null);
 
   // Admin Navigation Tab
-  const [activeAdminTab, setActiveAdminTab] = useState<'OVERVIEW' | 'VOTERS'>('OVERVIEW');
+  const [activeAdminTab, setActiveAdminTab] = useState<'OVERVIEW' | 'VOTERS' | 'EXHIBITS'>('OVERVIEW');
+
+  // Project Exhibit Admin State
+  const [showExhibitModal, setShowExhibitModal] = useState(false);
+  const [editingExhibit, setEditingExhibit] = useState<ExhibitProject | null>(null);
+  const [exhibitToDelete, setExhibitToDelete] = useState<ExhibitProject | null>(null);
+  const [exhibitForm, setExhibitForm] = useState<{
+    title: string;
+    teamName: string;
+    description: string;
+  }>({
+    title: '',
+    teamName: '',
+    description: '',
+  });
 
   // Voter Audit & Invalidation State
   const [votersList, setVotersList] = useState<Voter[]>([]);
@@ -1049,6 +1075,212 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setIsSubmittingAction(false);
   };
 
+  // --- PROJECT EXHIBIT ADMIN HANDLERS ---
+  const openAddExhibitModal = () => {
+    setEditingExhibit(null);
+    setError(null);
+    setExhibitForm({
+      title: '',
+      teamName: '',
+      description: '',
+    });
+    setShowExhibitModal(true);
+  };
+
+  const openEditExhibitModal = (proj: ExhibitProject) => {
+    setEditingExhibit(proj);
+    setError(null);
+    setExhibitForm({
+      title: proj.title || '',
+      teamName: proj.teamName || '',
+      description: proj.description || '',
+    });
+    setShowExhibitModal(true);
+  };
+
+  const handleSaveExhibitProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!exhibitForm.title.trim() || !exhibitForm.teamName.trim() || !exhibitForm.description.trim()) {
+      setError('Project Title, Team Name, and Description are required.');
+      return;
+    }
+
+    setIsSubmittingAction(true);
+    setError(null);
+
+    const projectPayload: ExhibitProject = {
+      id: editingExhibit ? editingExhibit.id : `exh-${Date.now()}`,
+      title: exhibitForm.title.trim(),
+      teamName: exhibitForm.teamName.trim(),
+      description: exhibitForm.description.trim(),
+    };
+
+    try {
+      const res = await fetch('/api/admin/exhibit/project', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-email': adminEmail,
+          'x-admin-pin': adminPin,
+        },
+        body: JSON.stringify({ adminEmail, adminPin, project: projectPayload }),
+      });
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(
+            editingExhibit
+              ? `Updated exhibit "${projectPayload.title}".`
+              : `Added exhibit "${projectPayload.title}" to Project Exhibit!`
+          );
+          setShowExhibitModal(false);
+          setEditingExhibit(null);
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 3500);
+          setIsSubmittingAction(false);
+          return;
+        }
+      }
+    } catch {
+      // Fallback to direct Firestore
+    }
+
+    const saved = await saveExhibitProjectInFirestore(projectPayload);
+    if (saved) {
+      setSuccessMsg(
+        editingExhibit
+          ? `Updated exhibit "${projectPayload.title}".`
+          : `Added exhibit "${projectPayload.title}" to Project Exhibit!`
+      );
+      setShowExhibitModal(false);
+      setEditingExhibit(null);
+      onRefreshData();
+      setTimeout(() => setSuccessMsg(null), 3500);
+    } else {
+      setError('Failed to save project exhibit.');
+    }
+    setIsSubmittingAction(false);
+  };
+
+  const handleDeleteExhibitProject = (proj: ExhibitProject) => {
+    setError(null);
+    setExhibitToDelete(proj);
+  };
+
+  const executeDeleteExhibitProject = async () => {
+    if (!exhibitToDelete) return;
+    const proj = exhibitToDelete;
+    setIsSubmittingAction(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/admin/exhibit/project/${encodeURIComponent(proj.id)}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-email': adminEmail,
+          'x-admin-pin': adminPin,
+        },
+        body: JSON.stringify({ adminEmail, adminPin }),
+      });
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg(`Deleted project exhibit "${proj.title}".`);
+          setExhibitToDelete(null);
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 3500);
+          setIsSubmittingAction(false);
+          return;
+        }
+      }
+    } catch {
+      // Fallback to direct Firestore
+    }
+
+    const deleted = await deleteExhibitProjectInFirestore(proj.id);
+    if (deleted) {
+      setSuccessMsg(`Deleted project exhibit "${proj.title}".`);
+      setExhibitToDelete(null);
+      onRefreshData();
+      setTimeout(() => setSuccessMsg(null), 3500);
+    } else {
+      setError('Failed to delete project exhibit.');
+    }
+    setIsSubmittingAction(false);
+  };
+
+  const handleToggleExhibitSetting = async (updates: Partial<ExhibitSettings>) => {
+    setIsSubmittingAction(true);
+    try {
+      const res = await fetch('/api/admin/exhibit/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminEmail, adminPin, newExhibitSettings: updates }),
+      });
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg('Project Exhibit settings updated.');
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 3000);
+          setIsSubmittingAction(false);
+          return;
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    const ok = await updateExhibitSettingsInFirestore(updates);
+    if (ok) {
+      setSuccessMsg('Project Exhibit settings updated.');
+      onRefreshData();
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } else {
+      setError('Failed to update exhibit settings.');
+    }
+    setIsSubmittingAction(false);
+  };
+
+  const handleResetExhibitVotes = async () => {
+    if (!window.confirm('Reset all Project Exhibit votes back to zero? Project entries will remain intact.')) return;
+    setIsSubmittingAction(true);
+    try {
+      const res = await fetch('/api/admin/exhibit/reset-votes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminEmail, adminPin }),
+      });
+      const contentType = res.headers.get('content-type');
+      if (res.ok && contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success) {
+          setSuccessMsg('All Project Exhibit votes have been reset to zero.');
+          onRefreshData();
+          setTimeout(() => setSuccessMsg(null), 3500);
+          setIsSubmittingAction(false);
+          return;
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    const ok = await resetExhibitVotesInFirestore();
+    if (ok) {
+      setSuccessMsg('All Project Exhibit votes have been reset to zero.');
+      onRefreshData();
+      setTimeout(() => setSuccessMsg(null), 3500);
+    } else {
+      setError('Failed to reset exhibit votes.');
+    }
+    setIsSubmittingAction(false);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="max-w-md mx-auto my-12 bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl text-neutral-900 dark:text-slate-100">
@@ -1190,7 +1422,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       )}
 
       {/* Admin Navigation Tab Bar */}
-      <div className="flex items-center space-x-3 border-b border-neutral-200 dark:border-slate-800 pb-3">
+      <div className="flex flex-wrap items-center gap-3 border-b border-neutral-200 dark:border-slate-800 pb-3">
         <button
           onClick={() => setActiveAdminTab('OVERVIEW')}
           className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all border ${
@@ -1200,7 +1432,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <Settings className="w-4 h-4" />
-          <span>Election Controls & Candidates</span>
+          <span>Election Controls &amp; Candidates</span>
+        </button>
+
+        <button
+          onClick={() => setActiveAdminTab('EXHIBITS')}
+          className={`flex items-center space-x-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all border ${
+            activeAdminTab === 'EXHIBITS'
+              ? 'bg-rose-700 text-white border-rose-700 shadow-sm'
+              : 'bg-white dark:bg-slate-800 text-neutral-900 dark:text-slate-100 border-neutral-200 dark:border-slate-700 hover:bg-neutral-100 dark:hover:bg-slate-700'
+          }`}
+        >
+          <Lightbulb className="w-4 h-4" />
+          <span>Project Exhibits ({exhibitProjects.length})</span>
         </button>
 
         <button
@@ -1212,7 +1456,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Voter Audit & Account Invalidation</span>
+          <span>Voter Audit &amp; Account Invalidation</span>
           {votersList.filter((v) => v.isInvalidated).length > 0 && (
             <span className="ml-1.5 px-2 py-0.5 text-[10px] rounded-full bg-black text-white font-black animate-pulse border border-white">
               {votersList.filter((v) => v.isInvalidated).length} Invalidated
@@ -1851,6 +2095,165 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       })}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: PROJECT EXHIBITS MANAGER */}
+      {activeAdminTab === 'EXHIBITS' && (
+        <div className="space-y-6">
+          {/* Exhibit Controls & Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+              <h3 className="text-sm font-black text-neutral-900 dark:text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+                <Lightbulb className="w-4 h-4 text-rose-700 dark:text-rose-400" />
+                <span>Exhibit Voting Controls</span>
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <button
+                  type="button"
+                  disabled={isSubmittingAction}
+                  onClick={() => handleToggleExhibitSetting({ isOpen: !exhibitSettings.isOpen })}
+                  className={`p-3.5 rounded-2xl border text-left font-extrabold transition-all ${
+                    exhibitSettings.isOpen
+                      ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
+                      : 'bg-amber-50 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-800'
+                  }`}
+                >
+                  <span className="block">{exhibitSettings.isOpen ? 'Voting: OPEN' : 'Voting: CLOSED'}</span>
+                  <span className="text-[10px] font-bold opacity-80">
+                    Click to {exhibitSettings.isOpen ? 'close exhibit voting' : 'open exhibit voting'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSubmittingAction}
+                  onClick={() =>
+                    handleToggleExhibitSetting({ showLiveStandings: !exhibitSettings.showLiveStandings })
+                  }
+                  className={`p-3.5 rounded-2xl border text-left font-extrabold transition-all ${
+                    exhibitSettings.showLiveStandings
+                      ? 'bg-rose-50 dark:bg-rose-950/70 text-rose-900 dark:text-rose-200 border-rose-300 dark:border-rose-800'
+                      : 'bg-neutral-100 dark:bg-slate-800 text-neutral-700 dark:text-slate-300 border-neutral-300 dark:border-slate-700'
+                  }`}
+                >
+                  <span className="block">
+                    {exhibitSettings.showLiveStandings ? 'Standings: PUBLIC' : 'Standings: HIDDEN'}
+                  </span>
+                  <span className="text-[10px] font-bold opacity-80">
+                    Click to {exhibitSettings.showLiveStandings ? 'hide live vote counts' : 'show live vote counts'}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black text-neutral-900 dark:text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+                  <Trophy className="w-4 h-4 text-amber-500" />
+                  <span>Exhibit Summary ({exhibitVotes.filter((v) => !v.isInvalidated).length} Votes)</span>
+                </h3>
+              </div>
+
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={openAddExhibitModal}
+                  className="w-full bg-rose-700 hover:bg-rose-800 text-white font-extrabold p-3 rounded-2xl text-xs flex items-center justify-center space-x-2 transition-all shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add New Project Exhibit</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isSubmittingAction}
+                  onClick={handleResetExhibitVotes}
+                  className="w-full bg-rose-50 dark:bg-rose-950/80 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 hover:bg-rose-100 dark:hover:bg-rose-900/80 font-extrabold p-2.5 rounded-2xl text-xs flex items-center justify-center space-x-2 transition-all"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Reset Exhibit Votes to Zero</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Exhibit Projects List */}
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-black text-neutral-900 dark:text-slate-100 uppercase tracking-wider">
+                  Registered Project Exhibits ({exhibitProjects.length})
+                </h3>
+                <p className="text-xs text-neutral-600 dark:text-slate-400 font-bold mt-0.5">
+                  Manage project titles, team names, descriptions, and monitor People&apos;s Choice votes.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={openAddExhibitModal}
+                className="px-3.5 py-2 rounded-xl bg-rose-100 dark:bg-rose-950 border border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 hover:bg-rose-200 text-xs font-black flex items-center space-x-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Exhibit</span>
+              </button>
+            </div>
+
+            {exhibitProjects.length === 0 ? (
+              <div className="text-center py-10 text-xs text-neutral-600 dark:text-slate-400 font-bold bg-neutral-50 dark:bg-slate-800 rounded-2xl border border-neutral-200 dark:border-slate-700">
+                No project exhibits registered yet. Click &quot;Add New Project Exhibit&quot; to create one.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {exhibitProjects.map((proj) => {
+                  const voteCount = exhibitVotes.filter(
+                    (v) => v.projectId === proj.id && !v.isInvalidated
+                  ).length;
+
+                  return (
+                    <div
+                      key={proj.id}
+                      className="bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-2xl p-4 flex items-start justify-between space-x-3.5 shadow-sm"
+                    >
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <h4 className="text-sm font-black text-neutral-900 dark:text-slate-100 leading-snug">
+                          {proj.title}
+                        </h4>
+                        <p className="text-[11px] font-bold text-rose-700 dark:text-rose-400">
+                          {proj.teamName} • <span className="font-mono">{voteCount} votes</span>
+                        </p>
+                        <p className="text-xs text-neutral-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                          {proj.description}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center space-x-1 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => openEditExhibitModal(proj)}
+                          disabled={isSubmittingAction}
+                          className="p-2 rounded-xl text-neutral-700 dark:text-slate-300 hover:bg-neutral-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                          title="Edit Project Exhibit"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExhibitProject(proj)}
+                          disabled={isSubmittingAction}
+                          className="p-2 rounded-xl text-neutral-700 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                          title="Delete Project Exhibit"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -2522,6 +2925,142 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             setTimeout(() => setSuccessMsg(null), 4000);
           }}
         />
+      )}
+
+      {/* Add / Edit Project Exhibit Modal */}
+      {showExhibitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative text-neutral-900 dark:text-slate-100 max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setShowExhibitModal(false);
+                setEditingExhibit(null);
+              }}
+              className="absolute top-4 right-4 text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-extrabold text-sm"
+            >
+              ✕
+            </button>
+
+            <h3 className="text-lg font-black text-neutral-900 dark:text-slate-100 mb-1">
+              {editingExhibit ? 'Edit Project Exhibit' : 'Add New Project Exhibit'}
+            </h3>
+            <p className="text-xs text-neutral-600 dark:text-slate-400 font-bold mb-4">
+              {editingExhibit
+                ? 'Update the project title, team name, and description.'
+                : "Register a CPE student project for People's Choice voting."}
+            </p>
+
+            <form onSubmit={handleSaveExhibitProject} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-black mb-1">Project Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={exhibitForm.title}
+                  onChange={(e) => setExhibitForm({ ...exhibitForm, title: e.target.value })}
+                  placeholder="e.g. AquaSense: Solar IoT Water Quality Node"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
+                />
+              </div>
+
+              <div>
+                <label className="block font-black mb-1">Team Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={exhibitForm.teamName}
+                  onChange={(e) => setExhibitForm({ ...exhibitForm, teamName: e.target.value })}
+                  placeholder="e.g. Team CircuitPulse"
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
+                />
+              </div>
+
+              <div>
+                <label className="block font-black mb-1">Description *</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={exhibitForm.description}
+                  onChange={(e) => setExhibitForm({ ...exhibitForm, description: e.target.value })}
+                  placeholder="Describe the project..."
+                  className="w-full bg-neutral-50 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 font-bold focus:outline-none focus:ring-2 focus:ring-rose-700"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-neutral-200 dark:border-slate-800 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExhibitModal(false);
+                    setEditingExhibit(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-neutral-100 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingAction}
+                  className="px-5 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white font-black shadow-sm disabled:opacity-50"
+                >
+                  {isSubmittingAction ? 'Saving...' : editingExhibit ? 'Save Changes' : 'Create Exhibit'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Project Exhibit Confirmation Modal */}
+      {exhibitToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-neutral-900 dark:text-slate-100">
+            <button
+              type="button"
+              onClick={() => setExhibitToDelete(null)}
+              className="absolute top-4 right-4 text-neutral-700 dark:text-slate-300 hover:text-black dark:hover:text-white font-extrabold text-sm"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-800 dark:text-rose-300" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-neutral-900 dark:text-slate-100">Delete Project Exhibit</h3>
+                <p className="text-xs text-rose-800 dark:text-rose-400 font-extrabold">Permanent Removal</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-neutral-800 dark:text-slate-200 font-bold leading-relaxed mb-4">
+              Are you sure you want to permanently delete <strong className="text-black dark:text-white">{exhibitToDelete.title}</strong> by <span className="text-rose-800 dark:text-rose-400">{exhibitToDelete.teamName}</span>?
+              <br /><br />
+              Any exhibit votes cast for this project will also be removed.
+            </p>
+
+            <div className="pt-2 flex items-center justify-end space-x-2">
+              <button
+                type="button"
+                onClick={() => setExhibitToDelete(null)}
+                disabled={isSubmittingAction}
+                className="px-4 py-2 rounded-2xl bg-neutral-100 dark:bg-slate-800 border border-neutral-200 dark:border-slate-700 text-neutral-900 dark:text-slate-100 text-xs font-black transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeDeleteExhibitProject}
+                disabled={isSubmittingAction}
+                className="px-4 py-2 rounded-2xl text-xs font-black flex items-center space-x-2 transition-all bg-rose-700 hover:bg-rose-800 border border-rose-700 text-white shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isSubmittingAction ? 'Deleting...' : 'Delete Exhibit'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

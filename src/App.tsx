@@ -4,13 +4,29 @@ import { BallotStation } from './components/BallotStation';
 import { LiveResults } from './components/LiveResults';
 import { ReceiptVerifier } from './components/ReceiptVerifier';
 import { AdminPanel } from './components/AdminPanel';
+import { ProjectExhibitSection } from './components/ProjectExhibitSection';
 import { VoterAuthModal } from './components/VoterAuthModal';
 import { BallotConfirmationModal } from './components/BallotConfirmationModal';
 import { VoteReceiptModal } from './components/VoteReceiptModal';
 import { TermsPrivacyModal } from './components/TermsPrivacyModal';
 import { UserProfileModal } from './components/UserProfileModal';
-import { Position, Candidate, Voter, VoteChoices, ElectionSettings } from './types';
-import { INITIAL_ELECTION_SETTINGS, INITIAL_POSITIONS, INITIAL_CANDIDATES } from './data/initialData';
+import {
+  Position,
+  Candidate,
+  Voter,
+  VoteChoices,
+  ElectionSettings,
+  ExhibitProject,
+  ExhibitVote,
+  ExhibitSettings,
+} from './types';
+import {
+  INITIAL_ELECTION_SETTINGS,
+  INITIAL_POSITIONS,
+  INITIAL_CANDIDATES,
+  INITIAL_EXHIBIT_PROJECTS,
+  INITIAL_EXHIBIT_SETTINGS,
+} from './data/initialData';
 import { loadElectionDataFromFirestore, subscribeToElectionData } from './lib/firebase';
 
 export default function App() {
@@ -34,7 +50,7 @@ export default function App() {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const [activeTab, setActiveTab] = useState<'ballot' | 'results' | 'verify' | 'admin'>(() => {
+  const [activeTab, setActiveTab] = useState<'ballot' | 'exhibit' | 'results' | 'verify' | 'admin'>(() => {
     const saved = localStorage.getItem('cpe_voter');
     if (saved) {
       try {
@@ -53,6 +69,9 @@ export default function App() {
   const [positions, setPositions] = useState<Position[]>(INITIAL_POSITIONS);
   const [candidates, setCandidates] = useState<Candidate[]>(INITIAL_CANDIDATES);
   const [settings, setSettings] = useState<ElectionSettings>(INITIAL_ELECTION_SETTINGS);
+  const [exhibitProjects, setExhibitProjects] = useState<ExhibitProject[]>(INITIAL_EXHIBIT_PROJECTS);
+  const [exhibitVotes, setExhibitVotes] = useState<ExhibitVote[]>([]);
+  const [exhibitSettings, setExhibitSettings] = useState<ExhibitSettings>(INITIAL_EXHIBIT_SETTINGS);
 
   // User Auth State
   const [voter, setVoter] = useState<Voter | null>(() => {
@@ -175,6 +194,15 @@ export default function App() {
         const dataInfo = await resInfo.json();
         if (dataInfo.settings) setSettings(dataInfo.settings);
       }
+
+      const resExhibit = await fetch('/api/exhibit/data');
+      if (resExhibit.ok && resExhibit.headers.get('content-type')?.includes('application/json')) {
+        const dataExhibit = await resExhibit.json();
+        const apiProjects = dataExhibit.exhibitProjects || dataExhibit.projects;
+        if (Array.isArray(apiProjects)) setExhibitProjects(apiProjects);
+        if (Array.isArray(dataExhibit.exhibitVotes)) setExhibitVotes(dataExhibit.exhibitVotes);
+        if (dataExhibit.exhibitSettings) setExhibitSettings(dataExhibit.exhibitSettings);
+      }
     } catch {
       // API fallback handled by Firestore direct subscription
     }
@@ -184,6 +212,9 @@ export default function App() {
       if (fsData.positions && fsData.positions.length > 0) setPositions(fsData.positions);
       if (fsData.candidates) setCandidates(fsData.candidates);
       if (fsData.settings) setSettings(fsData.settings);
+      if (Array.isArray(fsData.exhibitProjects)) setExhibitProjects(fsData.exhibitProjects);
+      if (Array.isArray(fsData.exhibitVotes)) setExhibitVotes(fsData.exhibitVotes);
+      if (fsData.exhibitSettings) setExhibitSettings(fsData.exhibitSettings);
       setVoter((prevVoter) => syncVoterStateFromElectionData(fsData, prevVoter));
     }
   };
@@ -197,6 +228,9 @@ export default function App() {
         if (Array.isArray(data.positions) && data.positions.length > 0) setPositions(data.positions);
         if (Array.isArray(data.candidates)) setCandidates(data.candidates);
         if (data.settings) setSettings(data.settings);
+        if (Array.isArray(data.exhibitProjects)) setExhibitProjects(data.exhibitProjects);
+        if (Array.isArray(data.exhibitVotes)) setExhibitVotes(data.exhibitVotes);
+        if (data.exhibitSettings) setExhibitSettings(data.exhibitSettings);
 
         setVoter((prevVoter) => syncVoterStateFromElectionData(data, prevVoter));
       }
@@ -261,6 +295,18 @@ export default function App() {
     fetchData();
   };
 
+  const handleExhibitVoteSuccess = (newVote: ExhibitVote, updatedVotes?: ExhibitVote[]) => {
+    if (Array.isArray(updatedVotes)) {
+      setExhibitVotes(updatedVotes);
+    } else {
+      setExhibitVotes((prev) => {
+        if (prev.some((v) => v.id === newVote.id || v.receiptHash === newVote.receiptHash)) return prev;
+        return [...prev, newVote];
+      });
+    }
+    fetchData();
+  };
+
   return (
     <div className="min-h-screen bg-neutral-100 dark:bg-slate-950 text-neutral-900 dark:text-slate-100 flex flex-col font-sans selection:bg-rose-700 selection:text-white transition-colors">
       {/* Navigation Header */}
@@ -293,7 +339,25 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'results' && voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com' && <LiveResults settings={settings} />}
+        {activeTab === 'exhibit' && (
+          <ProjectExhibitSection
+            projects={exhibitProjects}
+            exhibitVotes={exhibitVotes}
+            exhibitSettings={exhibitSettings}
+            electionSettings={settings}
+            voter={voter}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
+            onVoteSuccess={handleExhibitVoteSuccess}
+          />
+        )}
+
+        {activeTab === 'results' && voter?.email?.toLowerCase() === 'bamuyahacksie@gmail.com' && (
+          <LiveResults
+            settings={settings}
+            exhibitProjects={exhibitProjects}
+            exhibitVotes={exhibitVotes}
+          />
+        )}
 
         {activeTab === 'verify' && <ReceiptVerifier />}
 
@@ -302,6 +366,9 @@ export default function App() {
             settings={settings}
             positions={positions}
             candidates={candidates}
+            exhibitProjects={exhibitProjects}
+            exhibitVotes={exhibitVotes}
+            exhibitSettings={exhibitSettings}
             onRefreshData={fetchData}
           />
         )}

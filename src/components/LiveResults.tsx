@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { PositionResult, VoterTurnoutStats, ElectionSettings } from '../types';
+import { PositionResult, VoterTurnoutStats, ElectionSettings, ExhibitProject, ExhibitVote } from '../types';
 import { generateElectionPDF } from '../utils/pdfGenerator';
 import { fetchOrCalculateResults, computeResultsFromData } from '../utils/electionResultsHelper';
 import { subscribeToElectionData } from '../lib/firebase';
@@ -7,6 +7,7 @@ import {
   INITIAL_POSITIONS,
   INITIAL_CANDIDATES,
   INITIAL_ELECTION_SETTINGS,
+  INITIAL_EXHIBIT_PROJECTS,
 } from '../data/initialData';
 import {
   BarChart,
@@ -30,15 +31,26 @@ import {
   Download,
   FileText,
   ShieldCheck,
+  Lightbulb,
 } from 'lucide-react';
 
 interface LiveResultsProps {
   settings: ElectionSettings;
+  exhibitProjects?: ExhibitProject[];
+  exhibitVotes?: ExhibitVote[];
 }
 
-export const LiveResults: React.FC<LiveResultsProps> = ({ settings }) => {
+export const LiveResults: React.FC<LiveResultsProps> = ({
+  settings,
+  exhibitProjects: propExhibitProjects,
+  exhibitVotes: propExhibitVotes,
+}) => {
   const [positionResults, setPositionResults] = useState<PositionResult[]>([]);
   const [turnoutStats, setTurnoutStats] = useState<VoterTurnoutStats | null>(null);
+  const [exhibitProjects, setExhibitProjects] = useState<ExhibitProject[]>(
+    propExhibitProjects || INITIAL_EXHIBIT_PROJECTS
+  );
+  const [exhibitVotes, setExhibitVotes] = useState<ExhibitVote[]>(propExhibitVotes || []);
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
@@ -73,6 +85,8 @@ export const LiveResults: React.FC<LiveResultsProps> = ({ settings }) => {
         const calculated = computeResultsFromData(positions, candidates, votes, voters, effSettings, effUpdatedAt);
         setPositionResults(calculated.positionResults || []);
         setTurnoutStats(calculated.turnoutStats || null);
+        if (Array.isArray(fsData.exhibitProjects)) setExhibitProjects(fsData.exhibitProjects);
+        if (Array.isArray(fsData.exhibitVotes)) setExhibitVotes(fsData.exhibitVotes);
         setLastUpdated(calculated.lastUpdated || new Date().toISOString());
         setLoading(false);
       }
@@ -423,6 +437,122 @@ export const LiveResults: React.FC<LiveResultsProps> = ({ settings }) => {
           );
         })}
       </div>
+
+      {/* Project Exhibit People's Choice Live Standings */}
+      {exhibitProjects.length > 0 && (() => {
+        const validExhVotes = exhibitVotes.filter((v) => !v.isInvalidated);
+        const totalExhVotes = validExhVotes.length;
+        const exhCounts: Record<string, number> = {};
+        exhibitProjects.forEach((p) => (exhCounts[p.id] = 0));
+        validExhVotes.forEach((v) => {
+          if (exhCounts[v.projectId] !== undefined) exhCounts[v.projectId]++;
+        });
+
+        const rankedExhibits = [...exhibitProjects]
+          .map((p) => {
+            const votes = exhCounts[p.id] || 0;
+            const percentage =
+              totalExhVotes > 0 ? parseFloat(((votes / totalExhVotes) * 100).toFixed(1)) : 0;
+            return { ...p, votes, percentage };
+          })
+          .sort((a, b) => b.votes - a.votes);
+
+        const leadingExhibit = rankedExhibits[0] && rankedExhibits[0].votes > 0 ? rankedExhibits[0] : null;
+        const exhChartData = rankedExhibits.map((e) => ({
+          name: e.teamName,
+          votes: e.votes,
+        }));
+
+        return (
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-neutral-200 dark:border-slate-800 gap-2">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-black px-2.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 flex items-center space-x-1">
+                    <Lightbulb className="w-3.5 h-3.5" />
+                    <span>Project Exhibit Showcase</span>
+                  </span>
+                  <h3 className="text-xl font-black text-neutral-900 dark:text-slate-100">
+                    People&apos;s Choice Exhibit Standings
+                  </h3>
+                </div>
+                <p className="text-xs text-neutral-700 dark:text-slate-300 font-bold mt-1">
+                  Total Exhibit Votes Cast: <span className="font-mono text-neutral-900 dark:text-slate-100 font-extrabold">{totalExhVotes}</span>
+                </p>
+              </div>
+
+              {leadingExhibit && (
+                <div className="flex items-center space-x-2 bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 px-3.5 py-1.5 rounded-2xl text-amber-950 dark:text-amber-200 text-xs shadow-sm">
+                  <Trophy className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <div>
+                    <span className="font-extrabold block leading-none">{leadingExhibit.title}</span>
+                    <span className="text-[10px] font-bold">
+                      Leading ({leadingExhibit.votes} votes • {leadingExhibit.teamName})
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              <div className="lg:col-span-6 h-64 bg-neutral-50 dark:bg-slate-800 p-4 rounded-2xl border border-neutral-200 dark:border-slate-700">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={exhChartData} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }}>
+                    <XAxis type="number" stroke="#94a3b8" fontSize={11} fontWeight={700} allowDecimals={false} />
+                    <YAxis dataKey="name" type="category" stroke="#94a3b8" fontSize={11} fontWeight={700} width={150} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        borderWidth: '1px',
+                        borderRadius: '0.75rem',
+                        color: '#f8fafc',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                      }}
+                    />
+                    <Bar dataKey="votes" fill="#be123c" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="lg:col-span-6 space-y-2.5">
+                {rankedExhibits.map((proj, idx) => (
+                  <div
+                    key={proj.id}
+                    className={`p-3.5 rounded-2xl border transition-all ${
+                      idx === 0 && proj.votes > 0
+                        ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800 shadow-sm'
+                        : 'bg-neutral-50 dark:bg-slate-800 border-neutral-200 dark:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1.5 gap-2">
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-black uppercase text-rose-700 dark:text-rose-400 block">
+                          #{idx + 1} • {proj.teamName}
+                        </span>
+                        <span className="font-extrabold text-neutral-900 dark:text-slate-100 text-xs block truncate">
+                          {proj.title}
+                        </span>
+                      </div>
+                      <div className="text-right font-mono flex-shrink-0">
+                        <span className="font-black text-sm text-rose-800 dark:text-rose-400">{proj.votes}</span>
+                        <span className="text-xs text-neutral-600 dark:text-slate-300 font-bold block">{proj.percentage}%</span>
+                      </div>
+                    </div>
+                    <div className="w-full bg-white dark:bg-slate-900 h-2 rounded-full overflow-hidden border border-neutral-200 dark:border-slate-700">
+                      <div
+                        className="bg-rose-700 h-full transition-all duration-500"
+                        style={{ width: `${proj.percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

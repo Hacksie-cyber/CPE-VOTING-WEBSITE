@@ -1,4 +1,14 @@
-import { Position, Candidate, Voter, ElectionSettings, VoteRecord, CandidateNomination } from '../types';
+import {
+  Position,
+  Candidate,
+  Voter,
+  ElectionSettings,
+  VoteRecord,
+  CandidateNomination,
+  ExhibitProject,
+  ExhibitSettings,
+  ExhibitVote,
+} from '../types';
 
 export const INITIAL_POSITIONS: Position[] = [
   {
@@ -82,3 +92,58 @@ export const SAMPLE_VOTERS: Voter[] = [];
 export const INITIAL_VOTES: VoteRecord[] = [];
 
 export const SAMPLE_NOMINATIONS: CandidateNomination[] = [];
+
+export const INITIAL_EXHIBIT_SETTINGS: ExhibitSettings = {
+  isOpen: true,
+  showLiveStandings: true,
+  title: 'CPE Innovation & Capstone Project Exhibit 2026',
+  subtitle: "Cast your People's Choice vote for the most impactful Computer Engineering student prototype and system.",
+};
+
+export const INITIAL_EXHIBIT_PROJECTS: ExhibitProject[] = [
+  {
+    id: 'exh-aquasense',
+    title: 'AquaSense: Solar IoT Aquaculture Water Quality Node',
+    teamName: 'Team CircuitPulse',
+    description:
+      'AquaSense is a solar-powered ESP32 sensor buoy engineered for local fishpond operators. It monitors dissolved oxygen, water temperature, pH, and turbidity every 60 seconds, transmits telemetry over LoRaWAN to a cloud dashboard, and automatically triggers relay-driven aerators when oxygen drops below safe thresholds.',
+  },
+  {
+    id: 'exh-visionaid',
+    title: 'SightGuide: Edge AI Smart Glasses for Visually Impaired Navigation',
+    teamName: 'Team NeuralOptics',
+    description:
+      'SightGuide integrates a lightweight camera module and ultrasonic rangefinder onto an ergonomic frame powered by a Raspberry Pi Zero 2 W. Running quantized YOLO object detection and on-device OCR, it whispers directional hazard warnings and reads street signs or medicine labels aloud via bone-conduction audio.',
+  },
+  {
+    id: 'exh-sortbot',
+    title: 'EcoSort Rover: Autonomous Campus Waste-Segregating Robot',
+    teamName: 'Team MechaCore',
+    description:
+      'Built on a ROS2 navigation stack with custom 3D-printed actuators, EcoSort Rover patrols campus corridors using 2D LiDAR SLAM. Its overhead vision classifier identifies recyclables and sorts them into separate onboard compartments with 93% accuracy.',
+  },
+  {
+    id: 'exh-gridguard',
+    title: 'GridGuard: Smart Campus Microgrid & Load-Shedding Controller',
+    teamName: 'Team VoltMatrix',
+    description:
+      'GridGuard features a custom 4-layer PCB with SCT-013 current transformers and PZEM energy meters deployed across laboratory circuits. It detects abnormal harmonic loads, prevents breaker trips via automated priority load-shedding, and forecasts daily kWh consumption.',
+  },
+  {
+    id: 'exh-signbridge',
+    title: 'SignBridge: Wearable Haptic & EMG Sign-Language Translator',
+    teamName: 'Team SynapTech',
+    description:
+      'SignBridge captures finger articulation and wrist orientation through 5 flex sensors and a 9-axis IMU per glove, streaming gesture vectors over BLE to a mobile companion app that synthesizes natural voice output in English and Filipino.',
+  },
+  {
+    id: 'exh-packetsentinel',
+    title: 'PacketSentinel: Zero-Trust Lab Network Intrusion Appliance',
+    teamName: 'Team CyberByte',
+    description:
+      'Designed for computer engineering laboratory LANs, PacketSentinel runs eBPF packet filtering on an ARM single-board appliance. It detects ARP poisoning, anomalous port scans, and unauthorized MAC devices in milliseconds with instant quarantine alerts.',
+  },
+];
+
+export const INITIAL_EXHIBIT_VOTES: ExhibitVote[] = [];
+

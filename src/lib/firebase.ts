@@ -1,7 +1,9 @@
 /// <reference types="vite/client" />
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, getDocFromServer, setDoc, onSnapshot } from 'firebase/firestore';
+import { ExhibitProject, ExhibitSettings, ExhibitVote } from '../types';
+import { INITIAL_EXHIBIT_PROJECTS, INITIAL_EXHIBIT_SETTINGS } from '../data/initialData';
 
 export const firebaseConfig = {
   apiKey: import.meta.env?.VITE_FIREBASE_API_KEY || "AIzaSyAOT_2VW4VYSWjILqaC-4qqCkBmk2xSGJ8",
@@ -18,6 +20,67 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
+
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  };
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo:
+        auth.currentUser?.providerData?.map((provider) => ({
+          providerId: provider.providerId,
+          email: provider.email,
+        })) || [],
+    },
+    operationType,
+    path,
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.error('Please check your Firebase configuration.');
+    }
+  }
+}
+if (typeof window !== 'undefined') {
+  testConnection();
+}
 
 export const signInWithGoogle = async () => {
   const result = await signInWithPopup(auth, googleProvider);
@@ -476,8 +539,223 @@ export const deleteBulkVotersInFirestore = async (voterIds: string[]) => {
   return null;
 };
 
+export const saveExhibitVoteToFirestoreDirect = async (
+  voter: { id: string; name: string; email?: string; yearLevel: string },
+  projectId: string,
+  receiptHash: string,
+  timestamp: string
+): Promise<{ success: boolean; message?: string; vote?: ExhibitVote }> => {
+  const path = 'elections/cpe2026';
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    const data = snap.exists() ? snap.data() : {};
+    const currentExhibitVotes: ExhibitVote[] = Array.isArray(data.exhibitVotes) ? [...data.exhibitVotes] : [];
+    const currentProjects: ExhibitProject[] = Array.isArray(data.exhibitProjects)
+      ? data.exhibitProjects
+      : INITIAL_EXHIBIT_PROJECTS;
+
+    if (!currentProjects.some((p) => p.id === projectId)) {
+      return { success: false, message: 'Selected project exhibit not found.' };
+    }
+
+    const cleanId = voter.id.trim().toUpperCase();
+    const cleanEmail = voter.email ? voter.email.trim().toLowerCase() : '';
+    const normName = voter.name.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+
+    const alreadyVoted = currentExhibitVotes.find(
+      (ev) =>
+        ev.voterId?.toUpperCase() === cleanId ||
+        (cleanEmail && ev.voterEmail && ev.voterEmail.toLowerCase() === cleanEmail) ||
+        (normName.length > 2 && ev.voterName?.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ') === normName)
+    );
+
+    if (alreadyVoted) {
+      return {
+        success: false,
+        message: 'You have already cast your People\'s Choice vote for the Project Exhibit.',
+        vote: alreadyVoted,
+      };
+    }
+
+    const newVote: ExhibitVote = {
+      id: `exhvote-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      receiptHash,
+      voterId: cleanId,
+      voterName: voter.name.trim(),
+      voterEmail: cleanEmail,
+      yearLevel: (voter.yearLevel as ExhibitVote['yearLevel']) || '3rd Year',
+      projectId,
+      timestamp,
+      isInvalidated: false,
+    };
+
+    currentExhibitVotes.push(newVote);
+
+    await setDoc(
+      docRef,
+      {
+        ...data,
+        exhibitProjects: currentProjects,
+        exhibitVotes: currentExhibitVotes,
+        exhibitSettings: data.exhibitSettings || INITIAL_EXHIBIT_SETTINGS,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    return { success: true, vote: newVote };
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Missing or insufficient permissions')) {
+      handleFirestoreError(err, OperationType.WRITE, path);
+    }
+    console.warn('Direct Firestore exhibit vote save error:', err);
+    return { success: false, message: 'Failed to record exhibit vote.' };
+  }
+};
+
+export const saveExhibitProjectInFirestore = async (project: ExhibitProject): Promise<boolean> => {
+  const path = 'elections/cpe2026';
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    const data = snap.exists() ? snap.data() : {};
+    const currentProjects: ExhibitProject[] = (
+      Array.isArray(data.exhibitProjects) ? data.exhibitProjects : INITIAL_EXHIBIT_PROJECTS
+    ).map((p: any) => ({
+      id: p.id,
+      title: p.title,
+      teamName: p.teamName,
+      description: p.description || p.tagline || '',
+    }));
+
+    const cleanProject: ExhibitProject = {
+      id: project.id,
+      title: project.title.trim(),
+      teamName: project.teamName.trim(),
+      description: project.description.trim(),
+    };
+
+    const idx = currentProjects.findIndex((p) => p.id === cleanProject.id);
+    if (idx >= 0) {
+      currentProjects[idx] = cleanProject;
+    } else {
+      currentProjects.push(cleanProject);
+    }
+
+    await setDoc(
+      docRef,
+      {
+        ...data,
+        exhibitProjects: currentProjects,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return true;
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Missing or insufficient permissions')) {
+      handleFirestoreError(err, OperationType.WRITE, path);
+    }
+    console.warn('Firestore exhibit project save error:', err);
+    return false;
+  }
+};
+
+export const deleteExhibitProjectInFirestore = async (projectId: string): Promise<boolean> => {
+  const path = 'elections/cpe2026';
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    const data = snap.exists() ? snap.data() : {};
+    const currentProjects: ExhibitProject[] = (
+      Array.isArray(data.exhibitProjects) ? data.exhibitProjects : INITIAL_EXHIBIT_PROJECTS
+    ).map((p: any) => ({
+      id: p.id,
+      title: p.title,
+      teamName: p.teamName,
+      description: p.description || p.tagline || '',
+    }));
+    const currentVotes: ExhibitVote[] = Array.isArray(data.exhibitVotes) ? data.exhibitVotes : [];
+
+    await setDoc(
+      docRef,
+      {
+        ...data,
+        exhibitProjects: currentProjects.filter((p) => p.id !== projectId),
+        exhibitVotes: currentVotes.filter((v) => v.projectId !== projectId),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return true;
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Missing or insufficient permissions')) {
+      handleFirestoreError(err, OperationType.DELETE, path);
+    }
+    console.warn('Firestore exhibit project delete error:', err);
+  }
+  return false;
+};
+
+export const updateExhibitSettingsInFirestore = async (
+  newExhibitSettings: Partial<ExhibitSettings>
+): Promise<boolean> => {
+  const path = 'elections/cpe2026';
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    const data = snap.exists() ? snap.data() : {};
+    const current = data.exhibitSettings || INITIAL_EXHIBIT_SETTINGS;
+
+    await setDoc(
+      docRef,
+      {
+        ...data,
+        exhibitSettings: { ...current, ...newExhibitSettings },
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return true;
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Missing or insufficient permissions')) {
+      handleFirestoreError(err, OperationType.UPDATE, path);
+    }
+    console.warn('Firestore exhibit settings update error:', err);
+  }
+  return false;
+};
+
+export const resetExhibitVotesInFirestore = async (): Promise<boolean> => {
+  const path = 'elections/cpe2026';
+  try {
+    const docRef = doc(db, 'elections', 'cpe2026');
+    const snap = await getDoc(docRef);
+    const data = snap.exists() ? snap.data() : {};
+
+    await setDoc(
+      docRef,
+      {
+        ...data,
+        exhibitVotes: [],
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    return true;
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Missing or insufficient permissions')) {
+      handleFirestoreError(err, OperationType.WRITE, path);
+    }
+    console.warn('Firestore reset exhibit votes error:', err);
+  }
+  return false;
+};
+
 export { signOut };
 export default app;
+
 
 
 

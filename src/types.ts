@@ -130,3 +130,36 @@ export interface AIComparisonResponse {
     standoutPoint: string;
   }[];
 }
+
+export interface ExhibitProject {
+  id: string;
+  title: string;
+  teamName: string;
+  description: string;
+}
+
+export interface ExhibitVote {
+  id: string;
+  receiptHash: string;
+  voterId: string;
+  voterName: string;
+  voterEmail?: string;
+  yearLevel: YearLevel;
+  projectId: string;
+  timestamp: string;
+  isInvalidated?: boolean;
+}
+
+export interface ExhibitSettings {
+  isOpen: boolean;
+  showLiveStandings: boolean;
+  title: string;
+  subtitle: string;
+}
+
+export interface ExhibitResult extends ExhibitProject {
+  votes: number;
+  percentage: number;
+  isLeading: boolean;
+}
+

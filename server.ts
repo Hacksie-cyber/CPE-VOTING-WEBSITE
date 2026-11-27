@@ -12,6 +12,9 @@ import {
   SAMPLE_VOTERS,
   INITIAL_VOTES,
   SAMPLE_NOMINATIONS,
+  INITIAL_EXHIBIT_PROJECTS,
+  INITIAL_EXHIBIT_SETTINGS,
+  INITIAL_EXHIBIT_VOTES,
 } from './src/data/initialData';
 import {
   Position,
@@ -24,6 +27,9 @@ import {
   YearLevel,
   Gender,
   CandidateNomination,
+  ExhibitProject,
+  ExhibitVote,
+  ExhibitSettings,
 } from './src/types';
 
 // Read Firebase applet configuration if provisioned
@@ -65,6 +71,9 @@ let candidates: Candidate[] = [...INITIAL_CANDIDATES];
 let voters: Voter[] = [...SAMPLE_VOTERS];
 let votes: VoteRecord[] = [...INITIAL_VOTES];
 let nominations: CandidateNomination[] = [...SAMPLE_NOMINATIONS];
+let exhibitProjects: ExhibitProject[] = [...INITIAL_EXHIBIT_PROJECTS];
+let exhibitVotes: ExhibitVote[] = [...INITIAL_EXHIBIT_VOTES];
+let exhibitSettings: ExhibitSettings = { ...INITIAL_EXHIBIT_SETTINGS };
 
 // Firebase Load & Save Helpers
 async function loadStateFromFirestore() {
@@ -137,7 +146,26 @@ async function loadStateFromFirestore() {
       });
 
       if (Array.isArray(data.nominations)) nominations = data.nominations;
-      console.log('Firebase Firestore: Loaded election state successfully. Candidate count:', candidates.length, 'Votes:', votes.length);
+      if (Array.isArray(data.exhibitProjects)) {
+        exhibitProjects = data.exhibitProjects.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          teamName: p.teamName,
+          description: p.description || p.tagline || '',
+        }));
+      } else {
+        exhibitProjects = [...INITIAL_EXHIBIT_PROJECTS];
+      }
+      if (Array.isArray(data.exhibitVotes)) {
+        exhibitVotes = data.exhibitVotes;
+      } else {
+        exhibitVotes = [];
+      }
+      if (data.exhibitSettings) {
+        exhibitSettings = { ...INITIAL_EXHIBIT_SETTINGS, ...data.exhibitSettings };
+      }
+
+      console.log('Firebase Firestore: Loaded election state successfully. Candidate count:', candidates.length, 'Votes:', votes.length, 'Exhibits:', exhibitProjects.length);
       await saveStateToFirestore();
     } else {
       console.log('Firebase Firestore: Initializing new election record for cpe2026');
@@ -159,6 +187,9 @@ async function saveStateToFirestore() {
       voters,
       votes,
       nominations,
+      exhibitProjects,
+      exhibitVotes,
+      exhibitSettings,
       updatedAt: new Date().toISOString()
     });
 
@@ -1024,6 +1055,29 @@ async function startServer() {
     const voteRecord = votes.find((v) => v.receiptHash.toUpperCase() === hash);
 
     if (!voteRecord) {
+      const exhibitRecord = exhibitVotes.find((ev) => ev.receiptHash?.toUpperCase() === hash);
+      if (exhibitRecord) {
+        const project = exhibitProjects.find((p) => p.id === exhibitRecord.projectId);
+        const voter = voters.find((vr) => exhibitRecord.voterId && vr.id === exhibitRecord.voterId);
+        const isInvalidated = Boolean(exhibitRecord.isInvalidated || voter?.isInvalidated);
+        const invalidatedReason = voter?.invalidatedReason || 'Flagged during audit by the Commission on Elections';
+        return res.json({
+          success: true,
+          receiptHash: exhibitRecord.receiptHash,
+          timestamp: exhibitRecord.timestamp,
+          yearLevel: exhibitRecord.yearLevel,
+          choicesDetails: {
+            "Project Exhibit People's Choice": {
+              positionTitle: "Project Exhibit People's Choice",
+              selectedChoice: project ? `${project.title} (${project.teamName})` : exhibitRecord.projectId,
+            },
+          },
+          status: isInvalidated ? 'INVALIDATED_BY_COMMISSION' : 'VERIFIED_TAMPER_PROOF',
+          isInvalidated,
+          invalidatedReason: isInvalidated ? invalidatedReason : undefined,
+        });
+      }
+
       return res.status(404).json({
         success: false,
         message: 'Receipt Hash not found in the official election ledger.',
@@ -1168,6 +1222,9 @@ async function startServer() {
     voters = [...SAMPLE_VOTERS];
     votes = [...INITIAL_VOTES];
     nominations = [...SAMPLE_NOMINATIONS];
+    exhibitProjects = [...INITIAL_EXHIBIT_PROJECTS];
+    exhibitVotes = [...INITIAL_EXHIBIT_VOTES];
+    exhibitSettings = { ...INITIAL_EXHIBIT_SETTINGS };
 
     await saveStateToFirestore();
 
@@ -1593,6 +1650,184 @@ Return ONLY valid raw JSON with no markdown block markers around it.`;
         })),
       });
     }
+  });
+
+  // --- PROJECT EXHIBIT VOTING ROUTES ---
+
+  // Get all project exhibits, settings, and votes
+  app.get('/api/exhibit/data', async (req, res) => {
+    await loadStateFromFirestore();
+    res.json({
+      success: true,
+      exhibitProjects,
+      exhibitVotes,
+      exhibitSettings,
+    });
+  });
+
+  // Cast a student People's Choice vote for a project exhibit
+  app.post('/api/exhibit/vote', async (req, res) => {
+    await loadStateFromFirestore();
+    const { voterId, voterName, voterEmail, voterYearLevel, projectId } = req.body;
+
+    if (!exhibitSettings.isOpen) {
+      return res.status(403).json({
+        success: false,
+        message: 'Project Exhibit voting is currently closed by the election committee.',
+      });
+    }
+
+    const stNorm = (settings.status || '').toString().trim().toUpperCase();
+    if (stNorm === 'PAUSED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Voting is currently paused by the election committee until further notice.',
+      });
+    }
+
+    if (!voterId || !projectId) {
+      return res.status(400).json({ success: false, message: 'Voter ID and Project ID are required.' });
+    }
+
+    const targetProject = exhibitProjects.find((p) => p.id === projectId);
+    if (!targetProject) {
+      return res.status(404).json({ success: false, message: 'Project exhibit not found.' });
+    }
+
+    const cleanId = voterId.toString().trim().toUpperCase();
+    const cleanEmail = voterEmail ? voterEmail.toString().trim().toLowerCase() : '';
+    const cleanName = voterName ? voterName.toString().trim() : `CPE Student (${cleanId})`;
+    const normName = normalizeName(cleanName);
+
+    // Check if voter is invalidated in voter ledger
+    const matchedVoter = voters.find(
+      (v) =>
+        (v.id && v.id.toUpperCase() === cleanId) ||
+        (cleanEmail && v.email && v.email.toLowerCase() === cleanEmail) ||
+        (normName.length > 2 && normalizeName(v.name) === normName)
+    );
+
+    if (matchedVoter?.isInvalidated) {
+      return res.status(403).json({
+        success: false,
+        message: 'This student account has been invalidated by the Election Commission and cannot cast an exhibit vote.',
+      });
+    }
+
+    // Enforce 1 People's Choice exhibit vote per student
+    const existingVote = exhibitVotes.find(
+      (ev) =>
+        ev.voterId.toUpperCase() === cleanId ||
+        (cleanEmail && ev.voterEmail && ev.voterEmail.toLowerCase() === cleanEmail) ||
+        (normName.length > 2 && normalizeName(ev.voterName) === normName)
+    );
+
+    if (existingVote) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already cast your People\'s Choice vote for the Project Exhibit.',
+        vote: existingVote,
+      });
+    }
+
+    const chars = 'ABCDEF0123456789';
+    const part1 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const part2 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    const receiptHash = `EXH2026-${part1}-${part2}`;
+    const timestamp = new Date().toISOString();
+
+    const newExhibitVote: ExhibitVote = {
+      id: `exhvote-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      receiptHash,
+      voterId: cleanId,
+      voterName: cleanName,
+      voterEmail: cleanEmail,
+      yearLevel: (voterYearLevel as YearLevel) || matchedVoter?.yearLevel || '3rd Year',
+      projectId: targetProject.id,
+      timestamp,
+      isInvalidated: false,
+    };
+
+    exhibitVotes.push(newExhibitVote);
+    await saveStateToFirestore();
+
+    res.json({
+      success: true,
+      message: `Vote recorded for "${targetProject.title}"!`,
+      vote: newExhibitVote,
+      receiptHash,
+      timestamp,
+      exhibitVotes,
+    });
+  });
+
+  // Admin: Add or update a project exhibit
+  app.post('/api/admin/exhibit/project', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+    await loadStateFromFirestore();
+
+    const { project } = req.body;
+    if (!project || !project.title?.trim() || !project.teamName?.trim() || !project.description?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Project title, team name, and description are required.',
+      });
+    }
+
+    const cleanProject: ExhibitProject = {
+      id: project.id || `exh-${Date.now()}`,
+      title: project.title.trim(),
+      teamName: project.teamName.trim(),
+      description: project.description.trim(),
+    };
+
+    const existingIdx = exhibitProjects.findIndex((p) => p.id === cleanProject.id);
+    if (existingIdx >= 0) {
+      exhibitProjects[existingIdx] = cleanProject;
+    } else {
+      exhibitProjects.push(cleanProject);
+    }
+
+    await saveStateToFirestore();
+    res.json({ success: true, exhibitProjects });
+  });
+
+  // Admin: Delete a project exhibit
+  app.delete('/api/admin/exhibit/project/:id', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+    await loadStateFromFirestore();
+
+    const projectId = req.params.id;
+    exhibitProjects = exhibitProjects.filter((p) => p.id !== projectId);
+    exhibitVotes = exhibitVotes.filter((v) => v.projectId !== projectId);
+
+    await saveStateToFirestore();
+    res.json({ success: true, exhibitProjects, exhibitVotes });
+  });
+
+  // Admin: Update exhibit settings (open/closed, showLiveStandings)
+  app.post('/api/admin/exhibit/settings', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+    await loadStateFromFirestore();
+
+    const { newExhibitSettings } = req.body;
+    exhibitSettings = {
+      ...exhibitSettings,
+      ...newExhibitSettings,
+    };
+
+    await saveStateToFirestore();
+    res.json({ success: true, exhibitSettings });
+  });
+
+  // Admin: Reset exhibit votes only
+  app.post('/api/admin/exhibit/reset-votes', async (req, res) => {
+    if (!verifyAdminAuth(req, res)) return;
+    await loadStateFromFirestore();
+
+    exhibitVotes = [];
+    await saveStateToFirestore();
+    res.json({ success: true, message: 'All project exhibit votes have been reset to zero.', exhibitVotes: [] });
   });
 
   // --- VITE MIDDLEWARE / STATIC SERVING ---
